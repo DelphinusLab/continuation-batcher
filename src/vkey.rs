@@ -71,6 +71,45 @@ pub fn load_or_build_vkey<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
     verify_circuit_vk
 }
 
+pub fn write_vkey<C:CurveAffine, W: io::Write>(vkey: &VerifyingKey<C>, writer: &mut W) -> io::Result<()> {
+    let j = vkey.domain.get_quotient_poly_degree() + 1; // quotient_poly_degree is j-1
+    let k = vkey.domain.k();
+    writer.write(&mut j.to_le_bytes())?;
+    writer.write(&mut k.to_le_bytes())?;
+    write_cs::<C, W>(&vkey.cs, writer)?;
+    vkey.write(writer)?;
+    Ok(())
+}
+
+pub fn read_vkey<C:CurveAffine, R: io::Read>(
+        //params: &Params<C>,
+        reader: &mut R
+    ) -> io::Result<VerifyingKey<C>> {
+    let mut buffer = [0_u8; std::mem::size_of::<u32>()];
+    reader.read_exact(&mut buffer)?;
+    let j = u32::from_le_bytes(buffer);
+    reader.read_exact(&mut buffer)?;
+    let k = u32::from_le_bytes(buffer);
+    let domain: EvaluationDomain<C::Scalar> = EvaluationDomain::new(j, k);
+    let cs = read_cs::<C, R>(reader)?;
+
+    let fixed_commitments: Vec<_> = (0..cs.num_fixed_columns)
+       .map(|_| C::read(reader))
+       .collect::<Result<_, _>>()?;
+
+    let permutation = permutation::VerifyingKey::read(reader, &cs.permutation)?;
+
+    Ok(VerifyingKey {
+        domain,
+        cs,
+        fixed_commitments,
+        permutation,
+    })
+}
+
+
+
+
 fn write_argument<W: std::io::Write>(column: &Column<Any>, writer: &mut W) -> std::io::Result<()> {
     writer.write(&mut column.index.to_le_bytes())?;
     writer.write(&mut (*column.column_type() as u32).to_le_bytes())?;
@@ -107,12 +146,12 @@ fn read_arguments<R: std::io::Read>(reader: &mut R) -> std::io::Result<plonk::pe
 
 fn write_column<T: ColumnType, W: std::io::Write>(encode: Any, column: &Column<T>, writer: &mut W) -> std::io::Result<()> {
     writer.write(&mut column.index.to_le_bytes())?;
-    writer.write(&mut (encode as u32).to_le_bytes())?;
     Ok(())
 }
 
-fn read_column<T: ColumnType, R: std::io::Read>(reader: &mut R) -> std::io::Result<Column<T>> {
-    todo!();
+fn read_column<T: ColumnType, R: std::io::Read>(reader: &mut R, t: T) -> std::io::Result<Column<T>> {
+    let index = read_u32(reader)? as usize;
+    Ok(Column {index, column_type: t})
 }
 
 fn write_queries<T: ColumnType, W: std::io::Write>(encode: Any, columns: &Vec<(Column<T>, Rotation)>, writer: &mut W) -> std::io::Result<()> {
@@ -124,11 +163,11 @@ fn write_queries<T: ColumnType, W: std::io::Write>(encode: Any, columns: &Vec<(C
     Ok(())
 }
 
-fn read_queries<T: ColumnType, R: std::io::Read>(reader: &mut R) -> std::io::Result<Vec<(Column<T>, Rotation)>> {
+fn read_queries<T: ColumnType, R: std::io::Read>(reader: &mut R, t: T) -> std::io::Result<Vec<(Column<T>, Rotation)>> {
     let mut queries = vec![];
     let len = read_u32(reader)?;
     for i in 0..len {
-        let column = read_column(reader)?;
+        let column = read_column(reader, t)?;
         let rotation = read_u32(reader)?;
         let rotation = Rotation (rotation as i32); //u32 to i32??
         queries.push((column, rotation))
@@ -164,7 +203,6 @@ fn read_fixed_columns<R: std::io::Read>(reader: &mut R) -> std::io::Result<Vec<C
 }
 
 fn write_cs<C:CurveAffine, W: io::Write>(cs: &ConstraintSystem<C::Scalar>, writer: &mut W) -> io::Result<()> {
-    writer.write(&mut cs.num_fixed_columns.to_le_bytes())?;
     writer.write(&mut cs.num_advice_columns.to_le_bytes())?;
     writer.write(&mut cs.num_instance_columns.to_le_bytes())?;
     writer.write(&mut cs.num_selectors.to_le_bytes())?;
@@ -195,7 +233,6 @@ fn read_u32<R: io::Read>(reader: &mut R) -> io::Result<u32> {
 }
 
 fn read_cs<C:CurveAffine, R: io::Read>(reader: &mut R) -> io::Result<ConstraintSystem<C::Scalar>> {
-    let num_fixed_columns = read_u32(reader)? as usize;
     let num_advice_columns = read_u32(reader)? as usize;
     let num_instance_columns = read_u32(reader)? as usize;
     let num_selectors = read_u32(reader)? as usize;
@@ -210,13 +247,13 @@ fn read_cs<C:CurveAffine, R: io::Read>(reader: &mut R) -> io::Result<ConstraintS
     let selector_map = read_fixed_columns(reader)?;
     let constants = read_fixed_columns(reader)?;
 
-    let advice_queries = read_queries::<Advice, R>(reader)?;
-    let instance_queries = read_queries::<Instance, R>(reader)?;
-    let fixed_queries = read_queries::<Fixed, R>(reader)?;
+    let advice_queries = read_queries::<Advice, R>(reader, Advice)?;
+    let instance_queries = read_queries::<Instance, R>(reader, Instance)?;
+    let fixed_queries = read_queries::<Fixed, R>(reader, Fixed)?;
 
     let permutation = read_arguments(reader)?;
     let mut lookups = vec![];
-    let mut nb_lookup = read_u32(reader)?;
+    let nb_lookup = read_u32(reader)?;
     for _ in 0..nb_lookup {
         let input_expressions = read_expressions::<C, R>(reader)?;
         let table_expressions = read_expressions::<C, R>(reader)?;
@@ -282,43 +319,6 @@ fn read_gates<C:CurveAffine, R: std::io::Read>(reader: &mut R) -> std::io::Resul
     }
     Ok(gates)
 }
-
-pub fn write_vkey<C:CurveAffine, W: io::Write>(vkey: &VerifyingKey<C>, writer: &mut W) -> io::Result<()> {
-    let j = vkey.domain.get_quotient_poly_degree() + 1; // quotient_poly_degree is j-1
-    let k = vkey.domain.k();
-    writer.write(&mut j.to_le_bytes())?;
-    writer.write(&mut k.to_le_bytes())?;
-    write_cs::<C, W>(&vkey.cs, writer)?;
-    vkey.write(writer)?;
-    Ok(())
-}
-
-pub fn read_vkey<C:CurveAffine, R: io::Read>(
-        //params: &Params<C>,
-        reader: &mut R
-    ) -> io::Result<VerifyingKey<C>> {
-    let mut buffer = [0_u8; std::mem::size_of::<u32>()];
-    reader.read_exact(&mut buffer)?;
-    let j = u32::from_le_bytes(buffer);
-    reader.read_exact(&mut buffer)?;
-    let k = u32::from_le_bytes(buffer);
-    let domain: EvaluationDomain<C::Scalar> = EvaluationDomain::new(j, k);
-    let cs = read_cs::<C, R>(reader)?;
-
-    let fixed_commitments: Vec<_> = (0..cs.num_fixed_columns)
-       .map(|_| C::read(reader))
-       .collect::<Result<_, _>>()?;
-
-    let permutation = permutation::VerifyingKey::read(reader, &cs.permutation)?;
-
-    Ok(VerifyingKey {
-        domain,
-        cs,
-        fixed_commitments,
-        permutation,
-    })
-}
-
 
 #[derive(FromPrimitive)]
 enum ExpressionCode {
