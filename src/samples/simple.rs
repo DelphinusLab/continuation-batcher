@@ -18,8 +18,8 @@ pub struct SimpleConfig {
 
 #[derive(Default, Clone)]
 pub struct SimpleCircuit<F: FieldExt> {
-    a: F,
-    b: F,
+    pub a: F,
+    pub b: F,
 }
 
 impl<F: FieldExt> SimpleCircuit<F> {
