@@ -1,23 +1,23 @@
+use crate::vkey::read_vkey;
+use crate::vkey::write_vkey;
 use ark_std::rand::rngs::OsRng;
 use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::dev::MockProver;
 use halo2_proofs::plonk::create_proof;
 use halo2_proofs::plonk::keygen_pk;
+use halo2_proofs::plonk::keygen_vk;
 use halo2_proofs::plonk::Circuit;
 use halo2_proofs::plonk::VerifyingKey;
+use halo2_proofs::poly::commitment::Params;
 use halo2aggregator_s::circuits::utils::load_instance;
 use halo2aggregator_s::circuits::utils::load_proof;
+use halo2aggregator_s::circuits::utils::run_circuit_unsafe_full_pass;
 use halo2aggregator_s::circuits::utils::store_instance;
 use halo2aggregator_s::transcript::poseidon::PoseidonWrite;
-use halo2aggregator_s::circuits::utils::run_circuit_unsafe_full_pass;
 use std::io::Write;
 use std::path::Path;
-use halo2_proofs::poly::commitment::Params;
-use halo2_proofs::plonk::keygen_vk;
-use crate::vkey::write_vkey;
-use crate::vkey::read_vkey;
 
-#[derive (Clone)]
+#[derive(Clone)]
 pub struct ProofLoadInfo {
     pub vkey: String,
     pub instance_size: Vec<u32>,
@@ -44,8 +44,6 @@ impl ProofLoadInfo {
     }
 }
 
-
-
 pub struct CircuitInfo<E: MultiMillerLoop, C: Circuit<E::Scalar>> {
     pub circuit: C,
     pub name: String,
@@ -67,7 +65,11 @@ impl<E: MultiMillerLoop> ProofInfo<E> {
             let vkey = read_vkey_full::<E>(&cache_folder.join(loadinfo.vkey.clone()));
             let instances = load_instance::<E>(&loadinfo.instance_size, &cache_folder.join(ins));
             let transcripts = load_proof(&cache_folder.join(trans));
-            proofs.push(ProofInfo {vkey, instances, transcripts});
+            proofs.push(ProofInfo {
+                vkey,
+                instances,
+                transcripts,
+            });
         }
         proofs
     }
@@ -97,7 +99,12 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> CircuitInfo<E, C> {
             circuit: c,
             k,
             name: name.clone(),
-            proofloadinfo: ProofLoadInfo::new(name.as_str(), 1, k, instances.iter().map(|x| x.len() as u32).collect::<Vec<_>>()),
+            proofloadinfo: ProofLoadInfo::new(
+                name.as_str(),
+                1,
+                k,
+                instances.iter().map(|x| x.len() as u32).collect::<Vec<_>>(),
+            ),
             instances,
         }
     }
@@ -118,7 +125,10 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
             &cache_folder.join(format!("{}.vkey.data", self.name)),
         );
 
-        store_instance(&self.instances, &cache_folder.join(self.proofloadinfo.instances[index].as_str()));
+        store_instance(
+            &self.instances,
+            &cache_folder.join(self.proofloadinfo.instances[index].as_str()),
+        );
 
         store_vkey_full::<E>(&vkey, &cache_folder.join(self.proofloadinfo.vkey.clone()));
         let vkey2 = read_vkey_full::<E>(&cache_folder.join(self.proofloadinfo.vkey));
@@ -151,7 +161,6 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
         let prover = MockProver::run(k, &self.circuit, self.instances.clone()).unwrap();
         assert_eq!(prover.verify(), Ok(()));
     }
-
 }
 
 fn load_vkey<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
@@ -181,18 +190,13 @@ fn load_or_build_vkey<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
     verify_circuit_vk
 }
 
-fn store_vkey_full<E: MultiMillerLoop>(
-    vkey: &VerifyingKey<E::G1Affine>,
-    cache_file: &Path,
-) {
+fn store_vkey_full<E: MultiMillerLoop>(vkey: &VerifyingKey<E::G1Affine>, cache_file: &Path) {
     println!("store vkey full to {:?}", cache_file);
     let mut fd = std::fs::File::create(&cache_file).unwrap();
     write_vkey(vkey, &mut fd).unwrap();
 }
 
-pub (crate) fn read_vkey_full<E: MultiMillerLoop>(
-    cache_file: &Path,
-) -> VerifyingKey<E::G1Affine> {
+pub(crate) fn read_vkey_full<E: MultiMillerLoop>(cache_file: &Path) -> VerifyingKey<E::G1Affine> {
     println!("read vkey full from {:?}", cache_file);
     let mut fd = std::fs::File::open(&cache_file).unwrap();
     read_vkey(&mut fd).unwrap()

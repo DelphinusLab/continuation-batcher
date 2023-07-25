@@ -12,10 +12,10 @@ pub trait CommandBuilder: ArgBuilder {
 
     fn append_create_aggregate_proof_subcommand(app: App) -> App {
         let command = Command::new("aggregate-prove");
-            /*
-            .arg(Self::aggregate_public_args())
-            .arg(Self::aggregate_private_args());
-            */
+        /*
+        .arg(Self::aggregate_public_args())
+        .arg(Self::aggregate_private_args());
+        */
 
         app.subcommand(command)
     }

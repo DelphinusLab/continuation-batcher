@@ -18,8 +18,6 @@ use crate::exec::exec_setup;
 //use crate::exec::exec_verify_aggregate_proof;
 //use crate::exec::exec_verify_proof;
 
-
-
 pub trait AppBuilder: CommandBuilder {
     const NAME: &'static str;
     const VERSION: &'static str;
@@ -32,7 +30,7 @@ pub trait AppBuilder: CommandBuilder {
             .version(Self::VERSION)
             .setting(AppSettings::SubcommandRequired)
             .arg(Self::output_path_arg());
-            //.arg(Self::zkwasm_file_arg());
+        //.arg(Self::zkwasm_file_arg());
 
         let app = Self::append_setup_subcommand(app);
         let app = Self::append_create_aggregate_proof_subcommand(app);
@@ -46,16 +44,14 @@ pub trait AppBuilder: CommandBuilder {
 
         let top_matches = command.get_matches();
 
-        let output_dir = top_matches.get_one::<PathBuf>("output").expect("output dir is not provided");
+        let output_dir = top_matches
+            .get_one::<PathBuf>("output")
+            .expect("output dir is not provided");
         fs::create_dir_all(&output_dir).unwrap();
 
         match top_matches.subcommand() {
             Some(("setup", _)) => {
-                exec_setup(
-                    Self::AGGREGATE_K,
-                    Self::NAME,
-                    &output_dir,
-                );
+                exec_setup(Self::AGGREGATE_K, Self::NAME, &output_dir);
             }
 
             /*

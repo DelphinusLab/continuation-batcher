@@ -42,11 +42,7 @@ use crate::circuits::ZkWasmCircuitBuilder;
 
 const AGGREGATE_PREFIX: &'static str = "aggregate-circuit";
 
-pub fn exec_setup(
-    aggregate_k: u32,
-    prefix: &'static str,
-    output_dir: &PathBuf,
-) {
+pub fn exec_setup(aggregate_k: u32, prefix: &'static str, output_dir: &PathBuf) {
     info!("Setup Params and VerifyingKey");
 
     // Setup Aggregate Circuit Params
