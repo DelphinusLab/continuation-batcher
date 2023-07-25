@@ -1,4 +1,3 @@
-use ark_std::rand::rngs::OsRng;
 use halo2_proofs::arithmetic::FieldExt;
 use halo2_proofs::circuit::floor_planner::V1;
 use halo2_proofs::circuit::Layouter;
@@ -20,28 +19,6 @@ pub struct SimpleConfig {
 pub struct SimpleCircuit<F: FieldExt> {
     pub a: F,
     pub b: F,
-}
-
-impl<F: FieldExt> SimpleCircuit<F> {
-    pub fn new_with_instance(a: F, b: F) -> Self {
-        Self { a, b }
-    }
-
-    pub fn random_new_with_instance() -> (Self, Vec<Vec<F>>) {
-        let a = F::random(OsRng);
-        let b = F::random(OsRng);
-        let instance = a + b;
-
-        (Self::new_with_instance(a, b), vec![vec![instance]])
-    }
-
-    pub fn default_with_instance() -> (Self, Vec<Vec<F>>) {
-        let a = F::zero();
-        let b = F::zero();
-        let instance = a + b;
-
-        (Self::new_with_instance(a, b), vec![vec![instance]])
-    }
 }
 
 impl<F: FieldExt> Circuit<F> for SimpleCircuit<F> {

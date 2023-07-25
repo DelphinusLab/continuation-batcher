@@ -11,7 +11,6 @@ use halo2_proofs::poly::EvaluationDomain;
 use halo2_proofs::poly::Rotation;
 use num;
 use num_derive::FromPrimitive;
-use num_traits::ToBytes;
 use std::io;
 
 pub fn write_vkey<C: CurveAffine, W: io::Write>(
@@ -105,7 +104,6 @@ fn read_arguments<R: std::io::Read>(
 }
 
 fn write_column<T: ColumnType, W: std::io::Write>(
-    encode: Any,
     column: &Column<T>,
     writer: &mut W,
 ) -> std::io::Result<()> {
@@ -125,14 +123,13 @@ fn read_column<T: ColumnType, R: std::io::Read>(
 }
 
 fn write_queries<T: ColumnType, W: std::io::Write>(
-    encode: Any,
     columns: &Vec<(Column<T>, Rotation)>,
     writer: &mut W,
 ) -> std::io::Result<()> {
     writer.write(&mut (columns.len() as u32).to_le_bytes())?;
     println!("write queries {}", columns.len());
     for (c, rotation) in columns.iter() {
-        write_column(encode, c, writer)?;
+        write_column(c, writer)?;
         writer.write(&mut (rotation.0 as u32).to_le_bytes())?;
     }
     Ok(())
@@ -206,9 +203,9 @@ fn write_cs<C: CurveAffine, W: io::Write>(
     write_fixed_columns(&cs.selector_map, writer)?;
     println!("write constants:");
     write_fixed_columns(&cs.constants, writer)?;
-    write_queries::<Advice, W>(Any::Advice, &cs.advice_queries, writer)?;
-    write_queries::<Instance, W>(Any::Instance, &cs.instance_queries, writer)?;
-    write_queries::<Fixed, W>(Any::Fixed, &cs.fixed_queries, writer)?;
+    write_queries::<Advice, W>(&cs.advice_queries, writer)?;
+    write_queries::<Instance, W>(&cs.instance_queries, writer)?;
+    write_queries::<Fixed, W>(&cs.fixed_queries, writer)?;
     write_arguments(&cs.permutation.columns, writer)?;
     println!("write lookups {}:", cs.lookups.len());
     writer.write(&(cs.lookups.len() as u32).to_le_bytes())?;

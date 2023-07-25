@@ -11,19 +11,20 @@ use halo2_proofs::plonk::VerifyingKey;
 use halo2_proofs::poly::commitment::Params;
 use halo2aggregator_s::circuits::utils::load_instance;
 use halo2aggregator_s::circuits::utils::load_proof;
-use halo2aggregator_s::circuits::utils::run_circuit_unsafe_full_pass;
 use halo2aggregator_s::circuits::utils::store_instance;
 use halo2aggregator_s::transcript::poseidon::PoseidonWrite;
 use std::io::Write;
 use std::path::Path;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct ProofLoadInfo {
     pub vkey: String,
     pub instance_size: Vec<u32>,
     pub transcripts: Vec<String>,
     pub instances: Vec<String>,
     pub param: String,
+    pub name: String,
 }
 
 impl ProofLoadInfo {
@@ -35,6 +36,7 @@ impl ProofLoadInfo {
             instances.push(format!("{}.{}.instance.data", name, i));
         }
         ProofLoadInfo {
+            name: name.to_string(),
             vkey: format!("{}.vkeyfull.data", name),
             transcripts,
             instances,
@@ -42,6 +44,20 @@ impl ProofLoadInfo {
             param: format!("K{}.param", k),
         }
     }
+    pub fn save(&self, cache_folder: &Path) {
+        let cache_file = cache_folder.join(format!("{}.loadinfo.json", &self.name));
+        let json = serde_json::to_string_pretty(self).unwrap();
+        println!("write proof load info {:?}", cache_file);
+        let mut fd = std::fs::File::create(&cache_file).unwrap();
+        fd.write(json.as_bytes()).unwrap();
+    }
+
+    pub fn load(configfile: &Path) -> Self {
+        let fd = std::fs::File::open(configfile).unwrap();
+        println!("read proof load info {:?}", configfile);
+        serde_json::from_reader(fd).unwrap()
+    }
+
 }
 
 pub struct CircuitInfo<E: MultiMillerLoop, C: Circuit<E::Scalar>> {

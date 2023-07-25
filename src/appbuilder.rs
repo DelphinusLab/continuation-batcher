@@ -1,10 +1,14 @@
 use clap::App;
 use clap::AppSettings;
-use log::info;
 use std::fs;
 use std::path::PathBuf;
-
+use crate::proof::ProofLoadInfo;
+use crate::proof::ProofInfo;
+use crate::proof::Prover;
+use halo2_proofs::pairing::bn256::Bn256;
+use crate::batch::BatchInfo;
 /*
+use log::info;
 use crate::circuits::config::init_zkwasm_runtime;
 use crate::circuits::config::MIN_K;
 */
@@ -51,34 +55,24 @@ pub trait AppBuilder: CommandBuilder {
 
         match top_matches.subcommand() {
             Some(("setup", _)) => {
-                exec_setup(Self::AGGREGATE_K, Self::NAME, &output_dir);
+                exec_setup(Self::AGGREGATE_K, &output_dir);
+            }
+
+            Some(("aggregate-prove", sub_matches)) => {
+                let config_file = Self::parse_batch_file_arg(sub_matches);
+
+                let proofloadinfo = ProofLoadInfo::load(&config_file);
+                let batchinfo = BatchInfo::<Bn256> {
+                    proofs: ProofInfo::load_proof(&output_dir, &proofloadinfo),
+                    k: 21,
+                    commitment_check: vec![],
+                };
+
+                let agg_circuit = batchinfo.build_aggregate_circuit(&output_dir);
+                agg_circuit.create_proof(&output_dir, 0);
             }
 
             /*
-            Some(("aggregate-prove", sub_matches)) => {
-                let public_inputs: Vec<Vec<u64>> = Self::parse_aggregate_public_args(&sub_matches);
-                let private_inputs: Vec<Vec<u64>> =
-                    Self::parse_aggregate_private_args(&sub_matches);
-
-                for instances in &public_inputs {
-                    assert!(instances.len() <= Self::MAX_PUBLIC_INPUT_SIZE);
-                }
-
-                assert_eq!(public_inputs.len(), Self::N_PROOFS);
-                assert_eq!(private_inputs.len(), Self::N_PROOFS);
-
-                exec_aggregate_create_proof(
-                    zkwasm_k,
-                    Self::AGGREGATE_K,
-                    Self::NAME,
-                    &wasm_binary,
-                    &function_name,
-                    &output_dir,
-                    &public_inputs,
-                    &private_inputs,
-                );
-            }
-
             Some(("aggregate-verify", sub_matches)) => {
                 let proof_path: PathBuf = Self::parse_proof_path_arg(&sub_matches);
                 let instances_path: PathBuf = Self::parse_aggregate_instance(&sub_matches);

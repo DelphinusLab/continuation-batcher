@@ -16,35 +16,17 @@ pub trait ArgBuilder {
         matches.get_one("K").clone().map(|v| *v)
     }
 
-    fn zkwasm_file_arg<'a>() -> Arg<'a> {
+    fn batch_file_arg<'a>() -> Arg<'a> {
         arg!(
-            -w --wasm <WASM_BINARY> "Path of the Wasm binary file"
+            -b --batch <BATCH_CONFIG> "Path of the batch config file"
         )
         .value_parser(value_parser!(PathBuf))
     }
-    fn parse_zkwasm_file_arg(matches: &ArgMatches) -> PathBuf {
+    fn parse_batch_file_arg(matches: &ArgMatches) -> PathBuf {
         matches
-            .get_one::<PathBuf>("wasm")
-            .expect("wasm is required.")
+            .get_one::<PathBuf>("batch")
+            .expect("batch config is required.")
             .clone()
-    }
-
-    fn function_name_arg<'a>() -> Arg<'a> {
-        arg!(
-            -f --function <FUNCTION_NAME> "Function you would like to run."
-        )
-    }
-    fn parse_function_name(matches: &ArgMatches) -> String {
-        matches
-            .get_one::<String>("function")
-            .expect("function is required")
-            .to_string()
-    }
-
-    fn output_path_arg<'a>() -> Arg<'a> {
-        arg!(
-            -o --output [OUTPUT_PATH] "Path of the output files.\nThe md5 of the wasm binary file is the default path if not supplied."
-        ).value_parser(value_parser!(PathBuf))
     }
 
     fn proof_path_arg<'a>() -> Arg<'a> {
@@ -59,6 +41,13 @@ pub trait ArgBuilder {
             .get_one::<PathBuf>("proof")
             .expect("proof is required.")
             .clone()
+    }
+
+
+    fn output_path_arg<'a>() -> Arg<'a> {
+        arg!(
+            -o --output [OUTPUT_PATH] "Path of the output files.\nThe md5 of the wasm binary file is the default path if not supplied."
+        ).value_parser(value_parser!(PathBuf))
     }
 
     fn sol_dir_arg<'a>() -> Arg<'a> {
@@ -81,31 +70,20 @@ pub trait ArgBuilder {
         .takes_value(false)
     }
 
-    fn single_instance_path_arg<'a>() -> Arg<'a> {
-        arg!(
-            -i --instance <INSTANCE_PATH> "Path of circuit instance."
-        )
-        .value_parser(value_parser!(PathBuf))
-    }
-    fn parse_single_instance_arg(matches: &ArgMatches) -> PathBuf {
-        matches
-            .get_one::<PathBuf>("instance")
-            .expect("instance is required.")
-            .clone()
-    }
-
     fn instances_path_arg<'a>() -> Arg<'a> {
         arg!(
             -i --instances <AGGREGATE_INSTANCE_PATH> "Path of aggregate instances."
         )
         .value_parser(value_parser!(PathBuf))
     }
+
     fn parse_aggregate_instance(matches: &ArgMatches) -> PathBuf {
         matches
             .get_one::<PathBuf>("instances")
             .expect("instances is required.")
             .clone()
     }
+
     fn parse_auxonly(matches: &ArgMatches) -> bool {
         matches
             .get_many::<String>("auxonly")

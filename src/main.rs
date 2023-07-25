@@ -9,10 +9,6 @@ pub mod vkey;
 use crate::appbuilder::AppBuilder;
 use crate::args::ArgBuilder;
 use crate::command::CommandBuilder;
-use clap::value_parser;
-use clap::Arg;
-use clap::ArgAction;
-use clap::ArgMatches;
 
 struct CircuitBatcherApp;
 
@@ -65,6 +61,8 @@ fn batch_single_circuit() {
     circuit_info.mock_proof(K);
     let proofloadinfo = circuit_info.proofloadinfo.clone();
     circuit_info.create_proof(&Path::new("output"), 0);
+
+    proofloadinfo.save(&Path::new("output"));
 
     let batchinfo = BatchInfo::<Bn256> {
         proofs: ProofInfo::load_proof(&Path::new("output"), &proofloadinfo),
