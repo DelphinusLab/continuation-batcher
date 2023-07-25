@@ -3,7 +3,9 @@ mod args;
 mod command;
 mod exec;
 mod samples;
+pub mod proof;
 pub mod vkey;
+pub mod batch;
 use clap::value_parser;
 use clap::Arg;
 use clap::ArgAction;
@@ -11,7 +13,6 @@ use clap::ArgMatches;
 use crate::appbuilder::AppBuilder;
 use crate::args::ArgBuilder;
 use crate::command::CommandBuilder;
-use crate::samples::Prover;
 
 struct CircuitBatcherApp;
 
@@ -40,23 +41,38 @@ fn main() {
 }
 
 #[test]
-fn generate_simple_circuit() {
+fn batch_single_circuit() {
     use halo2_proofs::pairing::bn256::Fr;
     use halo2_proofs::pairing::bn256::Bn256;
     use crate::samples::simple::SimpleCircuit;
-    use crate::samples::CircuitInfo;
+    use crate::proof::Prover;
+    use crate::proof::ProofInfo;
+    use crate::proof::CircuitInfo;
     use std::path::Path;
+    use crate::batch::BatchInfo;
 
     const K: u32 = 8;
     let circuit = samples::simple::SimpleCircuit::<Fr> {
         a: Fr::from(100u64),
         b: Fr::from(200u64),
     };
-    let circuit_info = CircuitInfo::<Bn256, samples::simple::SimpleCircuit<Fr>> {
+    let circuit_info = CircuitInfo::<Bn256, SimpleCircuit<Fr>>::new(
         circuit,
-        name: "test".to_string(),
-        instances: vec![vec![Fr::from(300u64)]]
-    };
+        "test".to_string(),
+        vec![vec![Fr::from(300u64)]],
+        K as usize
+    );
     circuit_info.mock_proof(K);
-    circuit_info.create_proof(&Path::new("output"), K);
+    let proofloadinfo = circuit_info.proofloadinfo.clone();
+    circuit_info.create_proof(&Path::new("output"), 0);
+
+    let batchinfo = BatchInfo::<Bn256> {
+        proofs: ProofInfo::load_proof(&Path::new("output"), &proofloadinfo),
+        k: 21,
+        commitment_check: vec![]
+    };
+
+
+    let agg_circuit = batchinfo.build_aggregate_circuit(&Path::new("output"));
+    agg_circuit.create_proof(&Path::new("output"), 0);
 }
