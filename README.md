@@ -1,6 +1,6 @@
-# batcher-stack
+# This is a standalone proof compress & batch tool for zkWASM guest and host circuits.
 
-## ProofLoadInfo
+## Descript proof for a specific target through ProofLoadInfo
 
 ```
 {
@@ -20,7 +20,7 @@
 
 ```
 
-## generate batch proof
+## Generate batch proof from ProofLoadInfos
 
 ```
 cargo run -- -k 8 --output sample aggregate-prove --batch sample/test.loadinfo.json
