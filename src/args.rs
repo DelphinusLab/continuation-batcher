@@ -46,7 +46,7 @@ pub trait ArgBuilder {
 
     fn output_path_arg<'a>() -> Arg<'a> {
         arg!(
-            -o --output [OUTPUT_PATH] "Path of the output files.\nThe md5 of the wasm binary file is the default path if not supplied."
+            -o --output [OUTPUT_PATH] "Path of the output files."
         ).value_parser(value_parser!(PathBuf))
     }
 

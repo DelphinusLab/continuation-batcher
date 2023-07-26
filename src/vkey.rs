@@ -3,6 +3,7 @@ use halo2_proofs::arithmetic::FieldExt;
 use halo2_proofs::helpers::CurveRead;
 use halo2_proofs::plonk;
 use halo2_proofs::plonk::VerifyingKey;
+use halo2_proofs::plonk::VirtualCell;
 use halo2_proofs::plonk::{
     permutation, Advice, Any, Column, ColumnType, ConstraintSystem, Expression, Fixed, Gate,
     Instance,
@@ -135,6 +136,19 @@ fn write_queries<T: ColumnType, W: std::io::Write>(
     Ok(())
 }
 
+fn write_virtual_cells <W: std::io::Write>(
+    columns: &Vec<VirtualCell>,
+    writer: &mut W,
+) -> std::io::Result<()> {
+    writer.write(&mut (columns.len() as u32).to_le_bytes())?;
+    println!("write queries {}", columns.len());
+    for cell in columns.iter() {
+        write_argument(&cell.column, writer)?;
+        writer.write(&mut (cell.rotation.0 as u32).to_le_bytes())?;
+    }
+    Ok(())
+}
+
 fn read_queries<T: ColumnType, R: std::io::Read>(
     reader: &mut R,
     t: T,
@@ -149,6 +163,21 @@ fn read_queries<T: ColumnType, R: std::io::Read>(
         queries.push((column, rotation))
     }
     Ok(queries)
+}
+
+fn read_virtual_cells<R: std::io::Read>(
+    reader: &mut R,
+) -> std::io::Result<Vec<VirtualCell>> {
+    let mut vcells = vec![];
+    let len = read_u32(reader)?;
+    println!("read queries {}", len);
+    for _ in 0..len {
+        let column = read_argument(reader)?;
+        let rotation = read_u32(reader)?;
+        let rotation = Rotation(rotation as i32); //u32 to i32??
+        vcells.push(VirtualCell {column, rotation})
+    }
+    Ok(vcells)
 }
 
 fn write_fixed_column<W: std::io::Write>(
@@ -309,6 +338,7 @@ fn write_gates<C: CurveAffine, W: std::io::Write>(
     println!("write gates nb {}", gates.len());
     for gate in gates.iter() {
         write_expressions::<C, W>(&gate.polys, writer)?;
+        write_virtual_cells(&gate.queried_cells, writer)?;
     }
     Ok(())
 }
@@ -320,7 +350,7 @@ fn read_gates<C: CurveAffine, R: std::io::Read>(
     println!("read gates nb {}", nb_gates);
     let mut gates = vec![];
     for _ in 0..nb_gates {
-        gates.push(Gate::default(read_expressions::<C, R>(reader)?))
+        gates.push(Gate::default(read_expressions::<C, R>(reader)?, read_virtual_cells(reader)?));
     }
     Ok(gates)
 }

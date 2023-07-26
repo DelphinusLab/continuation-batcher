@@ -48,6 +48,7 @@ fn batch_single_circuit() {
     use std::path::Path;
 
     const K: u32 = 8;
+    const BATCH_K: u32 = 21;
     let circuit = samples::simple::SimpleCircuit::<Fr> {
         a: Fr::from(100u64),
         b: Fr::from(200u64),
@@ -66,7 +67,8 @@ fn batch_single_circuit() {
 
     let batchinfo = BatchInfo::<Bn256> {
         proofs: ProofInfo::load_proof(&Path::new("output"), &proofloadinfo),
-        k: 21,
+        target_k: K as usize,
+        batch_k: BATCH_K as usize,
         commitment_check: vec![],
     };
 

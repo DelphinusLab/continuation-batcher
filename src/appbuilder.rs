@@ -33,8 +33,8 @@ pub trait AppBuilder: CommandBuilder {
         let app = App::new(Self::NAME)
             .version(Self::VERSION)
             .setting(AppSettings::SubcommandRequired)
-            .arg(Self::output_path_arg());
-        //.arg(Self::zkwasm_file_arg());
+            .arg(Self::output_path_arg())
+            .arg(Self::zkwasm_k_arg());
 
         let app = Self::append_setup_subcommand(app);
         let app = Self::append_create_aggregate_proof_subcommand(app);
@@ -53,6 +53,8 @@ pub trait AppBuilder: CommandBuilder {
             .expect("output dir is not provided");
         fs::create_dir_all(&output_dir).unwrap();
 
+        let k = Self::parse_zkwasm_k_arg(&top_matches).unwrap();
+
         match top_matches.subcommand() {
             Some(("setup", _)) => {
                 exec_setup(Self::AGGREGATE_K, &output_dir);
@@ -64,7 +66,8 @@ pub trait AppBuilder: CommandBuilder {
                 let proofloadinfo = ProofLoadInfo::load(&config_file);
                 let batchinfo = BatchInfo::<Bn256> {
                     proofs: ProofInfo::load_proof(&output_dir, &proofloadinfo),
-                    k: 21,
+                    target_k: k as usize,
+                    batch_k: 21,
                     commitment_check: vec![],
                 };
 

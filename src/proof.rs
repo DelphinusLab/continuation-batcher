@@ -3,15 +3,19 @@ use crate::vkey::write_vkey;
 use ark_std::rand::rngs::OsRng;
 use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::dev::MockProver;
+use halo2_proofs::plonk::SingleVerifier;
 use halo2_proofs::plonk::create_proof;
 use halo2_proofs::plonk::keygen_pk;
 use halo2_proofs::plonk::keygen_vk;
 use halo2_proofs::plonk::Circuit;
 use halo2_proofs::plonk::VerifyingKey;
+use halo2_proofs::plonk::verify_proof;
 use halo2_proofs::poly::commitment::Params;
+use halo2_proofs::poly::commitment::ParamsVerifier;
 use halo2aggregator_s::circuits::utils::load_instance;
 use halo2aggregator_s::circuits::utils::load_proof;
 use halo2aggregator_s::circuits::utils::store_instance;
+use halo2aggregator_s::transcript::poseidon::PoseidonRead;
 use halo2aggregator_s::transcript::poseidon::PoseidonWrite;
 use std::io::Write;
 use std::path::Path;
@@ -41,7 +45,7 @@ impl ProofLoadInfo {
             transcripts,
             instances,
             instance_size,
-            param: format!("K{}.param", k),
+            param: format!("K{}.params", k),
         }
     }
     pub fn save(&self, cache_folder: &Path) {
@@ -150,9 +154,10 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
         let vkey2 = read_vkey_full::<E>(&cache_folder.join(self.proofloadinfo.vkey));
         assert_eq!(vkey.domain, vkey2.domain);
         assert_eq!(vkey.fixed_commitments, vkey2.fixed_commitments);
-        // assert_eq!(vkey.permutation, vkey2.permutation);
+        //assert_eq!(vkey.permutation, vkey2.permutation);
 
         let pkey = keygen_pk(&params, vkey2, &self.circuit).expect("keygen_pk should not fail");
+        //let pkey = keygen_pk(&params, vkey, &self.circuit).expect("keygen_pk should not fail");
         let mut transcript = PoseidonWrite::init(vec![]);
         let instances: Vec<&[E::Scalar]> =
             self.instances.iter().map(|x| &x[..]).collect::<Vec<_>>();
@@ -165,7 +170,24 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
             &mut transcript,
         )
         .expect("proof generation should not fail");
+
+        let params_verifier: ParamsVerifier<E> = params.verifier(10).unwrap();
+
         let r = transcript.finalize();
+
+        let strategy = SingleVerifier::new(&params_verifier);
+
+        println!("verify halo2 proof ... {:?}", r);
+        println!("instance ... {:?}", self.instances);
+        verify_proof(
+            &params_verifier,
+            &pkey.get_vk(),
+            strategy,
+            &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
+            &mut PoseidonRead::init(&r[..])
+        ).unwrap();
+        println!("verify halo2 proof succeed");
+
         let cache_file = &cache_folder.join(self.proofloadinfo.transcripts[index].clone());
         println!("create file {:?}", cache_file);
         let mut fd = std::fs::File::create(&cache_file).unwrap();
