@@ -16,33 +16,19 @@ pub trait ArgBuilder {
         matches.get_one("K").clone().map(|v| *v)
     }
 
-    fn batch_file_arg<'a>() -> Arg<'a> {
+    fn proof_load_info_arg<'a>() -> Arg<'a> {
         arg!(
-            -b --batch <BATCH_CONFIG> "Path of the batch config file"
+            -i --info <PROOF_INFO> "Path of the batch config file"
         )
         .value_parser(value_parser!(PathBuf))
     }
-    fn parse_batch_file_arg(matches: &ArgMatches) -> PathBuf {
+    fn parse_proof_load_info_arg(matches: &ArgMatches) -> Vec<PathBuf> {
         matches
-            .get_one::<PathBuf>("batch")
-            .expect("batch config is required.")
-            .clone()
+            .get_many::<PathBuf>("info")
+            .expect("proof loading info(s) is required.")
+            .cloned()
+            .collect::<Vec<_>>()
     }
-
-    fn proof_path_arg<'a>() -> Arg<'a> {
-        arg!(
-            -p --proof <PROOF_PATH> "Path of proof."
-        )
-        .value_parser(value_parser!(PathBuf))
-    }
-
-    fn parse_proof_path_arg(matches: &ArgMatches) -> PathBuf {
-        matches
-            .get_one::<PathBuf>("proof")
-            .expect("proof is required.")
-            .clone()
-    }
-
 
     fn output_path_arg<'a>() -> Arg<'a> {
         arg!(

@@ -20,11 +20,10 @@ pub fn write_vkey<C: CurveAffine, W: io::Write>(
 ) -> io::Result<()> {
     let j = (vkey.domain.get_quotient_poly_degree() + 1) as u32; // quotient_poly_degree is j-1
     let k = vkey.domain.k() as u32;
-    println!("write j is {}", j);
-    println!("write k is {}", k);
     writer.write(&mut j.to_le_bytes())?;
     writer.write(&mut k.to_le_bytes())?;
     write_cs::<C, W>(&vkey.cs, writer)?;
+
     println!("write cs {:?}", &vkey.cs);
     vkey.write(writer)?;
     Ok(())
@@ -36,12 +35,10 @@ pub fn read_vkey<C: CurveAffine, R: io::Read>(
 ) -> io::Result<VerifyingKey<C>> {
     let j = read_u32(reader)?;
     let k = read_u32(reader)?;
-    println!("read j is {}", j);
-    println!("read k is {}", k);
     let domain: EvaluationDomain<C::Scalar> = EvaluationDomain::new(j, k);
     let cs = read_cs::<C, R>(reader)?;
-    println!("read cs {:?}", cs);
 
+    println!("read cs {:?}", cs);
     let fixed_commitments: Vec<_> = (0..cs.num_fixed_columns)
         .map(|_| C::read(reader))
         .collect::<Result<_, _>>()?;
@@ -128,7 +125,6 @@ fn write_queries<T: ColumnType, W: std::io::Write>(
     writer: &mut W,
 ) -> std::io::Result<()> {
     writer.write(&mut (columns.len() as u32).to_le_bytes())?;
-    println!("write queries {}", columns.len());
     for (c, rotation) in columns.iter() {
         write_column(c, writer)?;
         writer.write(&mut (rotation.0 as u32).to_le_bytes())?;
@@ -141,7 +137,6 @@ fn write_virtual_cells <W: std::io::Write>(
     writer: &mut W,
 ) -> std::io::Result<()> {
     writer.write(&mut (columns.len() as u32).to_le_bytes())?;
-    println!("write queries {}", columns.len());
     for cell in columns.iter() {
         write_argument(&cell.column, writer)?;
         writer.write(&mut (cell.rotation.0 as u32).to_le_bytes())?;
@@ -155,7 +150,6 @@ fn read_queries<T: ColumnType, R: std::io::Read>(
 ) -> std::io::Result<Vec<(Column<T>, Rotation)>> {
     let mut queries = vec![];
     let len = read_u32(reader)?;
-    println!("read queries {}", len);
     for _ in 0..len {
         let column = read_column(reader, t)?;
         let rotation = read_u32(reader)?;
@@ -170,7 +164,6 @@ fn read_virtual_cells<R: std::io::Read>(
 ) -> std::io::Result<Vec<VirtualCell>> {
     let mut vcells = vec![];
     let len = read_u32(reader)?;
-    println!("read queries {}", len);
     for _ in 0..len {
         let column = read_argument(reader)?;
         let rotation = read_u32(reader)?;
@@ -198,7 +191,6 @@ fn write_fixed_columns<W: std::io::Write>(
     writer: &mut W,
 ) -> std::io::Result<()> {
     writer.write(&mut (columns.len() as u32).to_le_bytes())?;
-    println!("write fixed columns: {}", columns.len());
     for c in columns.iter() {
         write_fixed_column(c, writer)?;
     }
@@ -207,7 +199,6 @@ fn write_fixed_columns<W: std::io::Write>(
 
 fn read_fixed_columns<R: std::io::Read>(reader: &mut R) -> std::io::Result<Vec<Column<Fixed>>> {
     let len = read_u32(reader)?;
-    println!("read fixed columns: {}", len);
     let mut columns = vec![];
     for _ in 0..len {
         columns.push(read_fixed_column(reader)?);
@@ -224,19 +215,15 @@ fn write_cs<C: CurveAffine, W: io::Write>(
     writer.write(&mut (cs.num_selectors as u32).to_le_bytes())?;
     writer.write(&mut (cs.num_fixed_columns as u32).to_le_bytes())?;
     writer.write(&mut (cs.num_advice_queries.len() as u32).to_le_bytes())?;
-    println!("write advice queries {}:", cs.num_advice_queries.len());
     for n in cs.num_advice_queries.iter() {
         writer.write(&mut (*n as u32).to_le_bytes())?;
     }
-    println!("write selector map:");
     write_fixed_columns(&cs.selector_map, writer)?;
-    println!("write constants:");
     write_fixed_columns(&cs.constants, writer)?;
     write_queries::<Advice, W>(&cs.advice_queries, writer)?;
     write_queries::<Instance, W>(&cs.instance_queries, writer)?;
     write_queries::<Fixed, W>(&cs.fixed_queries, writer)?;
     write_arguments(&cs.permutation.columns, writer)?;
-    println!("write lookups {}:", cs.lookups.len());
     writer.write(&(cs.lookups.len() as u32).to_le_bytes())?;
     for p in cs.lookups.iter() {
         write_expressions::<C, W>(&p.input_expressions, writer)?;
@@ -259,15 +246,12 @@ fn read_cs<C: CurveAffine, R: io::Read>(reader: &mut R) -> io::Result<Constraint
     let num_fixed_columns = read_u32(reader)? as usize;
 
     let num_advice_queries_len = read_u32(reader)?;
-    println!("read advice queries {}:", num_advice_queries_len);
     let mut num_advice_queries = vec![];
     for _ in 0..num_advice_queries_len {
         num_advice_queries.push(read_u32(reader)? as usize);
     }
 
-    println!("read selector map:");
     let selector_map = read_fixed_columns(reader)?;
-    println!("read constants:");
     let constants = read_fixed_columns(reader)?;
 
     let advice_queries = read_queries::<Advice, R>(reader, Advice)?;
@@ -277,7 +261,6 @@ fn read_cs<C: CurveAffine, R: io::Read>(reader: &mut R) -> io::Result<Constraint
 
     let mut lookups = vec![];
     let nb_lookup = read_u32(reader)?;
-    println!("read lookups {}:", nb_lookup);
     for _ in 0..nb_lookup {
         let input_expressions = read_expressions::<C, R>(reader)?;
         let table_expressions = read_expressions::<C, R>(reader)?;
@@ -310,7 +293,6 @@ fn write_expressions<C: CurveAffine, W: std::io::Write>(
     expressions: &Vec<Expression<C::Scalar>>,
     writer: &mut W,
 ) -> std::io::Result<()> {
-    println!("write expressions {}", expressions.len());
     writer.write(&mut (expressions.len() as u32).to_le_bytes())?;
     for e in expressions.iter() {
         encode_expression(&e, writer)?;
@@ -322,7 +304,6 @@ fn read_expressions<C: CurveAffine, R: std::io::Read>(
     reader: &mut R,
 ) -> std::io::Result<Vec<Expression<C::Scalar>>> {
     let nb_expr = read_u32(reader)?;
-    println!("read expressions {}", nb_expr);
     let mut exps = vec![];
     for _ in 0..nb_expr {
         exps.push(decode_expression(reader)?)
@@ -335,7 +316,6 @@ fn write_gates<C: CurveAffine, W: std::io::Write>(
     writer: &mut W,
 ) -> std::io::Result<()> {
     writer.write(&mut (gates.len() as u32).to_le_bytes())?;
-    println!("write gates nb {}", gates.len());
     for gate in gates.iter() {
         write_expressions::<C, W>(&gate.polys, writer)?;
         write_virtual_cells(&gate.queried_cells, writer)?;
@@ -347,7 +327,6 @@ fn read_gates<C: CurveAffine, R: std::io::Read>(
     reader: &mut R,
 ) -> std::io::Result<Vec<Gate<C::Scalar>>> {
     let nb_gates = read_u32(reader)?;
-    println!("read gates nb {}", nb_gates);
     let mut gates = vec![];
     for _ in 0..nb_gates {
         gates.push(Gate::default(read_expressions::<C, R>(reader)?, read_virtual_cells(reader)?));
