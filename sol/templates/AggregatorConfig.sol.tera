@@ -1,0 +1,187 @@
+// SPDX-License-Identifier: MIT
+// Tells the Solidity compiler to compile only from v0.8.13 to v0.9.0
+pragma solidity ^0.8.13;
+
+import "./AggregatorLib.sol";
+
+library AggregatorConfig {
+    function fill_target_circuits_g2(uint256[] memory s) internal pure {
+        s[2] = {{target_circuit_s_g2_x0}};
+        s[3] = {{target_circuit_s_g2_x1}};
+        s[4] = {{target_circuit_s_g2_y0}};
+        s[5] = {{target_circuit_s_g2_y1}};
+
+        s[8] = {{target_circuit_n_g2_x0}};
+        s[9] = {{target_circuit_n_g2_x1}};
+        s[10] = {{target_circuit_n_g2_y0}};
+        s[11] = {{target_circuit_n_g2_y1}};
+    }
+
+    function fill_verify_circuits_g2(uint256[] memory s) internal pure {
+        s[2] = {{verify_circuit_s_g2_x0}};
+        s[3] = {{verify_circuit_s_g2_x1}};
+        s[4] = {{verify_circuit_s_g2_y0}};
+        s[5] = {{verify_circuit_s_g2_y1}};
+
+        s[8] = {{verify_circuit_n_g2_x0}};
+        s[9] = {{verify_circuit_n_g2_x1}};
+        s[10] = {{verify_circuit_n_g2_y0}};
+        s[11] = {{verify_circuit_n_g2_y1}};
+    }
+
+    function calc_verify_circuit_lagrange(uint256[] memory buf, uint256[] calldata instances) internal view {
+        require(instances.length == {{ verify_circuit_lagrange_commitments | length() }}, "invalid verify instances");
+
+        {% set_global i = 0 %}
+        {% for commitment in verify_circuit_lagrange_commitments -%}
+        buf[{{ i }}] = {{ commitment[0] }};
+        buf[{{ i + 1 }}] = {{ commitment[1] }};
+        {% set_global i = i + 3 %}
+        {% endfor %}
+        
+        for (uint256 i = 0; i < instances.length; i++) {
+            buf[i * 3 + 2] = instances[i];
+        }
+
+        AggregatorLib.msm(buf, 0, instances.length);
+    }
+
+    function calc_target_circuit_lagrange(uint256[] calldata instances) internal view 
+    returns (uint256[] memory buf) {
+        buf = new uint256[]({{ target_circuit_lagrange_commitments | length() * 3 }});
+        require(instances.length * 3 <= buf.length, "too many target instances");
+
+        {% set_global i = 0 %}
+        {% for commitment in target_circuit_lagrange_commitments -%}
+        buf[{{ i }}] = {{ commitment[0] }};
+        buf[{{ i + 1 }}] = {{ commitment[1] }};
+        {% set_global i = i + 3 %}
+        {% endfor %}
+        
+        for (uint256 i = 0; i < instances.length; i++) {
+            buf[i * 3 + 2] = instances[i];
+        }
+
+        AggregatorLib.msm(buf, 0, instances.length);
+    }
+
+    function hash(uint256[] memory absorbing, uint256 length)
+        private
+        view
+        returns (bytes32[1] memory v)
+    {
+        bool success;
+        assembly {
+            success := staticcall(
+                sub(gas(), 2000),
+                2,
+                add(absorbing, 0x20),
+                length,
+                v,
+                32
+            )
+            switch success
+            case 0 {
+                invalid()
+            }
+        }
+        assert(success);
+    }
+
+    function squeeze_challenge(uint256[] memory absorbing, uint256 length) internal view returns (uint256 v) {
+        absorbing[length] = 0;
+        bytes32 res = hash(absorbing, length * 32 + 1)[0];
+        absorbing[0] = uint256(res);
+        v = absorbing[0] % AggregatorLib.p_mod;
+    }
+
+    function get_challenges(
+        uint256[] calldata transcript,
+        uint256[] memory buf // buf[0..1] is instance_commitment
+    ) internal view {
+        {% set i = 0 %}
+        {% set buf_start = 2 %}
+        uint256[] memory absorbing = new uint256[]({{ evals * 2 }});
+        absorbing[0] = {{ init_scalar }};
+        absorbing[1] = buf[0];
+        absorbing[2] = buf[1];
+
+        uint256 pos = 3;
+        uint256 transcript_pos = 0;
+        for (uint i = 0; i < {{ n_advice }}; i ++) {
+            AggregatorLib.check_on_curve(transcript[transcript_pos], transcript[transcript_pos + 1]);
+            absorbing[pos++] = transcript[transcript_pos++];
+            absorbing[pos++] = transcript[transcript_pos++];
+        }
+        // theta
+        buf[{{ i + buf_start }}] = squeeze_challenge(absorbing, pos);
+        {% if challenges %}
+        require(buf[{{ i + buf_start }}] == {{ challenges | nth(n = i) }}, "challenge {{ i }}");
+        {% endif %}
+        {% set i = i + 1 %}
+        pos = 1;
+        for (uint i = 0; i < {{ lookups * 2 }}; i ++) {
+            AggregatorLib.check_on_curve(transcript[transcript_pos], transcript[transcript_pos + 1]);
+            absorbing[pos++] = transcript[transcript_pos++];
+            absorbing[pos++] = transcript[transcript_pos++];
+        }
+        // beta
+        buf[{{ i + buf_start }}] = squeeze_challenge(absorbing, pos);
+        {% if challenges %}
+        require(buf[{{ i + buf_start }}] == {{ challenges | nth(n = i) }}, "challenge {{ i }}");
+        {% endif %}
+        {% set i = i + 1 %}
+        pos = 1;
+        // gamma
+        buf[{{ i + buf_start }}] = squeeze_challenge(absorbing, pos);
+        {% if challenges %}
+        require(buf[{{ i + buf_start }}] == {{ challenges | nth(n = i) }}, "challenge {{ i }}");
+        {% endif %}
+        {% set i = i + 1 %}
+        pos = 1;
+        for (uint i = 0; i < {{ permutation_products + lookups + 1 }}; i ++) {
+            AggregatorLib.check_on_curve(transcript[transcript_pos], transcript[transcript_pos + 1]);
+            absorbing[pos++] = transcript[transcript_pos++];
+            absorbing[pos++] = transcript[transcript_pos++];
+        }
+        // y
+        buf[{{ i + buf_start }}] = squeeze_challenge(absorbing, pos);
+        {% if challenges %}
+        require(buf[{{ i + buf_start }}] == {{ challenges | nth(n = i) }}, "challenge {{ i }}");
+        {% endif %}
+        {% set i = i + 1 %}
+        pos = 1;
+        for (uint i = 0; i < {{ degree }}; i ++) {
+            AggregatorLib.check_on_curve(transcript[transcript_pos], transcript[transcript_pos + 1]);
+            absorbing[pos++] = transcript[transcript_pos++];
+            absorbing[pos++] = transcript[transcript_pos++];
+        }
+        //x
+        buf[{{ i + buf_start }}] = squeeze_challenge(absorbing, pos);
+        {% if challenges %}
+        require(buf[{{ i + buf_start }}] == {{ challenges | nth(n = i) }}, "challenge {{ i }}");
+        {% endif %}
+        {% set i = i + 1 %}
+        pos = 1;
+        for (uint i = 0; i < {{ evals }}; i ++) {
+            absorbing[pos++] = transcript[transcript_pos++];
+        }
+        //v
+        buf[{{ i + buf_start }}] = squeeze_challenge(absorbing, pos);
+        {% if challenges %}
+        require(buf[{{ i + buf_start }}] == {{ challenges | nth(n = i) }}, "challenge {{ i }}");
+        {% endif %}
+        {% set i = i + 1 %}
+        pos = 1;
+        //u
+        buf[{{ i + buf_start }}] = squeeze_challenge(absorbing, pos);
+        {% if challenges %}
+        require(buf[{{ i + buf_start }}] == {{ challenges | nth(n = i) }}, "challenge {{ i }}");
+        {% endif %}
+        {% set i = i + 1 %}
+
+        for (; transcript_pos < transcript.length; transcript_pos += 2) {
+            AggregatorLib.check_on_curve(transcript[transcript_pos], transcript[transcript_pos + 1]);
+        }
+    }
+}

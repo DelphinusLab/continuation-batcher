@@ -1,0 +1,15 @@
+// SPDX-License-Identifier: MIT
+// Tells the Solidity compiler to compile only from v0.8.13 to v0.9.0
+pragma solidity ^0.8.13;
+
+import "./AggregatorLib.sol";
+
+contract AggregatorVerifierCoreStep{{step_index}} {
+    function verify_proof(
+        uint256[] calldata transcript,
+        uint256[] calldata aux,
+        uint256[] memory buf
+    ) public view {
+        {{ step }}
+    }
+}
