@@ -1,5 +1,7 @@
 use clap::App;
 use clap::AppSettings;
+use halo2aggregator_s::solidity_verifier::codegen::solidity_aux_gen;
+use halo2aggregator_s::solidity_verifier::solidity_render;
 use std::fs;
 use std::path::PathBuf;
 use crate::proof::ProofLoadInfo;
@@ -57,6 +59,7 @@ pub trait AppBuilder: CommandBuilder {
         let output_dir = top_matches
             .get_one::<PathBuf>("output")
             .expect("output dir is not provided");
+
         fs::create_dir_all(&output_dir).unwrap();
 
         let k = Self::parse_zkwasm_k_arg(&top_matches).unwrap();
@@ -85,8 +88,35 @@ pub trait AppBuilder: CommandBuilder {
                     commitment_check: vec![],
                 };
 
-                let agg_circuit = batchinfo.build_aggregate_circuit(&output_dir);
+                let proof_name = sub_matches
+                    .get_one::<String>("name")
+                    .expect("name of the prove task is not provided");
+
+                let agg_circuit = batchinfo.build_aggregate_circuit(&output_dir, proof_name.clone());
+                agg_circuit.proofloadinfo.save(&output_dir);
+                let agg_info = agg_circuit.proofloadinfo.clone();
                 agg_circuit.create_proof(&output_dir, 0);
+
+                let proof: Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &agg_info);
+
+                let public_inputs_size =
+                        proof[0].instances.iter().fold(0, |acc, x| usize::max(acc, x.len()));
+
+                let params = load_or_build_unsafe_params::<Bn256>(
+                    k as usize,
+                    &output_dir.join(format!("K{}.params", k)),
+                );
+
+                let params_verifier: ParamsVerifier<Bn256> = params.verifier(public_inputs_size).unwrap();
+
+                // generate solidity aux data
+                solidity_aux_gen(
+                    &params_verifier,
+                    &proof[0].vkey,
+                    &proof[0].instances[0],
+                    proof[0].transcripts.clone(),
+                    &output_dir.join(format!("{}.{}.aux.data", &agg_info.name.clone(), 0)),
+                );
             }
 
             Some(("verify", sub_matches)) => {
@@ -109,7 +139,9 @@ pub trait AppBuilder: CommandBuilder {
                 let mut public_inputs_size = 0;
                 for proof in proofs.iter() {
                     public_inputs_size =
-                        usize::max(public_inputs_size, proof.instances.iter().fold(0, |acc, x| usize::max(acc, x.len())));
+                        usize::max(public_inputs_size,
+                            proof.instances.iter().fold(0, |acc, x| usize::max(acc, x.len()))
+                        );
                 }
 
                 let params_verifier: ParamsVerifier<Bn256> = params.verifier(public_inputs_size).unwrap();
@@ -126,28 +158,65 @@ pub trait AppBuilder: CommandBuilder {
                 }
                 end_timer!(timer);
             }
-            /*
 
-            Some(("solidity-aggregate-verifier", sub_matches)) => {
-                let proof_path: PathBuf = Self::parse_proof_path_arg(&sub_matches);
-                let instances_path: PathBuf = Self::parse_aggregate_instance(&sub_matches);
-                let aux_only: bool = Self::parse_auxonly(&sub_matches);
+            Some(("solidity", sub_matches)) => {
+                let aggregate_k = 21;
+                let max_public_inputs_size = 12;
+                let config_file = Self::parse_proof_load_info_arg(sub_matches);
+                let n_proofs = config_file.len() - 1;
                 let sol_path: PathBuf = Self::parse_sol_dir_arg(&sub_matches);
+                let proofloadinfo = ProofLoadInfo::load(&config_file[0]);
 
-                exec_solidity_aggregate_proof(
-                    zkwasm_k,
-                    Self::AGGREGATE_K,
-                    Self::MAX_PUBLIC_INPUT_SIZE,
-                    &output_dir,
-                    &proof_path,
-                    &sol_path,
-                    &instances_path,
-                    Self::N_PROOFS,
-                    aux_only,
+                let proof_params = load_or_build_unsafe_params::<Bn256>(
+                    k as usize,
+                    &output_dir.join(format!("K{}.params", k)),
                 );
+
+                let proof_params_verifier: ParamsVerifier<Bn256> = proof_params.verifier(max_public_inputs_size).unwrap();
+
+                let public_inputs_size = 6 + 3 * n_proofs;
+
+                let agg_params = load_or_build_unsafe_params::<Bn256>(
+                    aggregate_k,
+                    &output_dir.join(format!("K{}.params", aggregate_k)),
+                );
+
+
+                let agg_params_verifier = agg_params.verifier(public_inputs_size).unwrap();
+
+                let proof: Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &proofloadinfo);
+
+                let path_in = {
+                    let mut path = sol_path.clone();
+                    path.push("templates");
+                    path
+                };
+                let path_out = {
+                    let mut path = sol_path.clone();
+                    path.push("contracts");
+                    path
+                };
+
+                solidity_render(
+                    &(path_in.to_str().unwrap().to_owned() + "/*"),
+                    path_out.to_str().unwrap(),
+                    vec![(
+                        "AggregatorConfig.sol.tera".to_owned(),
+                        "AggregatorConfig.sol".to_owned(),
+                    )],
+                    "AggregatorVerifierStepStart.sol.tera",
+                    "AggregatorVerifierStepEnd.sol.tera",
+                    |i| format!("AggregatorVerifierStep{}.sol", i + 1),
+                    &proof_params_verifier,
+                    &agg_params_verifier,
+                    &proof[0].vkey,
+                    &proof[0].instances[0],
+                    proof[0].transcripts.clone(),
+                );
+
+
             }
 
-            */
             Some((_, _)) => todo!(),
             None => todo!(),
         }

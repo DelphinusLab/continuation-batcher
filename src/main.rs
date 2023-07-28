@@ -71,6 +71,6 @@ fn batch_single_circuit() {
         commitment_check: vec![],
     };
 
-    let agg_circuit = batchinfo.build_aggregate_circuit(&Path::new("output"));
+    let agg_circuit = batchinfo.build_aggregate_circuit(&Path::new("output"), "aggregator".to_string());
     agg_circuit.create_proof(&Path::new("output"), 0);
 }

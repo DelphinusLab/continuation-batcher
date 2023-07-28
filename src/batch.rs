@@ -22,6 +22,7 @@ impl<E: MultiMillerLoop> BatchInfo<E> {
     pub fn build_aggregate_circuit(
         &self,
         cache_folder: &Path,
+        proof_name: String,
     ) -> CircuitInfo<E, AggregatorCircuit<E::G1Affine>> {
         // 1. setup params
         let params = load_or_build_unsafe_params::<E>(
@@ -75,6 +76,6 @@ impl<E: MultiMillerLoop> BatchInfo<E> {
         );
 
         end_timer!(timer);
-        CircuitInfo::new(circuit, "aggregator".to_string(), vec![instances], self.batch_k)
+        CircuitInfo::new(circuit, proof_name, vec![instances], self.batch_k)
     }
 }

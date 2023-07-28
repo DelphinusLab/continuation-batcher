@@ -23,5 +23,5 @@
 ## Generate batch proof from ProofLoadInfos
 
 ```
-cargo run -- -k 8 --output sample aggregate-prove --batch sample/test.loadinfo.json
+cargo run -- -k 8 --output ./sample batch --info sample/test.loadinfo.json --name batchsample
 ```

@@ -159,6 +159,9 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
         let pkey = keygen_pk(&params, vkey2, &self.circuit).expect("keygen_pk should not fail");
         //let pkey = keygen_pk(&params, vkey, &self.circuit).expect("keygen_pk should not fail");
         let mut transcript = PoseidonWrite::init(vec![]);
+
+        let inputs_size = self.instances.iter().fold(0, |acc, x| usize::max(acc, x.len()));
+
         let instances: Vec<&[E::Scalar]> =
             self.instances.iter().map(|x| &x[..]).collect::<Vec<_>>();
         create_proof(
@@ -171,7 +174,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
         )
         .expect("proof generation should not fail");
 
-        let params_verifier: ParamsVerifier<E> = params.verifier(10).unwrap();
+        let params_verifier: ParamsVerifier<E> = params.verifier(inputs_size).unwrap();
 
         let r = transcript.finalize();
 

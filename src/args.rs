@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use clap::arg;
 use clap::value_parser;
 use clap::Arg;
+use clap::ArgAction;
 use clap::ArgMatches;
 
 pub trait ArgBuilder {
@@ -17,10 +18,12 @@ pub trait ArgBuilder {
     }
 
     fn proof_load_info_arg<'a>() -> Arg<'a> {
-        arg!(
-            -i --info <PROOF_INFO> "Path of the batch config file"
-        )
-        .value_parser(value_parser!(PathBuf))
+        Arg::new("info")
+            .long("info")
+            .value_parser(value_parser!(PathBuf))
+            .action(ArgAction::Append)
+            .help("Path of the batch config files")
+            .min_values(1)
     }
     fn parse_proof_load_info_arg(matches: &ArgMatches) -> Vec<PathBuf> {
         matches
@@ -35,6 +38,13 @@ pub trait ArgBuilder {
             -o --output [OUTPUT_PATH] "Path of the output files."
         ).value_parser(value_parser!(PathBuf))
     }
+
+    fn proof_name_arg<'a>() -> Arg<'a> {
+        arg!(
+            -n --name [PROOF_NAME] "name of this task."
+        ).value_parser(value_parser!(String))
+    }
+
 
     fn sol_dir_arg<'a>() -> Arg<'a> {
         arg!(
