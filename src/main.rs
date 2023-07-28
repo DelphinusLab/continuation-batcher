@@ -5,7 +5,6 @@ mod command;
 mod exec;
 pub mod proof;
 mod samples;
-pub mod vkey;
 use crate::appbuilder::AppBuilder;
 use crate::args::ArgBuilder;
 use crate::command::CommandBuilder;

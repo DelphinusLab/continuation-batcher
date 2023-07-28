@@ -1,5 +1,5 @@
-use crate::vkey::read_vkey;
-use crate::vkey::write_vkey;
+use halo2_proofs::helpers::read_vkey;
+use halo2_proofs::helpers::write_vkey;
 use ark_std::rand::rngs::OsRng;
 use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::dev::MockProver;
