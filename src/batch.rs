@@ -73,11 +73,7 @@ impl<E: MultiMillerLoop> BatchInfo<E> {
             &vkeys,
             instances,
             all_proofs,
-            if hashtype == HashType::Sha {
-                TranscriptHash::Sha
-            } else {
-                TranscriptHash::Poseidon
-            },
+            TranscriptHash::Poseidon,
             self.commitment_check.clone(),
         );
 
