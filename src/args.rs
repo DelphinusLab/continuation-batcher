@@ -5,8 +5,29 @@ use clap::value_parser;
 use clap::Arg;
 use clap::ArgAction;
 use clap::ArgMatches;
+use serde::{Deserialize, Serialize};
+
+#[derive(clap::ArgEnum, Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
+pub enum HashType {
+    Poseidon,
+    Sha,
+}
+
 
 pub trait ArgBuilder {
+    fn hashtype<'a>() -> Arg<'a> {
+        arg!(-c --challenge<CHALLENGE_HASH_TYPE>... "HashType of Challenge")
+            .max_values(1)
+            .value_parser(value_parser!(HashType))
+    }
+
+    fn parse_hashtype(matches: &ArgMatches) -> HashType {
+        matches
+            .get_one::<HashType>("challenge")
+            .expect("challenge hashtype is required")
+            .clone()
+    }
+
     fn zkwasm_k_arg<'a>() -> Arg<'a> {
         arg!(
             -k [K] "Circuit Size K"

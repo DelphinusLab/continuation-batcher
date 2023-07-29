@@ -1,3 +1,4 @@
+use crate::args::HashType;
 use crate::proof::load_or_build_unsafe_params;
 use crate::proof::CircuitInfo;
 use crate::proof::ProofInfo;
@@ -23,6 +24,7 @@ impl<E: MultiMillerLoop> BatchInfo<E> {
         &self,
         cache_folder: &Path,
         proof_name: String,
+        hashtype: HashType,
     ) -> CircuitInfo<E, AggregatorCircuit<E::G1Affine>> {
         // 1. setup params
         let params = load_or_build_unsafe_params::<E>(
@@ -71,11 +73,15 @@ impl<E: MultiMillerLoop> BatchInfo<E> {
             &vkeys,
             instances,
             all_proofs,
-            TranscriptHash::Poseidon,
+            if hashtype == HashType::Sha {
+                TranscriptHash::Sha
+            } else {
+                TranscriptHash::Poseidon
+            },
             self.commitment_check.clone(),
         );
 
         end_timer!(timer);
-        CircuitInfo::new(circuit, proof_name, vec![instances], self.batch_k)
+        CircuitInfo::new(circuit, proof_name, vec![instances], self.batch_k, hashtype)
     }
 }

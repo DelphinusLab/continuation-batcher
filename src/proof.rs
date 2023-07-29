@@ -17,22 +17,27 @@ use halo2aggregator_s::circuits::utils::load_proof;
 use halo2aggregator_s::circuits::utils::store_instance;
 use halo2aggregator_s::transcript::poseidon::PoseidonRead;
 use halo2aggregator_s::transcript::poseidon::PoseidonWrite;
+use halo2aggregator_s::transcript::sha256::ShaRead;
+use halo2aggregator_s::transcript::sha256::ShaWrite;
 use std::io::Write;
 use std::path::Path;
 use serde::{Deserialize, Serialize};
+use crate::args::HashType;
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ProofLoadInfo {
     pub vkey: String,
+    pub k: usize,
     pub instance_size: Vec<u32>,
     pub transcripts: Vec<String>,
     pub instances: Vec<String>,
     pub param: String,
     pub name: String,
+    pub hashtype: HashType,
 }
 
 impl ProofLoadInfo {
-    pub fn new(name: &str, nb: usize, k: usize, instance_size: Vec<u32>) -> Self {
+    pub fn new(name: &str, nb: usize, k: usize, instance_size: Vec<u32>, hashtype: HashType) -> Self {
         let mut transcripts = vec![];
         let mut instances = vec![];
         for i in 0..nb {
@@ -42,10 +47,12 @@ impl ProofLoadInfo {
         ProofLoadInfo {
             name: name.to_string(),
             vkey: format!("{}.vkeyfull.data", name),
+            k,
             transcripts,
             instances,
             instance_size,
             param: format!("K{}.params", k),
+            hashtype,
         }
     }
     pub fn save(&self, cache_folder: &Path) {
@@ -76,6 +83,7 @@ pub struct ProofInfo<E: MultiMillerLoop> {
     pub vkey: VerifyingKey<E::G1Affine>,
     pub instances: Vec<Vec<E::Scalar>>,
     pub transcripts: Vec<u8>,
+    pub k: usize,
 }
 
 impl<E: MultiMillerLoop> ProofInfo<E> {
@@ -88,6 +96,7 @@ impl<E: MultiMillerLoop> ProofInfo<E> {
             proofs.push(ProofInfo {
                 vkey,
                 instances,
+                k: loadinfo.k,
                 transcripts,
             });
         }
@@ -114,7 +123,7 @@ pub fn load_or_build_unsafe_params<E: MultiMillerLoop>(
 }
 
 impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> CircuitInfo<E, C> {
-    pub fn new(c: C, name: String, instances: Vec<Vec<E::Scalar>>, k: usize) -> Self {
+    pub fn new(c: C, name: String, instances: Vec<Vec<E::Scalar>>, k: usize, hash: HashType) -> Self {
         CircuitInfo {
             circuit: c,
             k,
@@ -124,6 +133,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> CircuitInfo<E, C> {
                 1,
                 k,
                 instances.iter().map(|x| x.len() as u32).collect::<Vec<_>>(),
+                hash
             ),
             instances,
         }
@@ -158,37 +168,64 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
 
         let pkey = keygen_pk(&params, vkey2, &self.circuit).expect("keygen_pk should not fail");
         //let pkey = keygen_pk(&params, vkey, &self.circuit).expect("keygen_pk should not fail");
-        let mut transcript = PoseidonWrite::init(vec![]);
-
         let inputs_size = self.instances.iter().fold(0, |acc, x| usize::max(acc, x.len()));
 
         let instances: Vec<&[E::Scalar]> =
             self.instances.iter().map(|x| &x[..]).collect::<Vec<_>>();
-        create_proof(
-            &params,
-            &pkey,
-            &[self.circuit],
-            &[instances.as_slice()],
-            OsRng,
-            &mut transcript,
-        )
-        .expect("proof generation should not fail");
 
         let params_verifier: ParamsVerifier<E> = params.verifier(inputs_size).unwrap();
-
-        let r = transcript.finalize();
-
         let strategy = SingleVerifier::new(&params_verifier);
 
-        println!("instance ... {:?}", self.instances);
-        verify_proof(
-            &params_verifier,
-            &pkey.get_vk(),
-            strategy,
-            &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
-            &mut PoseidonRead::init(&r[..])
-        ).unwrap();
-        println!("verify halo2 proof succeed");
+        let r = match self.proofloadinfo.hashtype {
+            HashType::Poseidon => {
+                let mut transcript = PoseidonWrite::init(vec![]);
+                create_proof(
+                    &params,
+                    &pkey,
+                    &[self.circuit],
+                    &[instances.as_slice()],
+                    OsRng,
+                    &mut transcript,
+                )
+                .expect("proof generation should not fail");
+
+                let r = transcript.finalize();
+                println!("instance ... {:?}", self.instances);
+                verify_proof(
+                    &params_verifier,
+                    &pkey.get_vk(),
+                    strategy,
+                    &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
+                    &mut PoseidonRead::init(&r[..])
+                ).unwrap();
+                println!("verify halo2 proof succeed");
+                r
+            },
+            HashType::Sha => {
+                let mut transcript = ShaWrite::<_, _, _, sha2::Sha256>::init(vec![]);
+                create_proof(
+                    &params,
+                    &pkey,
+                    &[self.circuit],
+                    &[instances.as_slice()],
+                    OsRng,
+                    &mut transcript,
+                )
+                .expect("proof generation should not fail");
+
+                let r = transcript.finalize();
+                println!("instance ... {:?}", self.instances);
+                verify_proof(
+                    &params_verifier,
+                    &pkey.get_vk(),
+                    strategy,
+                    &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
+                    &mut ShaRead::<_, _, _, sha2::Sha256>::init(&r[..])
+                ).unwrap();
+                println!("verify halo2 proof succeed");
+                r
+            },
+        };
 
         let cache_file = &cache_folder.join(self.proofloadinfo.transcripts[index].clone());
         println!("create file {:?}", cache_file);

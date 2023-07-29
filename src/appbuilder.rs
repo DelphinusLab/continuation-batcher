@@ -15,20 +15,13 @@ use halo2aggregator_s::native_verifier;
 use ark_std::end_timer;
 use ark_std::start_timer;
 use halo2_proofs::poly::commitment::ParamsVerifier;
+use crate::args::HashType;
 /*
 use log::info;
-use crate::circuits::config::init_zkwasm_runtime;
-use crate::circuits::config::MIN_K;
 */
 
 use super::command::CommandBuilder;
-//use crate::exec::compile_image;
-//use crate::exec::exec_aggregate_create_proof;
-//use crate::exec::exec_create_proof;
 use crate::exec::exec_setup;
-//use crate::exec::exec_solidity_aggregate_proof;
-//use crate::exec::exec_verify_aggregate_proof;
-//use crate::exec::exec_verify_proof;
 
 pub trait AppBuilder: CommandBuilder {
     const NAME: &'static str;
@@ -42,6 +35,7 @@ pub trait AppBuilder: CommandBuilder {
             .version(Self::VERSION)
             .setting(AppSettings::SubcommandRequired)
             .arg(Self::output_path_arg())
+            .arg(Self::hashtype())
             .arg(Self::zkwasm_k_arg());
 
         let app = Self::append_setup_subcommand(app);
@@ -63,6 +57,7 @@ pub trait AppBuilder: CommandBuilder {
         fs::create_dir_all(&output_dir).unwrap();
 
         let k = Self::parse_zkwasm_k_arg(&top_matches).unwrap();
+        let hash = Self::parse_hashtype(&top_matches);
 
         match top_matches.subcommand() {
             Some(("setup", _)) => {
@@ -72,8 +67,18 @@ pub trait AppBuilder: CommandBuilder {
             Some(("batch", sub_matches)) => {
                 let config_files = Self::parse_proof_load_info_arg(sub_matches);
 
+                let mut target_k = None;
                 let proofs = config_files.iter().map(|config| {
                         let proofloadinfo = ProofLoadInfo::load(config);
+                        // target batch proof needs to use poseidon hash
+                        assert_eq!(proofloadinfo.hashtype, HashType::Poseidon);
+                        target_k = target_k.map_or(
+                            Some(proofloadinfo.k),
+                            |x| {
+                                assert_eq!(x, proofloadinfo.k);
+                                Some(x)
+                            }
+                        );
                         ProofInfo::load_proof(&output_dir, &proofloadinfo)
                     }
                 ).collect::<Vec<_>>()
@@ -83,8 +88,8 @@ pub trait AppBuilder: CommandBuilder {
 
                 let batchinfo = BatchInfo::<Bn256> {
                     proofs,
-                    target_k: k as usize,
-                    batch_k: 21,
+                    target_k: target_k.unwrap(),
+                    batch_k: k as usize,
                     commitment_check: vec![],
                 };
 
@@ -92,7 +97,7 @@ pub trait AppBuilder: CommandBuilder {
                     .get_one::<String>("name")
                     .expect("name of the prove task is not provided");
 
-                let agg_circuit = batchinfo.build_aggregate_circuit(&output_dir, proof_name.clone());
+                let agg_circuit = batchinfo.build_aggregate_circuit(&output_dir, proof_name.clone(), hash);
                 agg_circuit.proofloadinfo.save(&output_dir);
                 let agg_info = agg_circuit.proofloadinfo.clone();
                 agg_circuit.create_proof(&output_dir, 0);
@@ -102,70 +107,67 @@ pub trait AppBuilder: CommandBuilder {
                 let public_inputs_size =
                         proof[0].instances.iter().fold(0, |acc, x| usize::max(acc, x.len()));
 
+                println!("generate aux data for proof: {:?}", agg_info);
+
                 let params = load_or_build_unsafe_params::<Bn256>(
-                    k as usize,
+                    agg_info.k as usize,
                     &output_dir.join(format!("K{}.params", k)),
                 );
 
                 let params_verifier: ParamsVerifier<Bn256> = params.verifier(public_inputs_size).unwrap();
 
                 // generate solidity aux data
-                solidity_aux_gen(
-                    &params_verifier,
-                    &proof[0].vkey,
-                    &proof[0].instances[0],
-                    proof[0].transcripts.clone(),
-                    &output_dir.join(format!("{}.{}.aux.data", &agg_info.name.clone(), 0)),
-                );
+                // it only makes sense if the transcript challenge is poseidon
+                if hash == HashType::Sha {
+                    solidity_aux_gen(
+                        &params_verifier,
+                        &proof[0].vkey,
+                        &proof[0].instances[0],
+                        proof[0].transcripts.clone(),
+                        &output_dir.join(format!("{}.{}.aux.data", &agg_info.name.clone(), 0)),
+                    );
+                }
             }
 
             Some(("verify", sub_matches)) => {
                 let config_files = Self::parse_proof_load_info_arg(sub_matches);
-                let proofs: Vec<ProofInfo<Bn256>> = config_files.iter().map(|config| {
-                        let proofloadinfo = ProofLoadInfo::load(config);
-                        ProofInfo::load_proof(&output_dir, &proofloadinfo)
-                    }
-                ).collect::<Vec<_>>()
-                    .into_iter()
-                    .flatten()
-                    .collect::<Vec<_>>();
-
-                let params = load_or_build_unsafe_params::<Bn256>(
-                    k as usize,
-                    &output_dir.join(format!("K{}.params", k)),
-                );
-
-
-                let mut public_inputs_size = 0;
-                for proof in proofs.iter() {
-                    public_inputs_size =
-                        usize::max(public_inputs_size,
-                            proof.instances.iter().fold(0, |acc, x| usize::max(acc, x.len()))
-                        );
-                }
-
-                let params_verifier: ParamsVerifier<Bn256> = params.verifier(public_inputs_size).unwrap();
-
-                let timer = start_timer!(|| "native verify single proof");
-                for (_, proof) in proofs.iter().enumerate() {
-                    native_verifier::verify_single_proof::<Bn256>(
-                        &params_verifier,
-                        &proof.vkey,
-                        &proof.instances,
-                        proof.transcripts.clone(),
-                        TranscriptHash::Poseidon,
+                for config_file in config_files.iter() {
+                    let proofloadinfo = ProofLoadInfo::load(config_file);
+                    let proofs:Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &proofloadinfo);
+                    let params = load_or_build_unsafe_params::<Bn256>(
+                        proofloadinfo.k,
+                        &output_dir.join(format!("K{}.params", k)),
                     );
+                    let mut public_inputs_size = 0;
+                    for proof in proofs.iter() {
+                        public_inputs_size =
+                            usize::max(public_inputs_size,
+                                proof.instances.iter().fold(0, |acc, x| usize::max(acc, x.len()))
+                            );
+                    }
+
+                    let params_verifier: ParamsVerifier<Bn256> = params.verifier(public_inputs_size).unwrap();
+                    let timer = start_timer!(|| "native verify single proof");
+                    for (_, proof) in proofs.iter().enumerate() {
+                        native_verifier::verify_single_proof::<Bn256>(
+                            &params_verifier,
+                            &proof.vkey,
+                            &proof.instances,
+                            proof.transcripts.clone(),
+                            TranscriptHash::Poseidon,
+                        );
+                    }
+                    end_timer!(timer);
                 }
-                end_timer!(timer);
             }
 
             Some(("solidity", sub_matches)) => {
-                let aggregate_k = 21;
                 let max_public_inputs_size = 12;
                 let config_file = Self::parse_proof_load_info_arg(sub_matches);
                 let n_proofs = config_file.len() - 1;
                 let sol_path: PathBuf = Self::parse_sol_dir_arg(&sub_matches);
                 let proofloadinfo = ProofLoadInfo::load(&config_file[0]);
+                let aggregate_k = proofloadinfo.k;
 
                 let proof_params = load_or_build_unsafe_params::<Bn256>(
                     k as usize,

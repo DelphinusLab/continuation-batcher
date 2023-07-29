@@ -14,6 +14,7 @@
   "instances": [
     "test.0.instance.data"
   ],
+  "hashtype": "Poseidon",
   "param": "K8.params",
   "name": "test"
 }
@@ -23,5 +24,11 @@
 ## Generate batch proof from ProofLoadInfos
 
 ```
-cargo run -- -k 8 --output ./sample batch --info sample/test.loadinfo.json --name batchsample
+cargo run -- --challenge poseidon -k 21 --output ./sample batch --info sample/test.loadinfo.json --name batchsample
+```
+
+## Verify batch proof from ProofLoadInfos
+
+```
+cargo run -- --challenge poseidon -k 21 --output ./sample verify --info sample/batchsample.loadinfo.json
 ```
