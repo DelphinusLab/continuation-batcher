@@ -21,6 +21,7 @@ pub trait CommandBuilder: ArgBuilder {
     fn append_create_aggregate_proof_subcommand(app: App) -> App {
         let command = Command::new("batch")
             .arg(Self::zkwasm_k_arg())
+            .arg(Self::hashtype())
             .arg(Self::proof_name_arg())
             .arg(Self::proof_load_info_arg());
         app.subcommand(command)
