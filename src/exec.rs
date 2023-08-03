@@ -43,8 +43,8 @@ use crate::circuits::TestCircuit;
 use crate::circuits::ZkWasmCircuitBuilder;
 */
 
-pub fn exec_setup(aggregate_k: u32, output_dir: &PathBuf) {
-    info!("Setup Params and VerifyingKey");
+pub fn generate_k_params(aggregate_k: u32, output_dir: &PathBuf) {
+    info!("Generating K Params file");
 
     // Setup Aggregate Circuit Params
     {

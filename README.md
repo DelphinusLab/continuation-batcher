@@ -21,6 +21,18 @@
 
 ```
 
+## General Command Usage
+
+The general usage is as follows:
+
+```
+cargo run -- --output [OUTPUT_DIR] [SUBCOMMAND] --[ARGS]
+```
+
+where `[SUBCOMMAND]` is the command to execute, and `[ARGS]` are the args specific to that command.
+
+The `--output` arg specifies the directory to write all the output files to and is required for all commands.
+
 ## Generate batch proof from ProofLoadInfos
 
 ```
