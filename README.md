@@ -1,5 +1,12 @@
 # This is a standalone proof compress & batch tool for zkWASM guest and host circuits.
 
+## Motivation
+
+Delphinus-zkWASM supports a restricted continuation protocol by providing the context read(write) host APIs so that the execution of a large trace can be splitted into multiple code traces and the following trace can access the previous stack and memory. The whole process works similar to a context store/restore in a standard operation system.
+
+The basic idea is to put context in a specific column so that in the proof the commitment of that column is stored in the proof transcript. When the batcher batchs a continuation flow of proofs, it checks that the input context commitment is equal to the output context commitment of the previous context.
+
+
 ## Descript proof for a specific target through ProofLoadInfo
 
 ```

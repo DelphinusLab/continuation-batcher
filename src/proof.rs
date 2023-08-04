@@ -278,3 +278,47 @@ pub(crate) fn read_vkey_full<E: MultiMillerLoop>(cache_file: &Path) -> Verifying
     let mut fd = std::fs::File::open(&cache_file).unwrap();
     read_vkey(&mut fd).unwrap()
 }
+
+#[test]
+fn batch_single_circuit() {
+    use crate::batch::BatchInfo;
+    use crate::proof::CircuitInfo;
+    use crate::proof::ProofInfo;
+    use crate::proof::Prover;
+    use crate::samples::simple::SimpleCircuit;
+    use halo2_proofs::pairing::bn256::Bn256;
+    use halo2_proofs::pairing::bn256::Fr;
+    use std::path::Path;
+
+    const K: u32 = 8;
+    const BATCH_K: u32 = 21;
+    let circuit = samples::simple::SimpleCircuit::<Fr> {
+        a: Fr::from(100u64),
+        b: Fr::from(200u64),
+    };
+
+    let circuit_info = CircuitInfo::<Bn256, SimpleCircuit<Fr>>::new(
+        circuit,
+        "test".to_string(),
+        vec![vec![Fr::from(300u64)]],
+        K as usize,
+        HashType::Poseidon
+    );
+
+    circuit_info.mock_proof(K);
+    let proofloadinfo = circuit_info.proofloadinfo.clone();
+    circuit_info.create_proof(&Path::new("output"), 0);
+
+    proofloadinfo.save(&Path::new("output"));
+
+    let batchinfo = BatchInfo::<Bn256> {
+        proofs: ProofInfo::load_proof(&Path::new("output"), &proofloadinfo),
+        target_k: K as usize,
+        batch_k: BATCH_K as usize,
+        commitment_check: vec![],
+    };
+
+    let agg_circuit = batchinfo.build_aggregate_circuit(&Path::new("output"), "aggregator".to_string(), HashType::Sha);
+    agg_circuit.create_proof(&Path::new("output"), 0);
+}
+
