@@ -21,14 +21,26 @@
 
 ```
 
+## General Command Usage
+
+The general usage is as follows:
+
+```
+cargo run -- --output [OUTPUT_DIR] [SUBCOMMAND] --[ARGS]
+```
+
+where `[SUBCOMMAND]` is the command to execute, and `[ARGS]` are the args specific to that command.
+
+The `--output` arg specifies the directory to write all the output files to and is required for all commands.
+
 ## Generate batch proof from ProofLoadInfos
 
 ```
-cargo run -- --challenge poseidon -k 21 --output ./sample batch --info sample/test.loadinfo.json --name batchsample
+cargo run -- --output ./sample batch --challenge poseidon -k 21 --info sample/test.loadinfo.json --name batchsample
 ```
 
 ## Verify batch proof from ProofLoadInfos
 
 ```
-cargo run -- --challenge poseidon -k 21 --output ./sample verify --info sample/batchsample.loadinfo.json
+cargo run -- --output ./sample verify -k 21 --info sample/batchsample.loadinfo.json
 ```
