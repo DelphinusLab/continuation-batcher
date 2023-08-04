@@ -36,11 +36,11 @@ The `--output` arg specifies the directory to write all the output files to and 
 ## Generate batch proof from ProofLoadInfos
 
 ```
-cargo run -- --challenge poseidon -k 21 --output ./sample batch --info sample/test.loadinfo.json --name batchsample
+cargo run -- --output ./sample batch --challenge poseidon -k 21 --info sample/test.loadinfo.json --name batchsample
 ```
 
 ## Verify batch proof from ProofLoadInfos
 
 ```
-cargo run -- --challenge poseidon -k 21 --output ./sample verify --info sample/batchsample.loadinfo.json
+cargo run -- --output ./sample verify -k 21 --info sample/batchsample.loadinfo.json
 ```

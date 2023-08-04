@@ -34,7 +34,7 @@ pub trait AppBuilder: CommandBuilder {
             .setting(AppSettings::SubcommandRequired)
             .arg(Self::output_path_arg());
 
-        let app = Self::append_params_command(app);
+        let app = Self::append_params_subcommand(app);
         let app = Self::append_setup_subcommand(app);
         let app = Self::append_create_aggregate_proof_subcommand(app);
         let app = Self::append_verify_aggregate_verify_subcommand(app);
@@ -56,8 +56,8 @@ pub trait AppBuilder: CommandBuilder {
         
 
         match top_matches.subcommand() {
-            Some(("params", args)) => {
-                let k: u32 = Self::parse_zkwasm_k_arg(args).unwrap();
+            Some(("params", sub_matches)) => {
+                let k: u32 = Self::parse_zkwasm_k_arg(&sub_matches).unwrap();
                 generate_k_params(k, &output_dir);
             }
             Some(("setup", _)) => {
@@ -67,8 +67,8 @@ pub trait AppBuilder: CommandBuilder {
             }
 
             Some(("batch", sub_matches)) => {
-                let k: u32 = Self::parse_zkwasm_k_arg(&top_matches).unwrap();
-                let hash = Self::parse_hashtype(&top_matches);
+                let k: u32 = Self::parse_zkwasm_k_arg(&sub_matches).unwrap();
+                let hash = Self::parse_hashtype(&sub_matches);
                 let config_files = Self::parse_proof_load_info_arg(sub_matches);
 
                 let mut target_k = None;
@@ -134,8 +134,8 @@ pub trait AppBuilder: CommandBuilder {
             }
 
             Some(("verify", sub_matches)) => {
-                let k: u32 = Self::parse_zkwasm_k_arg(&top_matches).unwrap();
-                let config_files = Self::parse_proof_load_info_arg(sub_matches);
+                let k: u32 = Self::parse_zkwasm_k_arg(&sub_matches).unwrap();
+                let config_files = Self::parse_proof_load_info_arg(&sub_matches);
                 for config_file in config_files.iter() {
                     let proofloadinfo = ProofLoadInfo::load(config_file);
                     let proofs:Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &proofloadinfo);
@@ -167,7 +167,7 @@ pub trait AppBuilder: CommandBuilder {
             }
 
             Some(("solidity", sub_matches)) => {
-                let k: u32 = Self::parse_zkwasm_k_arg(&top_matches).unwrap();
+                let k: u32 = Self::parse_zkwasm_k_arg(&sub_matches).unwrap();
                 let max_public_inputs_size = 12;
                 let config_file = Self::parse_proof_load_info_arg(sub_matches);
                 let n_proofs = config_file.len() - 1;

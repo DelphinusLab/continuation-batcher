@@ -5,7 +5,7 @@ use super::args::ArgBuilder;
 
 pub trait CommandBuilder: ArgBuilder {
 
-    fn append_params_command(app: App) -> App {
+    fn append_params_subcommand(app: App) -> App {
         let command = Command::new("params")
             .arg(Self::zkwasm_k_arg().required(true));
         app.subcommand(command)
