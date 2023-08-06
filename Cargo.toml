@@ -48,3 +48,8 @@ cuda = ["halo2_proofs/cuda"]
 
 [profile.dev]
 opt-level = 3
+
+
+[patch.'https://github.com/junyu0312/halo2']
+halo2_proofs = { path = './halo2/halo2_proofs' }
+

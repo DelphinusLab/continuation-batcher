@@ -53,7 +53,7 @@ pub trait AppBuilder: CommandBuilder {
 
         fs::create_dir_all(&output_dir).unwrap();
         println!("output dir: {:?}", output_dir);
-        
+
 
         match top_matches.subcommand() {
             Some(("params", sub_matches)) => {
