@@ -490,6 +490,6 @@ fn batch_single_circuit() {
     };
 
     let agg_circuit = batchinfo.build_aggregate_circuit(&Path::new("output"), "aggregator".to_string(), HashType::Sha);
+    agg_circuit.create_witness(&Path::new("output"), 0);
     agg_circuit.create_proof(&Path::new("output"), 0);
 }
-

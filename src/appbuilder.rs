@@ -4,6 +4,7 @@ use halo2aggregator_s::solidity_verifier::codegen::solidity_aux_gen;
 use halo2aggregator_s::solidity_verifier::solidity_render;
 use std::fs;
 use std::path::PathBuf;
+use crate::proof::ProofGenerationInfo;
 use crate::proof::ProofLoadInfo;
 use crate::proof::ProofInfo;
 use crate::proof::Prover;
@@ -36,8 +37,9 @@ pub trait AppBuilder: CommandBuilder {
 
         let app = Self::append_params_subcommand(app);
         let app = Self::append_setup_subcommand(app);
-        let app = Self::append_create_aggregate_proof_subcommand(app);
-        let app = Self::append_verify_aggregate_verify_subcommand(app);
+        let app = Self::append_batch_subcommand(app);
+        let app = Self::append_verify_subcommand(app);
+        let app = Self::append_prove_subcommand(app);
         let app = Self::append_generate_solidity_verifier(app);
         app
     }
@@ -64,6 +66,18 @@ pub trait AppBuilder: CommandBuilder {
                 let k: u32 = Self::parse_zkwasm_k_arg(&top_matches).unwrap();
 
                 generate_k_params(k, &output_dir);
+            }
+
+            Some(("prove", sub_matches)) => {
+                let config_files = Self::parse_proof_load_info_arg(sub_matches);
+
+                let proofs = config_files.iter().map(|config| {
+                    ProofGenerationInfo::load(config)
+                }).collect::<Vec<_>>();
+
+                for proof in proofs {
+                    proof.create_proofs::<Bn256>(output_dir);
+                }
             }
 
             Some(("batch", sub_matches)) => {
