@@ -23,6 +23,7 @@ use halo2aggregator_s::transcript::poseidon::PoseidonRead;
 use halo2aggregator_s::transcript::poseidon::PoseidonWrite;
 use halo2aggregator_s::transcript::sha256::ShaRead;
 use halo2aggregator_s::transcript::sha256::ShaWrite;
+use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
 use serde::{Deserialize, Serialize};
@@ -92,7 +93,10 @@ impl ProofGenerationInfo {
             let instances = load_instance::<E>(&self.instance_size, &cache_folder.join(ins));
 
             let witnessfile = cache_folder.join(wit);
-            let mut witnessreader = std::fs::File::open(witnessfile).unwrap();
+            let mut witnessreader = OpenOptions::new()
+                .read(true)
+                .open(witnessfile)
+                .unwrap();
 
             let inputs_size = self.instances.iter().fold(0, |acc, x| usize::max(acc, x.len()));
 
@@ -300,7 +304,14 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
         let cache_file = &cache_folder.join(format!("{}.{}.witness.data", self.name, index));
 
         println!("create witness file {:?}", cache_file);
-        let mut fd = std::fs::File::create(&cache_file).unwrap();
+
+        let mut fd = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(&cache_file)
+            .unwrap();
         create_witness(&params, &pkey, &self.circuit, &self.instances.iter().map(|x| &x[..]).collect::<Vec<_>>().as_slice(), &mut fd).unwrap()
     }
 
