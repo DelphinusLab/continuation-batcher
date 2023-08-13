@@ -1,5 +1,5 @@
 {
-  "vkey": "test.vkeyfull.data",
+  "circuit": "test.vkeyfull.data",
   "k": 8,
   "instance_size": [
     1

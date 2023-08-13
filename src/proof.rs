@@ -31,7 +31,7 @@ use crate::args::HashType;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ProofGenerationInfo {
-    pub vkey: String,
+    pub circuit: String,
     pub k: usize,
     pub instance_size: Vec<u32>,
     pub witnesses: Vec<String>,
@@ -54,7 +54,7 @@ impl ProofGenerationInfo {
         }
         ProofGenerationInfo {
             name: name.to_string(),
-            vkey: format!("{}.vkeyfull.data", name),
+            circuit: format!("{}.circuit.data", name),
             k,
             witnesses,
             instances,
@@ -85,7 +85,7 @@ impl ProofGenerationInfo {
         let params =
             load_or_build_unsafe_params::<E>(self.k, &cache_folder.join(self.param.clone()));
 
-        let pkey = read_info_full::<E>(&params, &cache_folder.join(self.vkey.clone()));
+        let pkey = read_pk_full::<E>(&params, &cache_folder.join(self.circuit.clone()));
 
         for ((ins, wit), trans) in self.instances.iter()
                 .zip(self.witnesses.clone())
@@ -168,7 +168,7 @@ impl ProofGenerationInfo {
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ProofLoadInfo {
-    pub vkey: String,
+    pub circuit: String,
     pub k: usize,
     pub instance_size: Vec<u32>,
     pub transcripts: Vec<String>,
@@ -188,7 +188,7 @@ impl ProofLoadInfo {
         }
         ProofLoadInfo {
             name: name.to_string(),
-            vkey: format!("{}.vkeyfull.data", name),
+            circuit: format!("{}.circuit.data", name),
             k,
             transcripts,
             instances,
@@ -224,7 +224,7 @@ impl<E: MultiMillerLoop> ProofInfo<E> {
     pub fn load_proof(cache_folder: &Path, loadinfo: &ProofLoadInfo) -> Vec<Self> {
         let mut proofs = vec![];
         for (ins, trans) in loadinfo.instances.iter().zip(loadinfo.transcripts.clone()) {
-            let vkey = read_vkey_full::<E>(&cache_folder.join(loadinfo.vkey.clone()));
+            let vkey = read_vkey_full::<E>(&cache_folder.join(loadinfo.circuit.clone()));
             let instances = load_instance::<E>(&loadinfo.instance_size, &cache_folder.join(ins));
             let transcripts = load_proof(&cache_folder.join(trans));
             proofs.push(ProofInfo {
@@ -330,8 +330,8 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
             &cache_folder.join(self.proofloadinfo.instances[index].as_str()),
         );
 
-        store_info_full::<E, C>(&params, &vkey, &self.circuit, &cache_folder.join(self.proofloadinfo.vkey.clone()));
-        let pkey = read_info_full::<E>(&params, &cache_folder.join(self.proofloadinfo.vkey));
+        store_info_full::<E, C>(&params, &vkey, &self.circuit, &cache_folder.join(self.proofloadinfo.circuit.clone()));
+        let pkey = read_pk_full::<E>(&params, &cache_folder.join(self.proofloadinfo.circuit));
         assert_eq!(vkey.domain, pkey.get_vk().domain);
         assert_eq!(vkey.fixed_commitments, pkey.get_vk().fixed_commitments);
 
@@ -453,7 +453,7 @@ pub(crate) fn read_vkey_full<E: MultiMillerLoop>(cache_file: &Path) -> Verifying
     VerifyingKey::<E::G1Affine>::fetch(&mut fd).unwrap()
 }
 
-pub(crate) fn read_info_full<E: MultiMillerLoop>(params: &Params<E::G1Affine>, cache_file: &Path) -> ProvingKey<E::G1Affine> {
+pub(crate) fn read_pk_full<E: MultiMillerLoop>(params: &Params<E::G1Affine>, cache_file: &Path) -> ProvingKey<E::G1Affine> {
     println!("read vkey full from {:?}", cache_file);
     let mut fd = std::fs::File::open(&cache_file).unwrap();
     let vk = VerifyingKey::<E::G1Affine>::fetch(&mut fd).unwrap();

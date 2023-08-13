@@ -6,8 +6,31 @@ Delphinus-zkWASM supports a restricted continuation protocol by providing the co
 
 The basic idea is to put context in a specific column so that in the proof the commitment of that column is stored in the proof transcript. When the batcher batchs a continuation flow of proofs, it checks that the input context commitment is equal to the output context commitment of the previous context.
 
+## Description of a withness input
+```
+{
+  "vkey": "xxx.vkeyfull.data",
+  "k": 21,
+  "instance_size": [
+    9
+  ],
+  "transcripts": [
+    "xxx.0.transcript.data"
+  ],
+  "instances": [
+    "xxx.0.instance.data"
+  ],
+  "witnesses": [
+    "xxx.0.witness.data"
+  ],
+  "param": "K21.params",
+  "name": "xxx_name",
+  "hashtype": "Poseidon"
+}
+```
 
-## Descript proof for a specific target through ProofLoadInfo
+
+## Description proof for a specific target through ProofLoadInfo
 
 ```
 {
@@ -33,7 +56,7 @@ The basic idea is to put context in a specific column so that in the proof the c
 The general usage is as follows:
 
 ```
-cargo run -- --output [OUTPUT_DIR] [SUBCOMMAND] --[ARGS]
+cargo run --release -- --output [OUTPUT_DIR] [SUBCOMMAND] --[ARGS]
 ```
 
 where `[SUBCOMMAND]` is the command to execute, and `[ARGS]` are the args specific to that command.
@@ -43,11 +66,14 @@ The `--output` arg specifies the directory to write all the output files to and 
 ## Generate batch proof from ProofLoadInfos
 
 ```
-cargo run -- --output ./sample batch --challenge poseidon -k 21 --info sample/test.loadinfo.json --name batchsample
+cargo run --release -- --output ./sample batch --challenge poseidon -k 21 --info sample/test.loadinfo.json --name batchsample
 ```
 
 ## Verify batch proof from ProofLoadInfos
 
 ```
-cargo run -- --output ./sample verify -k 21 --info sample/batchsample.loadinfo.json
+cargo run --release -- --output ./sample verify -k 21 --info sample/batchsample.loadinfo.json
 ```
+
+## Generate proof from witness
+cargo run --release -- --output output prove --info output/aggregator.witnessinfo.json
