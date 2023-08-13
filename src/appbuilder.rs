@@ -108,7 +108,7 @@ pub trait AppBuilder: CommandBuilder {
                     .flatten()
                     .collect::<Vec<_>>();
 
-                let batchinfo = BatchInfo::<Bn256> {
+                let mut batchinfo = BatchInfo::<Bn256> {
                     proofs,
                     target_k: target_k.unwrap(),
                     batch_k: k as usize,
@@ -122,6 +122,8 @@ pub trait AppBuilder: CommandBuilder {
                 let proof_name = sub_matches
                     .get_one::<String>("name")
                     .expect("name of the prove task is not provided");
+
+                batchinfo.load_commitments_check(&proofsinfo, commits_equiv_info);
 
                 let agg_circuit = batchinfo.build_aggregate_circuit(&output_dir, proof_name.clone(), hash);
                 agg_circuit.proofloadinfo.save(&output_dir);

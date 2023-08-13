@@ -49,7 +49,7 @@ pub struct BatchInfo<E: MultiMillerLoop> {
 }
 
 impl<E: MultiMillerLoop> BatchInfo<E> {
-    pub fn prepare_commitment_check(
+    pub fn get_commitment_index(
         &self,
         proofsinfo: &Vec<ProofLoadInfo>,
         cn: &CommitmentName
@@ -78,6 +78,18 @@ impl<E: MultiMillerLoop> BatchInfo<E> {
             }
         }
         (idx, column_idx.unwrap() as usize)
+    }
+
+    pub fn load_commitments_check(
+        &mut self,
+        proofsinfo: &Vec<ProofLoadInfo>,
+        commits: CommitmentCheck,
+    ) {
+        for eqs in commits.equivalents.iter() {
+            let src = self.get_commitment_index(proofsinfo, &eqs.source);
+            let target = self.get_commitment_index(proofsinfo, &eqs.target);
+            self.commitment_check.push([src.0, src.1, target.0, target.1])
+        }
     }
 
     pub fn build_aggregate_circuit(
@@ -131,6 +143,7 @@ impl<E: MultiMillerLoop> BatchInfo<E> {
         for vkey in vkeys.iter() {
             println!("vkey named advices: {:?}", vkey.cs.named_advices);
         }
+        println!("commitment check: {:?}", self.commitment_check);
 
 
         // circuit multi check

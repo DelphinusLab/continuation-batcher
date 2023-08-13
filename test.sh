@@ -5,7 +5,7 @@ cargo test --release
 cargo run --release -- --output ./output verify -k 8 --info output/test.loadinfo.json
 
 # batch test proofs
-cargo run --release -- --output ./output batch --challenge poseidon -k 21 --info output/test.loadinfo.json --name batchsample
+cargo run --release -- --output ./output batch --challenge poseidon -k 21 --info output/test.loadinfo.json --name batchsample --commits output/commits.json
 
 
 # verify generated proof for test circuits
