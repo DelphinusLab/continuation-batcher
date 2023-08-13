@@ -4,6 +4,7 @@ use halo2aggregator_s::solidity_verifier::codegen::solidity_aux_gen;
 use halo2aggregator_s::solidity_verifier::solidity_render;
 use std::fs;
 use std::path::PathBuf;
+use crate::batch::CommitmentCheck;
 use crate::proof::ProofGenerationInfo;
 use crate::proof::ProofLoadInfo;
 use crate::proof::ProofInfo;
@@ -84,10 +85,13 @@ pub trait AppBuilder: CommandBuilder {
                 let k: u32 = Self::parse_zkwasm_k_arg(&sub_matches).unwrap();
                 let hash = Self::parse_hashtype(&sub_matches);
                 let config_files = Self::parse_proof_load_info_arg(sub_matches);
+                let commits_equiv_file = Self::parse_commits_equiv_info_arg(sub_matches);
 
                 let mut target_k = None;
+                let mut proofsinfo = vec![];
                 let proofs = config_files.iter().map(|config| {
                         let proofloadinfo = ProofLoadInfo::load(config);
+                        proofsinfo.push(proofloadinfo.clone());
                         // target batch proof needs to use poseidon hash
                         assert_eq!(proofloadinfo.hashtype, HashType::Poseidon);
                         target_k = target_k.map_or(
@@ -110,6 +114,10 @@ pub trait AppBuilder: CommandBuilder {
                     batch_k: k as usize,
                     commitment_check: vec![],
                 };
+
+                let commits_equiv_info = CommitmentCheck::load(&commits_equiv_file);
+
+                println!("commits equivalent {:?}", commits_equiv_info);
 
                 let proof_name = sub_matches
                     .get_one::<String>("name")

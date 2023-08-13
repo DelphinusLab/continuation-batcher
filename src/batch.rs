@@ -1,4 +1,5 @@
 use crate::args::HashType;
+use crate::proof::ProofLoadInfo;
 use crate::proof::load_or_build_unsafe_params;
 use crate::proof::CircuitInfo;
 use crate::proof::ProofInfo;
@@ -11,6 +12,34 @@ use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuit;
 use halo2aggregator_s::circuits::utils::TranscriptHash;
 use halo2aggregator_s::native_verifier;
 use std::path::Path;
+use serde::{Deserialize, Serialize};
+
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct CommitmentName {
+    pub name: String,
+    pub proof_idx: usize,
+    pub column_name: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct CommitmentEquivPair {
+    pub source: CommitmentName,
+    pub target: CommitmentName,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct CommitmentCheck{
+    pub equivalents: Vec<CommitmentEquivPair>
+}
+
+impl CommitmentCheck {
+    pub fn load(equiv_file: &Path) -> Self {
+        let fd = std::fs::File::open(equiv_file).unwrap();
+        println!("read commit equivalents {:?}", equiv_file);
+        serde_json::from_reader(fd).unwrap()
+    }
+}
 
 pub struct BatchInfo<E: MultiMillerLoop> {
     pub proofs: Vec<ProofInfo<E>>,
@@ -20,6 +49,37 @@ pub struct BatchInfo<E: MultiMillerLoop> {
 }
 
 impl<E: MultiMillerLoop> BatchInfo<E> {
+    pub fn prepare_commitment_check(
+        &self,
+        proofsinfo: &Vec<ProofLoadInfo>,
+        cn: &CommitmentName
+    ) -> (usize, usize) {
+        let mut idx = 0;
+        let mut column_idx = None;
+        for proofinfo in proofsinfo.iter() {
+            if proofinfo.name == cn.name {
+                idx += cn.proof_idx;
+                let c = self.proofs[idx]
+                    .vkey.cs
+                    .named_advices
+                    .iter()
+                    .position(|r| r.0 == cn.column_name)
+                    .unwrap();
+                column_idx = Some (
+                    self.proofs[idx]
+                    .vkey
+                    .cs
+                    .named_advices[c]
+                    .1
+                );
+                break;
+            } else {
+                idx += proofinfo.transcripts.len()
+            }
+        }
+        (idx, column_idx.unwrap() as usize)
+    }
+
     pub fn build_aggregate_circuit(
         &self,
         cache_folder: &Path,
@@ -49,11 +109,12 @@ impl<E: MultiMillerLoop> BatchInfo<E> {
 
         let params_verifier: ParamsVerifier<E> = params.verifier(public_inputs_size).unwrap();
 
+        println!("check single proof for each proof info:");
         if true {
             let timer = start_timer!(|| "native verify single proof");
             for (_, proof) in self.proofs.iter().enumerate() {
-                println!("proof is {:?}", proof.transcripts);
-                println!("instance is {:?}", proof.instances);
+                //println!("proof is {:?}", proof.transcripts);
+                //println!("instance is {:?}", proof.instances);
                 native_verifier::verify_single_proof::<E>(
                     &params_verifier,
                     &proof.vkey,
@@ -63,6 +124,12 @@ impl<E: MultiMillerLoop> BatchInfo<E> {
                 );
             }
             end_timer!(timer);
+        }
+        println!("done!");
+
+        println!("preparing batch circuit:");
+        for vkey in vkeys.iter() {
+            println!("vkey named advices: {:?}", vkey.cs.named_advices);
         }
 
 

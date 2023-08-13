@@ -54,6 +54,23 @@ pub trait ArgBuilder {
             .collect::<Vec<_>>()
     }
 
+    fn commits_info_arg<'a>() -> Arg<'a> {
+        Arg::new("commits")
+            .long("commits")
+            .value_parser(value_parser!(PathBuf))
+            .action(ArgAction::Append)
+            .help("Path of the batch config files")
+            .min_values(1)
+            .max_values(1)
+    }
+
+    fn parse_commits_equiv_info_arg(matches: &ArgMatches) -> PathBuf {
+        matches
+            .get_one::<PathBuf>("commits")
+            .unwrap()
+            .clone()
+    }
+
     fn output_path_arg<'a>() -> Arg<'a> {
         arg!(
             -o --output [OUTPUT_PATH] "Path of the output files."

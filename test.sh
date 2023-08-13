@@ -1,5 +1,5 @@
 # Get the resource ready for tests
-cargo test --relesae
+cargo test --release
 
 # verify generated proof for test circuits
 cargo run --release -- --output ./output verify -k 8 --info output/test.loadinfo.json

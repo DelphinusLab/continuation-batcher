@@ -34,7 +34,7 @@ impl<F: FieldExt> Circuit<F> for SimpleCircuit<F> {
     }
 
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-        let advices = [meta.advice_column(), meta.advice_column()];
+        let advices = [meta.named_advice_column("A".to_string()), meta.advice_column()];
         let instance = meta.instance_column();
         let sel = meta.fixed_column();
 
