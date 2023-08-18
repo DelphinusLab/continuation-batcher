@@ -5,15 +5,18 @@ use crate::proof::CircuitInfo;
 use crate::proof::ProofInfo;
 use ark_std::end_timer;
 use ark_std::start_timer;
+use halo2_proofs::arithmetic::Engine;
 use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::poly::commitment::ParamsVerifier;
+use halo2aggregator_s::circuit_verifier::G2AffineBaseHelper;
 use halo2aggregator_s::circuit_verifier::build_aggregate_verify_circuit;
 use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuit;
 use halo2aggregator_s::circuits::utils::TranscriptHash;
 use halo2aggregator_s::native_verifier;
+use halo2ecc_s::circuit::pairing_chip::PairingChipOps;
+use halo2ecc_s::context::NativeScalarEccContext;
 use std::path::Path;
 use serde::{Deserialize, Serialize};
-
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct CommitmentName {
@@ -48,7 +51,9 @@ pub struct BatchInfo<E: MultiMillerLoop> {
     pub commitment_check: Vec<[usize; 4]>,
 }
 
-impl<E: MultiMillerLoop> BatchInfo<E> {
+impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
+    where NativeScalarEccContext<<E as Engine>::G1Affine>: PairingChipOps<<E as Engine>::G1Affine, <E as Engine>::Scalar>
+{
     pub fn get_commitment_index(
         &self,
         proofsinfo: &Vec<ProofLoadInfo>,
@@ -155,6 +160,8 @@ impl<E: MultiMillerLoop> BatchInfo<E> {
             all_proofs,
             TranscriptHash::Poseidon,
             self.commitment_check.clone(),
+            vec![],
+            vec![],
         );
 
         end_timer!(timer);
