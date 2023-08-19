@@ -1,0 +1,10 @@
+{
+    "equivalents": [],
+    "expose": [
+        {"name": "test", "proof_idx": 0, "column_name": "A"}
+    ],
+    "absorb": [
+        {"name": "test", "proof_idx": 0, "group_idx": 0}
+    ]
+
+}

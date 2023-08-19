@@ -26,14 +26,29 @@ pub struct CommitmentName {
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct CommitmentInInstance {
+    pub name: String,
+    pub proof_idx: usize,
+    pub group_idx: usize, // instances are grouped by 3 as commits
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct CommitmentEquivPair {
     pub source: CommitmentName,
     pub target: CommitmentName,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct CommitmentAbsorb {
+    pub instance_idx: CommitmentInInstance,
+    pub target: CommitmentName,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct CommitmentCheck{
-    pub equivalents: Vec<CommitmentEquivPair>
+    pub equivalents: Vec<CommitmentEquivPair>,
+    pub expose: Vec<CommitmentName>,
+    pub absorb: Vec<CommitmentAbsorb>,
 }
 
 impl CommitmentCheck {
@@ -48,13 +63,15 @@ pub struct BatchInfo<E: MultiMillerLoop> {
     pub proofs: Vec<ProofInfo<E>>,
     pub batch_k: usize,
     pub target_k: usize,
-    pub commitment_check: Vec<[usize; 4]>,
+    pub equivalents: Vec<[usize; 4]>,
+    pub expose: Vec<[usize; 2]>,
+    pub absorb: Vec<([usize; 3], [usize; 2])>,
 }
 
 impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
     where NativeScalarEccContext<<E as Engine>::G1Affine>: PairingChipOps<<E as Engine>::G1Affine, <E as Engine>::Scalar>
 {
-    pub fn get_commitment_index(
+    fn get_commitment_index(
         &self,
         proofsinfo: &Vec<ProofLoadInfo>,
         cn: &CommitmentName
@@ -85,6 +102,24 @@ impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
         (idx, column_idx.unwrap() as usize)
     }
 
+    fn get_instance_index(
+        &self,
+        proofsinfo: &Vec<ProofLoadInfo>,
+        ci: &CommitmentInInstance
+    ) -> [usize; 3] {
+        let mut idx = 0;
+        for proofinfo in proofsinfo.iter() {
+            if proofinfo.name == ci.name {
+                idx += ci.proof_idx;
+                break;
+            } else {
+                idx += proofinfo.transcripts.len()
+            }
+        }
+        [idx, 0, ci.group_idx * 3] // each commitment as instances are grouped by 3
+
+    }
+
     pub fn load_commitments_check(
         &mut self,
         proofsinfo: &Vec<ProofLoadInfo>,
@@ -93,8 +128,18 @@ impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
         for eqs in commits.equivalents.iter() {
             let src = self.get_commitment_index(proofsinfo, &eqs.source);
             let target = self.get_commitment_index(proofsinfo, &eqs.target);
-            self.commitment_check.push([src.0, src.1, target.0, target.1])
+            self.equivalents.push([src.0, src.1, target.0, target.1])
         }
+        for exp in commits.expose.iter() {
+            let s = self.get_commitment_index(proofsinfo, exp);
+            self.expose.push([s.0, s.1]);
+        }
+        for absorb in commits.absorb.iter() {
+            let s = self.get_instance_index(proofsinfo, &absorb.instance_idx);
+            let t = self.get_commitment_index(proofsinfo, &absorb.target);
+            self.absorb.push((s, [t.0, t.1]));
+        }
+
     }
 
     pub fn build_aggregate_circuit(
@@ -148,7 +193,7 @@ impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
         for vkey in vkeys.iter() {
             println!("vkey named advices: {:?}", vkey.cs.named_advices);
         }
-        println!("commitment check: {:?}", self.commitment_check);
+        println!("commitment check: {:?}", self.equivalents);
 
 
         // circuit multi check
@@ -159,9 +204,9 @@ impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
             instances,
             all_proofs,
             TranscriptHash::Poseidon,
-            self.commitment_check.clone(),
-            vec![],
-            vec![],
+            self.equivalents.clone(),
+            self.expose.clone(),
+            self.absorb.clone(),
         );
 
         end_timer!(timer);

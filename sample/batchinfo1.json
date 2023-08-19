@@ -4,5 +4,9 @@
             "source": {"name": "test", "proof_idx": 0, "column_name": "A"},
             "target": {"name": "test", "proof_idx": 0, "column_name": "A"}
         }
-    ]
+    ],
+    "expose": [
+        {"name": "test", "proof_idx": 0, "column_name": "A"}
+    ],
+    "absorb": []
 }

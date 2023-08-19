@@ -112,7 +112,9 @@ pub trait AppBuilder: CommandBuilder {
                     proofs,
                     target_k: target_k.unwrap(),
                     batch_k: k as usize,
-                    commitment_check: vec![],
+                    equivalents: vec![],
+                    absorb: vec![],
+                    expose: vec![],
                 };
 
                 let commits_equiv_info = CommitmentCheck::load(&commits_equiv_file);
