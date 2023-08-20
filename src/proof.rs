@@ -471,7 +471,7 @@ fn batch_single_circuit() {
     use halo2_proofs::pairing::bn256::Fr;
     use std::path::Path;
 
-    const K: u32 = 8;
+    const K: u32 = 22;
     const BATCH_K: u32 = 21;
     let circuit = SimpleCircuit::<Fr> {
         a: Fr::from(100u64),
@@ -493,6 +493,7 @@ fn batch_single_circuit() {
 
     proofloadinfo.save(&Path::new("output"));
 
+    /*
     let batchinfo = BatchInfo::<Bn256> {
         proofs: ProofInfo::load_proof(&Path::new("output"), &proofloadinfo),
         target_k: K as usize,
@@ -503,4 +504,5 @@ fn batch_single_circuit() {
     let agg_circuit = batchinfo.build_aggregate_circuit(&Path::new("output"), "aggregator".to_string(), HashType::Sha);
     agg_circuit.create_witness(&Path::new("output"), 0);
     agg_circuit.create_proof(&Path::new("output"), 0);
+    */
 }

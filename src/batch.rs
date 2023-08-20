@@ -193,7 +193,9 @@ impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
         for vkey in vkeys.iter() {
             println!("vkey named advices: {:?}", vkey.cs.named_advices);
         }
-        println!("commitment check: {:?}", self.equivalents);
+        println!("commitment equiv: {:?}", self.equivalents);
+        println!("commitment expose: {:?}", self.expose);
+        println!("commitment absorb: {:?}", self.absorb);
 
 
         // circuit multi check

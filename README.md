@@ -77,3 +77,9 @@ cargo run --release -- --output ./sample verify -k 21 --info sample/batchsample.
 
 ## Generate proof from witness
 cargo run --release -- --output output prove --info output/aggregator.witnessinfo.json
+
+## integrate with just
+
+1. install just: cargo install just
+2. configure your batch in a just script: see sample/batchscript.just
+3. just -f sample/batchscript.just

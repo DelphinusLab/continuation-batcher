@@ -4,7 +4,10 @@
         {"name": "test", "proof_idx": 0, "column_name": "A"}
     ],
     "absorb": [
-        {"name": "test", "proof_idx": 0, "group_idx": 0}
+        {
+            "instance_idx": {"name": "batch1", "proof_idx": 0, "group_idx": 1},
+            "target": {"name": "test", "proof_idx": 0, "column_name": "A"}
+        }
     ]
 
 }

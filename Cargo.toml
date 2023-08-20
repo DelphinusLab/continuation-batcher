@@ -54,3 +54,7 @@ opt-level = 3
 [patch.'https://github.com/junyu0312/halo2']
 halo2_proofs = { path = './halo2/halo2_proofs' }
 
+
+[patch.'https://github.com/DelphinusLab/halo2aggregator-s.git']
+halo2aggregator-s = { path = './halo2aggregator-s' }
+

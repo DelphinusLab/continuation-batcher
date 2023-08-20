@@ -97,6 +97,7 @@ pub trait AppBuilder: CommandBuilder {
                         target_k = target_k.map_or(
                             Some(proofloadinfo.k),
                             |x| {
+                                // proofs in the same batch needs to have same size
                                 assert_eq!(x, proofloadinfo.k);
                                 Some(x)
                             }
