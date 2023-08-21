@@ -317,6 +317,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
 
 
     fn create_proof(self, cache_folder: &Path, index: usize) -> Vec<u8> {
+        use ark_std::{start_timer, end_timer};
         let params =
             load_or_build_unsafe_params::<E>(self.k, &cache_folder.join(self.proofloadinfo.param));
         let vkey = load_or_build_vkey::<E, C>(
@@ -330,10 +331,14 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
             &cache_folder.join(self.proofloadinfo.instances[index].as_str()),
         );
 
+        let timer = start_timer!(|| "test storing info full ...");
         store_info_full::<E, C>(&params, &vkey, &self.circuit, &cache_folder.join(self.proofloadinfo.circuit.clone()));
+        end_timer!(timer);
+        let timer = start_timer!(|| "test read info full ...");
         let pkey = read_pk_full::<E>(&params, &cache_folder.join(self.proofloadinfo.circuit));
         assert_eq!(vkey.domain, pkey.get_vk().domain);
         assert_eq!(vkey.fixed_commitments, pkey.get_vk().fixed_commitments);
+        end_timer!(timer);
 
         //let pkey = keygen_pk(&params, vkey, &self.circuit).expect("keygen_pk should not fail");
         let inputs_size = self.instances.iter().fold(0, |acc, x| usize::max(acc, x.len()));
@@ -344,6 +349,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
         let params_verifier: ParamsVerifier<E> = params.verifier(inputs_size).unwrap();
         let strategy = SingleVerifier::new(&params_verifier);
 
+        let timer = start_timer!(|| "creating proof ...");
         let r = match self.proofloadinfo.hashtype {
             HashType::Poseidon => {
                 let mut transcript = PoseidonWrite::init(vec![]);
@@ -394,6 +400,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
                 r
             },
         };
+        end_timer!(timer);
 
         let cache_file = &cache_folder.join(self.proofloadinfo.transcripts[index].clone());
         println!("create transcripts file {:?}", cache_file);
@@ -462,9 +469,9 @@ pub(crate) fn read_pk_full<E: MultiMillerLoop>(params: &Params<E::G1Affine>, cac
 
 #[test]
 fn batch_single_circuit() {
-    use crate::batch::BatchInfo;
+    //use crate::batch::BatchInfo;
+    //use crate::proof::ProofInfo;
     use crate::proof::CircuitInfo;
-    use crate::proof::ProofInfo;
     use crate::proof::Prover;
     use crate::samples::simple::SimpleCircuit;
     use halo2_proofs::pairing::bn256::Bn256;
@@ -473,25 +480,51 @@ fn batch_single_circuit() {
 
     const K: u32 = 22;
     const BATCH_K: u32 = 21;
-    let circuit = SimpleCircuit::<Fr> {
-        a: Fr::from(100u64),
-        b: Fr::from(200u64),
-    };
 
-    let circuit_info = CircuitInfo::<Bn256, SimpleCircuit<Fr>>::new(
-        circuit,
-        "test".to_string(),
-        vec![vec![Fr::from(300u64)]],
-        K as usize,
-        HashType::Poseidon
-    );
+    {
+        let circuit = SimpleCircuit::<Fr> {
+            a: Fr::from(100u64),
+            b: Fr::from(200u64),
+        };
 
-    circuit_info.mock_proof(K);
-    let proofloadinfo = circuit_info.proofloadinfo.clone();
-    circuit_info.create_witness(&Path::new("output"), 0);
-    circuit_info.create_proof(&Path::new("output"), 0);
+        let circuit_info = CircuitInfo::<Bn256, SimpleCircuit<Fr>>::new(
+            circuit,
+            "test1".to_string(),
+            vec![vec![Fr::from(300u64)]],
+            K as usize,
+            HashType::Poseidon
+        );
 
-    proofloadinfo.save(&Path::new("output"));
+        circuit_info.mock_proof(K);
+        let proofloadinfo = circuit_info.proofloadinfo.clone();
+        circuit_info.create_witness(&Path::new("output"), 0);
+        circuit_info.create_proof(&Path::new("output"), 0);
+
+        proofloadinfo.save(&Path::new("output"));
+    }
+
+    {
+        let circuit = SimpleCircuit::<Fr> {
+            a: Fr::from(100u64),
+            b: Fr::from(200u64),
+        };
+
+        let circuit_info = CircuitInfo::<Bn256, SimpleCircuit<Fr>>::new(
+            circuit,
+            "test2".to_string(),
+            vec![vec![Fr::from(300u64)]],
+            K as usize,
+            HashType::Poseidon
+        );
+
+        circuit_info.mock_proof(K);
+        let proofloadinfo = circuit_info.proofloadinfo.clone();
+        circuit_info.create_witness(&Path::new("output"), 0);
+        circuit_info.create_proof(&Path::new("output"), 0);
+
+        proofloadinfo.save(&Path::new("output"));
+    }
+
 
     /*
     let batchinfo = BatchInfo::<Bn256> {

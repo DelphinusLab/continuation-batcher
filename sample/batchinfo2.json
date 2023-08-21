@@ -1,12 +1,12 @@
 {
     "equivalents": [],
     "expose": [
-        {"name": "test", "proof_idx": 0, "column_name": "A"}
+        {"name": "test2", "proof_idx": 0, "column_name": "A"}
     ],
     "absorb": [
         {
             "instance_idx": {"name": "batch1", "proof_idx": 0, "group_idx": 1},
-            "target": {"name": "test", "proof_idx": 0, "column_name": "A"}
+            "target": {"name": "test2", "proof_idx": 0, "column_name": "A"}
         }
     ]
 
