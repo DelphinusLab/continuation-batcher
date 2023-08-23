@@ -67,43 +67,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "auto-circuits-batcher"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "ark-std",
- "bitvec",
- "clap",
- "downcast-rs",
- "env_logger",
- "ff",
- "halo2_proofs",
- "halo2aggregator-s",
- "halo2ecc-s",
- "hex",
- "lazy_static",
- "log",
- "md5",
- "num",
- "num-bigint",
- "num-derive",
- "num-integer",
- "num-traits",
- "poseidon",
- "quote",
- "rand",
- "rusty-fork",
- "serde",
- "serde_json",
- "sha2",
- "strum",
- "strum_macros",
- "uuid",
- "wabt",
- "wast",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -231,6 +194,43 @@ dependencies = [
  "parse-zoneinfo",
  "phf",
  "phf_codegen",
+]
+
+[[package]]
+name = "circuits-batcher"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "ark-std",
+ "bitvec",
+ "clap",
+ "downcast-rs",
+ "env_logger",
+ "ff",
+ "halo2_proofs",
+ "halo2aggregator-s",
+ "halo2ecc-s",
+ "hex",
+ "lazy_static",
+ "log",
+ "md5",
+ "num",
+ "num-bigint",
+ "num-derive",
+ "num-integer",
+ "num-traits",
+ "poseidon",
+ "quote",
+ "rand",
+ "rusty-fork",
+ "serde",
+ "serde_json",
+ "sha2",
+ "strum",
+ "strum_macros",
+ "uuid",
+ "wabt",
+ "wast",
 ]
 
 [[package]]

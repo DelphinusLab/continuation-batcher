@@ -1,10 +1,10 @@
 [package]
-name = "auto-circuits-batcher"
+name = "circuits-batcher"
 version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-name = "auto-circuit-batcher"
+name = "circuit-batcher"
 path = "src/cli/main.rs"
 
 [dependencies]

@@ -1,6 +1,6 @@
-use auto_circuits_batcher::appbuilder::AppBuilder;
-use auto_circuits_batcher::args::ArgBuilder;
-use auto_circuits_batcher::command::CommandBuilder;
+use circuits_batcher::appbuilder::AppBuilder;
+use circuits_batcher::args::ArgBuilder;
+use circuits_batcher::command::CommandBuilder;
 
 struct CircuitBatcherApp;
 
