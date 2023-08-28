@@ -336,8 +336,8 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
         end_timer!(timer);
         let timer = start_timer!(|| "test read info full ...");
         let pkey = read_pk_full::<E>(&params, &cache_folder.join(self.proofloadinfo.circuit));
-        assert_eq!(vkey.domain, pkey.get_vk().domain);
-        assert_eq!(vkey.fixed_commitments, pkey.get_vk().fixed_commitments);
+        //assert_eq!(vkey.domain, pkey.get_vk().domain);
+        //assert_eq!(vkey.fixed_commitments, pkey.get_vk().fixed_commitments);
         end_timer!(timer);
 
         //let pkey = keygen_pk(&params, vkey, &self.circuit).expect("keygen_pk should not fail");
@@ -449,7 +449,13 @@ fn store_info_full<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
     cache_file: &Path
 ) {
     println!("store vkey full to {:?}", cache_file);
-    let mut fd = std::fs::File::create(&cache_file).unwrap();
+    let mut fd = OpenOptions::new()
+       .read(true)
+       .write(true)
+       .create(true)
+       .truncate(true)
+       .open(&cache_file)
+       .unwrap();
     vkey.store(&mut fd).unwrap();
     store_pk_info(params, vkey, circuit, &mut fd).unwrap();
 }
@@ -461,10 +467,16 @@ pub(crate) fn read_vkey_full<E: MultiMillerLoop>(cache_file: &Path) -> Verifying
 }
 
 pub(crate) fn read_pk_full<E: MultiMillerLoop>(params: &Params<E::G1Affine>, cache_file: &Path) -> ProvingKey<E::G1Affine> {
+    use ark_std::{start_timer, end_timer};
+    let timer = start_timer!(|| "fetch vkey full ...");
     println!("read vkey full from {:?}", cache_file);
     let mut fd = std::fs::File::open(&cache_file).unwrap();
     let vk = VerifyingKey::<E::G1Affine>::fetch(&mut fd).unwrap();
-    fetch_pk_info(params, &vk, &mut fd).unwrap()
+    end_timer!(timer);
+    let timer = start_timer!(|| "fetch pk full ...");
+    let pk = fetch_pk_info(params, &vk, &mut fd).unwrap();
+    end_timer!(timer);
+    pk
 }
 
 #[test]

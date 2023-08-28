@@ -664,6 +664,7 @@ dependencies = [
 [[package]]
 name = "halo2_proofs"
 version = "0.1.0-beta.1"
+source = "git+https://github.com/junyu0312/halo2?branch=gpu#49f0c26b2e60d8886bb9513c26d16b6edd3c369f"
 dependencies = [
  "ark-std",
  "blake2b_simd",
@@ -690,6 +691,7 @@ dependencies = [
 [[package]]
 name = "halo2aggregator-s"
 version = "0.1.0"
+source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git?branch=absorb-rebase#2a19443ce1a1f0d75a051791a251939f9087abab"
 dependencies = [
  "ark-std",
  "blake2b_simd",
