@@ -15,3 +15,6 @@ cargo run --release --features cuda -- --param ./params --output ./output batch 
 
 # verify generated proof for test circuits
 cargo run --release --features cuda -- --param ./params --output ./output verify --info output/batchsample.loadinfo.json
+
+cargo run --release -- --param ./params --output ./output solidity -k 22 --info output/batchsample.loadinfo.json
+
