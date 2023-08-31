@@ -213,7 +213,7 @@ pub trait AppBuilder: CommandBuilder {
 
                 let proof_params_verifier: ParamsVerifier<Bn256> = proof_params.verifier(max_public_inputs_size).unwrap();
 
-                let public_inputs_size = 6 + 3 * n_proofs;
+                let public_inputs_size = 3 * n_proofs;
 
                 let agg_params = load_or_build_unsafe_params::<Bn256>(
                     aggregate_k,
