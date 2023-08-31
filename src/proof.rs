@@ -81,11 +81,11 @@ impl ProofGenerationInfo {
 }
 
 impl ProofGenerationInfo {
-    pub fn create_proofs<E: MultiMillerLoop>(&self, cache_folder: &Path) {
+    pub fn create_proofs<E: MultiMillerLoop>(&self, cache_folder: &Path, param_folder: &Path) {
         let params =
-            load_or_build_unsafe_params::<E>(self.k, &cache_folder.join(self.param.clone()));
+            load_or_build_unsafe_params::<E>(self.k, &param_folder.join(self.param.clone()));
 
-        let pkey = read_pk_full::<E>(&params, &cache_folder.join(self.circuit.clone()));
+        let pkey = read_pk_full::<E>(&params, &param_folder.join(self.circuit.clone()));
 
         for ((ins, wit), trans) in self.instances.iter()
                 .zip(self.witnesses.clone())
@@ -275,8 +275,8 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> CircuitInfo<E, C> {
 }
 
 pub trait Prover<E: MultiMillerLoop> {
-    fn create_proof(self, cache_folder: &Path, index: usize) -> Vec<u8>;
-    fn create_witness(&self, cache_folder: &Path, index: usize);
+    fn create_proof(self, cache_folder: &Path, param_folder: &Path, index: usize) -> Vec<u8>;
+    fn create_witness(&self, cache_folder: &Path, param_folder: &Path, index: usize);
     fn mock_proof(&self, k: u32);
 }
 
@@ -289,17 +289,15 @@ pub struct CircuitInfo<E: MultiMillerLoop, C: Circuit<E::Scalar>> {
 }
 
 impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> {
-    fn create_witness(&self,  cache_folder: &Path, index: usize) {
+    fn create_witness(&self, cache_folder: &Path, param_folder: &Path, index: usize) {
         let params =
-            load_or_build_unsafe_params::<E>(self.k, &cache_folder.join(self.proofloadinfo.param.clone()));
-        let vkey = load_or_build_vkey::<E, C>(
+            load_or_build_unsafe_params::<E>(self.k, &param_folder.join(self.proofloadinfo.param.clone()));
+        let pkey = load_or_build_pkey::<E, C>(
             &params,
             &self.circuit,
+            &cache_folder.join(self.proofloadinfo.circuit.clone()),
             &cache_folder.join(format!("{}.vkey.data", self.name)),
         );
-
-        let pkey = keygen_pk(&params, vkey, &self.circuit).expect("keygen_pk should not fail");
-        //let pkey = keygen_pk(&params, vkey, &self.circuit).expect("keygen_pk should not fail");
 
         let cache_file = &cache_folder.join(format!("{}.{}.witness.data", self.name, index));
 
@@ -315,15 +313,15 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
         create_witness(&params, &pkey, &self.circuit, &self.instances.iter().map(|x| &x[..]).collect::<Vec<_>>().as_slice(), &mut fd).unwrap()
     }
 
-
-    fn create_proof(self, cache_folder: &Path, index: usize) -> Vec<u8> {
+    fn create_proof(self, cache_folder: &Path, param_folder: &Path, index: usize) -> Vec<u8> {
         use ark_std::{start_timer, end_timer};
         let params =
-            load_or_build_unsafe_params::<E>(self.k, &cache_folder.join(self.proofloadinfo.param));
-        let vkey = load_or_build_vkey::<E, C>(
+            load_or_build_unsafe_params::<E>(self.k, &param_folder.join(self.proofloadinfo.param));
+        let pkey = load_or_build_pkey::<E, C>(
             &params,
             &self.circuit,
-            &cache_folder.join(format!("{}.vkey.data", self.name)),
+            &param_folder.join(self.proofloadinfo.circuit.clone()),
+            &param_folder.join(format!("{}.vkey.data", self.name)),
         );
 
         store_instance(
@@ -331,14 +329,6 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
             &cache_folder.join(self.proofloadinfo.instances[index].as_str()),
         );
 
-        let timer = start_timer!(|| "test storing info full ...");
-        store_info_full::<E, C>(&params, &vkey, &self.circuit, &cache_folder.join(self.proofloadinfo.circuit.clone()));
-        end_timer!(timer);
-        let timer = start_timer!(|| "test read info full ...");
-        let pkey = read_pk_full::<E>(&params, &cache_folder.join(self.proofloadinfo.circuit));
-        //assert_eq!(vkey.domain, pkey.get_vk().domain);
-        //assert_eq!(vkey.fixed_commitments, pkey.get_vk().fixed_commitments);
-        end_timer!(timer);
 
         //let pkey = keygen_pk(&params, vkey, &self.circuit).expect("keygen_pk should not fail");
         let inputs_size = self.instances.iter().fold(0, |acc, x| usize::max(acc, x.len()));
@@ -372,7 +362,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
                     &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
                     &mut PoseidonRead::init(&r[..])
                 ).unwrap();
-                println!("verify halo2 proof succeed");
+                println!("verify halo2 proof with native vkey succeed");
                 r
             },
             HashType::Sha => {
@@ -415,31 +405,40 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
     }
 }
 
-fn load_vkey<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
+pub fn load_vkey<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
     params: &Params<E::G1Affine>,
-    cache_file: &Path,
+    param_folder: &Path,
 ) -> VerifyingKey<E::G1Affine> {
-    println!("read vkey from {:?}", cache_file);
-    let mut fd = std::fs::File::open(&cache_file).unwrap();
+    println!("read vkey from {:?}", param_folder);
+    let mut fd = std::fs::File::open(&param_folder).unwrap();
     VerifyingKey::read::<_, C>(&mut fd, params).unwrap()
 }
 
-fn load_or_build_vkey<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
+fn load_or_build_pkey<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
     params: &Params<E::G1Affine>,
     circuit: &C,
     cache_file: &Path,
-) -> VerifyingKey<E::G1Affine> {
+    vkey_file: &Path,
+) -> ProvingKey<E::G1Affine> {
+    use ark_std::{start_timer, end_timer};
     if Path::exists(&cache_file) {
-        return load_vkey::<E, C>(params, &cache_file);
+        let timer = start_timer!(|| "test read info full ...");
+        let pkey = read_pk_full::<E>(&params, &cache_file);
+        //assert_eq!(vkey.domain, pkey.get_vk().domain);
+        //assert_eq!(vkey.fixed_commitments, pkey.get_vk().fixed_commitments);
+        end_timer!(timer);
+        pkey
+    } else {
+        let vkey = keygen_vk(&params, circuit).expect("keygen_vk should not fail");
+        println!("write vkey to {:?}", vkey_file);
+        let mut fd = std::fs::File::create(&vkey_file).unwrap();
+        vkey.write(&mut fd).unwrap();
+        let pkey = keygen_pk(&params, vkey.clone(), circuit).expect("keygen_pk should not fail");
+        let timer = start_timer!(|| "test storing info full ...");
+        store_info_full::<E, C>(&params, &vkey, circuit, cache_file);
+        end_timer!(timer);
+        pkey
     }
-
-    let verify_circuit_vk = keygen_vk(&params, circuit).expect("keygen_vk should not fail");
-
-    println!("write vkey to {:?}", cache_file);
-    let mut fd = std::fs::File::create(&cache_file).unwrap();
-    verify_circuit_vk.write(&mut fd).unwrap();
-
-    verify_circuit_vk
 }
 
 fn store_info_full<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
@@ -491,8 +490,6 @@ fn batch_single_circuit() {
     use std::path::Path;
 
     const K: u32 = 22;
-    const BATCH_K: u32 = 21;
-
     {
         let circuit = SimpleCircuit::<Fr> {
             a: Fr::from(100u64),
@@ -509,8 +506,8 @@ fn batch_single_circuit() {
 
         circuit_info.mock_proof(K);
         let proofloadinfo = circuit_info.proofloadinfo.clone();
-        circuit_info.create_witness(&Path::new("output"), 0);
-        circuit_info.create_proof(&Path::new("output"), 0);
+        circuit_info.create_witness(&Path::new("output"), &Path::new("params"), 0);
+        circuit_info.create_proof(&Path::new("output"), &Path::new("params"), 0);
 
         proofloadinfo.save(&Path::new("output"));
     }
@@ -531,8 +528,8 @@ fn batch_single_circuit() {
 
         circuit_info.mock_proof(K);
         let proofloadinfo = circuit_info.proofloadinfo.clone();
-        circuit_info.create_witness(&Path::new("output"), 0);
-        circuit_info.create_proof(&Path::new("output"), 0);
+        circuit_info.create_witness(&Path::new("output"), &Path::new("params"), 0);
+        circuit_info.create_proof(&Path::new("output"), &Path::new("params"), 0);
 
         proofloadinfo.save(&Path::new("output"));
     }

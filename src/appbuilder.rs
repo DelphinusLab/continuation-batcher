@@ -34,6 +34,7 @@ pub trait AppBuilder: CommandBuilder {
         let app = App::new(Self::NAME)
             .version(Self::VERSION)
             .setting(AppSettings::SubcommandRequired)
+            .arg(Self::param_path_arg())
             .arg(Self::output_path_arg());
 
         let app = Self::append_params_subcommand(app);
@@ -54,18 +55,22 @@ pub trait AppBuilder: CommandBuilder {
             .get_one::<PathBuf>("output")
             .expect("output dir is not provided");
 
+        let param_dir = top_matches
+            .get_one::<PathBuf>("param")
+            .expect("param dir is not provided");
+
+
+
         fs::create_dir_all(&output_dir).unwrap();
         println!("output dir: {:?}", output_dir);
 
+        fs::create_dir_all(&param_dir).unwrap();
+        println!("params dir: {:?}", param_dir);
+
 
         match top_matches.subcommand() {
-            Some(("params", sub_matches)) => {
-                let k: u32 = Self::parse_zkwasm_k_arg(&sub_matches).unwrap();
-                generate_k_params(k, &output_dir);
-            }
             Some(("setup", _)) => {
                 let k: u32 = Self::parse_zkwasm_k_arg(&top_matches).unwrap();
-
                 generate_k_params(k, &output_dir);
             }
 
@@ -77,7 +82,7 @@ pub trait AppBuilder: CommandBuilder {
                 }).collect::<Vec<_>>();
 
                 for proof in proofs {
-                    proof.create_proofs::<Bn256>(output_dir);
+                    proof.create_proofs::<Bn256>(output_dir, param_dir);
                 }
             }
 
@@ -131,7 +136,7 @@ pub trait AppBuilder: CommandBuilder {
                 let agg_circuit = batchinfo.build_aggregate_circuit(&output_dir, proof_name.clone(), hash);
                 agg_circuit.proofloadinfo.save(&output_dir);
                 let agg_info = agg_circuit.proofloadinfo.clone();
-                agg_circuit.create_proof(&output_dir, 0);
+                agg_circuit.create_proof(&output_dir, &param_dir, 0);
 
                 let proof: Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &agg_info);
 

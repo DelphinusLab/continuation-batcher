@@ -77,6 +77,13 @@ pub trait ArgBuilder {
         ).value_parser(value_parser!(PathBuf))
     }
 
+    fn param_path_arg<'a>() -> Arg<'a> {
+        arg!(
+            -p --param [PARAM_PATH] "Path of the param files."
+        ).value_parser(value_parser!(PathBuf))
+    }
+
+
     fn proof_name_arg<'a>() -> Arg<'a> {
         arg!(
             -n --name [PROOF_NAME] "name of this task."
