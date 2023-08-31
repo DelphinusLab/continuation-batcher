@@ -107,7 +107,7 @@ pub trait AppBuilder: CommandBuilder {
                                 Some(x)
                             }
                         );
-                        ProofInfo::load_proof(&output_dir, &proofloadinfo)
+                        ProofInfo::load_proof(&output_dir, &param_dir, &proofloadinfo)
                     }
                 ).collect::<Vec<_>>()
                     .into_iter()
@@ -133,12 +133,12 @@ pub trait AppBuilder: CommandBuilder {
 
                 batchinfo.load_commitments_check(&proofsinfo, commits_equiv_info);
 
-                let agg_circuit = batchinfo.build_aggregate_circuit(&output_dir, proof_name.clone(), hash);
+                let agg_circuit = batchinfo.build_aggregate_circuit(&param_dir, proof_name.clone(), hash);
                 agg_circuit.proofloadinfo.save(&output_dir);
                 let agg_info = agg_circuit.proofloadinfo.clone();
                 agg_circuit.create_proof(&output_dir, &param_dir, 0);
 
-                let proof: Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &agg_info);
+                let proof: Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &param_dir, &agg_info);
 
                 let public_inputs_size =
                         proof[0].instances.iter().fold(0, |acc, x| usize::max(acc, x.len()));
@@ -147,7 +147,7 @@ pub trait AppBuilder: CommandBuilder {
 
                 let params = load_or_build_unsafe_params::<Bn256>(
                     agg_info.k as usize,
-                    &output_dir.join(format!("K{}.params", k)),
+                    &param_dir.join(format!("K{}.params", k)),
                 );
 
                 let params_verifier: ParamsVerifier<Bn256> = params.verifier(public_inputs_size).unwrap();
@@ -166,14 +166,13 @@ pub trait AppBuilder: CommandBuilder {
             }
 
             Some(("verify", sub_matches)) => {
-                let k: u32 = Self::parse_zkwasm_k_arg(&sub_matches).unwrap();
                 let config_files = Self::parse_proof_load_info_arg(&sub_matches);
                 for config_file in config_files.iter() {
                     let proofloadinfo = ProofLoadInfo::load(config_file);
-                    let proofs:Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &proofloadinfo);
+                    let proofs:Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &param_dir, &proofloadinfo);
                     let params = load_or_build_unsafe_params::<Bn256>(
                         proofloadinfo.k,
-                        &output_dir.join(format!("K{}.params", k)),
+                        &param_dir.join(format!("K{}.params", proofloadinfo.k)),
                     );
                     let mut public_inputs_size = 0;
                     for proof in proofs.iter() {
@@ -209,7 +208,7 @@ pub trait AppBuilder: CommandBuilder {
 
                 let proof_params = load_or_build_unsafe_params::<Bn256>(
                     k as usize,
-                    &output_dir.join(format!("K{}.params", k)),
+                    &param_dir.join(format!("K{}.params", k)),
                 );
 
                 let proof_params_verifier: ParamsVerifier<Bn256> = proof_params.verifier(max_public_inputs_size).unwrap();
@@ -218,13 +217,13 @@ pub trait AppBuilder: CommandBuilder {
 
                 let agg_params = load_or_build_unsafe_params::<Bn256>(
                     aggregate_k,
-                    &output_dir.join(format!("K{}.params", aggregate_k)),
+                    &param_dir.join(format!("K{}.params", aggregate_k)),
                 );
 
 
                 let agg_params_verifier = agg_params.verifier(public_inputs_size).unwrap();
 
-                let proof: Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &proofloadinfo);
+                let proof: Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &param_dir, &proofloadinfo);
 
                 let path_in = {
                     let mut path = sol_path.clone();

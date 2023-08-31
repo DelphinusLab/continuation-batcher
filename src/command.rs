@@ -36,7 +36,6 @@ pub trait CommandBuilder: ArgBuilder {
 
     fn append_verify_subcommand(app: App) -> App {
         let command = Command::new("verify")
-            .arg(Self::zkwasm_k_arg())
             .arg(Self::proof_load_info_arg());
 
         app.subcommand(command)

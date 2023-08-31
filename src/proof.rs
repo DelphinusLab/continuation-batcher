@@ -199,15 +199,15 @@ impl ProofLoadInfo {
     }
     pub fn save(&self, cache_folder: &Path) {
         let cache_file = cache_folder.join(format!("{}.loadinfo.json", &self.name));
-        let json = serde_json::to_string_pretty(self).unwrap();
         println!("write proof load info {:?}", cache_file);
+        let json = serde_json::to_string_pretty(self).unwrap();
         let mut fd = std::fs::File::create(&cache_file).unwrap();
         fd.write(json.as_bytes()).unwrap();
     }
 
     pub fn load(configfile: &Path) -> Self {
-        let fd = std::fs::File::open(configfile).unwrap();
         println!("read proof load info {:?}", configfile);
+        let fd = std::fs::File::open(configfile).unwrap();
         serde_json::from_reader(fd).unwrap()
     }
 
@@ -221,10 +221,10 @@ pub struct ProofInfo<E: MultiMillerLoop> {
 }
 
 impl<E: MultiMillerLoop> ProofInfo<E> {
-    pub fn load_proof(cache_folder: &Path, loadinfo: &ProofLoadInfo) -> Vec<Self> {
+    pub fn load_proof(cache_folder: &Path, param_folder: &Path, loadinfo: &ProofLoadInfo) -> Vec<Self> {
         let mut proofs = vec![];
         for (ins, trans) in loadinfo.instances.iter().zip(loadinfo.transcripts.clone()) {
-            let vkey = read_vkey_full::<E>(&cache_folder.join(loadinfo.circuit.clone()));
+            let vkey = read_vkey_full::<E>(&param_folder.join(loadinfo.circuit.clone()));
             let instances = load_instance::<E>(&loadinfo.instance_size, &cache_folder.join(ins));
             let transcripts = load_proof(&cache_folder.join(trans));
             proofs.push(ProofInfo {
@@ -295,8 +295,8 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
         let pkey = load_or_build_pkey::<E, C>(
             &params,
             &self.circuit,
-            &cache_folder.join(self.proofloadinfo.circuit.clone()),
-            &cache_folder.join(format!("{}.vkey.data", self.name)),
+            &param_folder.join(self.proofloadinfo.circuit.clone()),
+            &param_folder.join(format!("{}.vkey.data", self.name)),
         );
 
         let cache_file = &cache_folder.join(format!("{}.{}.witness.data", self.name, index));

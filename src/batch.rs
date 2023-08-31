@@ -144,14 +144,14 @@ impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
 
     pub fn build_aggregate_circuit(
         &self,
-        cache_folder: &Path,
+        param_folder: &Path,
         proof_name: String,
         hashtype: HashType,
     ) -> CircuitInfo<E, AggregatorCircuit<E::G1Affine>> {
         // 1. setup params
         let params = load_or_build_unsafe_params::<E>(
             self.target_k,
-            &cache_folder.join(format!("K{}.params", self.target_k)),
+            &param_folder.join(format!("K{}.params", self.target_k)),
         );
 
         let mut all_proofs = vec![];
