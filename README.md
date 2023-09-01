@@ -6,10 +6,20 @@ Delphinus-zkWASM supports a restricted continuation protocol by providing the co
 
 The basic idea is to put context in a specific column so that in the proof the commitment of that column is stored in the proof transcript. When the batcher batchs a continuation flow of proofs, it checks that the input context commitment is equal to the output context commitment of the previous context.
 
+# Pipeline
+
+1. Describe circuits:
+2. Generate the witnesses of circuits
+3. Generate the proofs from the witnesses of various circuits
+4. Define your batching policy via the batch DSL. 
+5. Execute the batching DSL and generate the batching circuit
+6. Generate the final solidity for your batching circuit
+  
+
 ## Description of a withness input
 ```
 {
-  "vkey": "xxx.vkeyfull.data",
+  "circuit": "xxx.circuit.data",
   "k": 21,
   "instance_size": [
     9
@@ -34,7 +44,7 @@ The basic idea is to put context in a specific column so that in the proof the c
 
 ```
 {
-  "vkey": "test.vkeyfull.data",
+  "circuit": "test.circuit.data",
   "instance_size": [
     1
   ],
@@ -72,7 +82,7 @@ cargo run --release -- --output ./sample batch --challenge poseidon -k 21 --info
 ## Verify batch proof from ProofLoadInfos
 
 ```
-cargo run --release -- --output ./sample verify -k 21 --info sample/batchsample.loadinfo.json
+cargo run --release -- --output ./sample verify --challenge poseidon --info sample/batchsample.loadinfo.json
 ```
 
 ## Generate proof from witness
