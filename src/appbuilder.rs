@@ -167,6 +167,7 @@ pub trait AppBuilder: CommandBuilder {
 
             Some(("verify", sub_matches)) => {
                 let config_files = Self::parse_proof_load_info_arg(&sub_matches);
+                let hash = Self::parse_hashtype(&sub_matches);
                 for config_file in config_files.iter() {
                     let proofloadinfo = ProofLoadInfo::load(config_file);
                     let proofs:Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &param_dir, &proofloadinfo);
@@ -190,7 +191,10 @@ pub trait AppBuilder: CommandBuilder {
                             &proof.vkey,
                             &proof.instances,
                             proof.transcripts.clone(),
-                            TranscriptHash::Poseidon,
+                            match hash {
+                                HashType::Poseidon => TranscriptHash::Poseidon,
+                                HashType::Sha => TranscriptHash::Sha,
+                            }
                         );
                     }
                     end_timer!(timer);
@@ -206,6 +210,9 @@ pub trait AppBuilder: CommandBuilder {
                 let proofloadinfo = ProofLoadInfo::load(&config_file[0]);
                 let aggregate_k = proofloadinfo.k;
 
+                let commits_equiv_file = Self::parse_commits_equiv_info_arg(sub_matches);
+                let commits_equiv_info = CommitmentCheck::load(&commits_equiv_file);
+
                 let proof_params = load_or_build_unsafe_params::<Bn256>(
                     k as usize,
                     &param_dir.join(format!("K{}.params", k)),
@@ -213,7 +220,9 @@ pub trait AppBuilder: CommandBuilder {
 
                 let proof_params_verifier: ParamsVerifier<Bn256> = proof_params.verifier(max_public_inputs_size).unwrap();
 
-                let public_inputs_size = 3 * n_proofs;
+                println!("nproof {}", n_proofs);
+
+                let public_inputs_size = 3 * (n_proofs + commits_equiv_info.expose.len());
 
                 let agg_params = load_or_build_unsafe_params::<Bn256>(
                     aggregate_k,

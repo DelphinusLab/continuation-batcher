@@ -67,7 +67,7 @@ pub trait ArgBuilder {
     fn parse_commits_equiv_info_arg(matches: &ArgMatches) -> PathBuf {
         matches
             .get_one::<PathBuf>("commits")
-            .unwrap()
+            .expect("commit info file is not provided")
             .clone()
     }
 
