@@ -1,5 +1,12 @@
-#[cfg(feature = "checksum")]
-use crate::image_hasher::ImageHasher;
+use crate::args::HashType;
+use crate::batch::BatchInfo;
+use crate::batch::CommitmentCheck;
+use crate::proof::ProofLoadInfo;
+use crate::proof::ProofInfo;
+use crate::proof::Prover;
+use crate::proof::load_or_build_unsafe_params;
+use halo2_proofs::poly::commitment::ParamsVerifier;
+use halo2aggregator_s::solidity_verifier::codegen::solidity_aux_gen;
 
 /*
 use crate::profile::Profiler;
@@ -20,7 +27,6 @@ use halo2_proofs::poly::commitment::ParamsVerifier;
 use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuit;
 use halo2aggregator_s::circuits::utils::load_instance;
 */
-use halo2aggregator_s::circuits::utils::load_or_build_unsafe_params;
 /*
 use halo2aggregator_s::circuits::utils::load_or_build_vkey;
 use halo2aggregator_s::circuits::utils::load_or_create_proof;
@@ -38,27 +44,100 @@ use log::info;
 
 use std::path::PathBuf;
 
-/*
-use crate::circuits::TestCircuit;
-use crate::circuits::ZkWasmCircuitBuilder;
-*/
-
-pub fn generate_k_params(aggregate_k: u32, output_dir: &PathBuf) {
+pub fn generate_k_params(aggregate_k: u32, param_dir: &PathBuf) {
     info!("Generating K Params file");
 
     // Setup Aggregate Circuit Params
     {
-        let params_path = &output_dir.join(format!("K{}.params", aggregate_k));
-
-        if params_path.exists() {
-            info!("Found Params with K = {} at {:?}", aggregate_k, params_path);
-        } else {
-            info!(
-                "Create Params with K = {} to {:?}",
-                aggregate_k, params_path
-            );
-        }
-
-        load_or_build_unsafe_params::<Bn256>(aggregate_k, Some(params_path))
+        let params_path = &param_dir.join(format!("K{}.params", aggregate_k));
+        load_or_build_unsafe_params::<Bn256>(aggregate_k as usize, params_path)
     };
 }
+
+pub fn batch_proofs(
+    proof_name: &String,
+    output_dir: &PathBuf,
+    param_dir: &PathBuf,
+    config_files: Vec<PathBuf>,
+    batch_script_file: PathBuf,
+    hash: HashType,
+    k: u32,
+) {
+    let mut target_k = None;
+    let mut proofsinfo = vec![];
+    let proofs = config_files.iter().map(|config| {
+            let proofloadinfo = ProofLoadInfo::load(config);
+            proofsinfo.push(proofloadinfo.clone());
+            // target batch proof needs to use poseidon hash
+            assert_eq!(proofloadinfo.hashtype, HashType::Poseidon);
+            target_k = target_k.map_or(
+                Some(proofloadinfo.k),
+                |x| {
+                    // proofs in the same batch needs to have same size
+                    assert_eq!(x, proofloadinfo.k);
+                    Some(x)
+                }
+            );
+            ProofInfo::load_proof(&output_dir, &param_dir, &proofloadinfo)
+        }
+    ).collect::<Vec<_>>()
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
+
+    let mut batchinfo = BatchInfo::<Bn256> {
+        proofs,
+        target_k: target_k.unwrap(),
+        batch_k: k as usize,
+        equivalents: vec![],
+        absorb: vec![],
+        expose: vec![],
+    };
+
+    let batch_script_info = CommitmentCheck::load(&batch_script_file);
+
+    info!("commits equivalent {:?}", batch_script_info);
+
+    batchinfo.load_commitments_check(&proofsinfo, batch_script_info);
+
+    let agg_circuit = batchinfo.build_aggregate_circuit(&param_dir, proof_name.clone(), hash);
+    agg_circuit.proofloadinfo.save(&output_dir);
+    let agg_info = agg_circuit.proofloadinfo.clone();
+    agg_circuit.create_proof(&output_dir, &param_dir, 0);
+
+    let proof: Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &param_dir, &agg_info);
+
+    let public_inputs_size =
+            proof[0].instances.iter().fold(0, |acc, x| usize::max(acc, x.len()));
+
+    info!("generate aux data for proof: {:?}", agg_info);
+
+    let params = load_or_build_unsafe_params::<Bn256>(
+        agg_info.k as usize,
+        &param_dir.join(format!("K{}.params", k)),
+    );
+
+    let params_verifier: ParamsVerifier<Bn256> = params.verifier(public_inputs_size).unwrap();
+
+    // generate solidity aux data
+    // it only makes sense if the transcript challenge is poseidon
+    if hash == HashType::Sha {
+        solidity_aux_gen(
+            &params_verifier,
+            &proof[0].vkey,
+            &proof[0].instances[0],
+            proof[0].transcripts.clone(),
+            &output_dir.join(format!("{}.{}.aux.data", &agg_info.name.clone(), 0)),
+        );
+    }
+
+}
+
+
+
+
+
+
+
+
+
