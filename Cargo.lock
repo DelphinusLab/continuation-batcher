@@ -446,7 +446,7 @@ source = "git+https://github.com/lanbones/ec-gpu#165d1dd6215f6fd1dd85c83cf430ff5
 [[package]]
 name = "ec-gpu-gen"
 version = "0.4.0"
-source = "git+https://github.com/lanbones/ec-gpu#165d1dd6215f6fd1dd85c83cf430ff511a03a00a"
+source = "git+https://github.com/lanbones/ec-gpu?branch=halo2-opt-v2#784eda53754a5344f75e4b3c533361d628ad1402"
 dependencies = [
  "ark-std",
  "bitvec",
@@ -664,7 +664,6 @@ dependencies = [
 [[package]]
 name = "halo2_proofs"
 version = "0.1.0-beta.1"
-source = "git+https://github.com/junyu0312/halo2?branch=gpu#8dbcacf1a9374b64d2e1450db5754fa2ae2b829f"
 dependencies = [
  "ark-std",
  "blake2b_simd",
@@ -675,6 +674,7 @@ dependencies = [
  "ec-gpu-gen",
  "ff",
  "group",
+ "lazy_static",
  "memmap",
  "num",
  "num-bigint",

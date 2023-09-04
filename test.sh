@@ -4,7 +4,7 @@ rm -rf params
 mkdir output
 mkdir params
 # Get the resource ready for tests
-cargo test --release
+cargo test --release -- --nocapture
 
 # verify generated proof for test circuits
 cargo run --release --features cuda -- --param ./params --output ./output verify --info output/test1.loadinfo.json

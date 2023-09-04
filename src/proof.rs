@@ -340,6 +340,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
         let strategy = SingleVerifier::new(&params_verifier);
 
         let timer = start_timer!(|| "creating proof ...");
+        println!("vkey is {:?}", pkey.get_vk());
         let r = match self.proofloadinfo.hashtype {
             HashType::Poseidon => {
                 let mut transcript = PoseidonWrite::init(vec![]);
@@ -355,6 +356,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
 
                 let r = transcript.finalize();
                 println!("instance ... {:?}", self.instances);
+                println!("transcript ... {:?}", r);
                 verify_proof(
                     &params_verifier,
                     &pkey.get_vk(),
@@ -421,12 +423,13 @@ fn load_or_build_pkey<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
     vkey_file: &Path,
 ) -> ProvingKey<E::G1Affine> {
     use ark_std::{start_timer, end_timer};
-    if Path::exists(&cache_file) {
+    if false && Path::exists(&cache_file) {
         let timer = start_timer!(|| "test read info full ...");
         let pkey = read_pk_full::<E>(&params, &cache_file);
         //assert_eq!(vkey.domain, pkey.get_vk().domain);
         //assert_eq!(vkey.fixed_commitments, pkey.get_vk().fixed_commitments);
         end_timer!(timer);
+        unreachable!();
         pkey
     } else {
         let vkey = keygen_vk(&params, circuit).expect("keygen_vk should not fail");
@@ -506,11 +509,14 @@ fn batch_single_circuit() {
 
         circuit_info.mock_proof(K);
         let proofloadinfo = circuit_info.proofloadinfo.clone();
-        circuit_info.create_witness(&Path::new("output"), &Path::new("params"), 0);
+        //circuit_info.create_witness(&Path::new("output"), &Path::new("params"), 0);
         circuit_info.create_proof(&Path::new("output"), &Path::new("params"), 0);
 
         proofloadinfo.save(&Path::new("output"));
+        println!("simple circuit test 01 finished");
     }
+
+    /*
 
     {
         let circuit = SimpleCircuit::<Fr> {
@@ -532,7 +538,9 @@ fn batch_single_circuit() {
         circuit_info.create_proof(&Path::new("output"), &Path::new("params"), 0);
 
         proofloadinfo.save(&Path::new("output"));
+        println!("simple circuit test 02 finished");
     }
+    */
 
 
     /*
