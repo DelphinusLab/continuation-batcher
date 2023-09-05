@@ -446,7 +446,7 @@ source = "git+https://github.com/lanbones/ec-gpu#165d1dd6215f6fd1dd85c83cf430ff5
 [[package]]
 name = "ec-gpu-gen"
 version = "0.4.0"
-source = "git+https://github.com/lanbones/ec-gpu#165d1dd6215f6fd1dd85c83cf430ff511a03a00a"
+source = "git+https://github.com/lanbones/ec-gpu?branch=halo2-opt-v2#784eda53754a5344f75e4b3c533361d628ad1402"
 dependencies = [
  "ark-std",
  "bitvec",
@@ -664,7 +664,7 @@ dependencies = [
 [[package]]
 name = "halo2_proofs"
 version = "0.1.0-beta.1"
-source = "git+https://github.com/junyu0312/halo2?branch=gpu#8dbcacf1a9374b64d2e1450db5754fa2ae2b829f"
+source = "git+https://github.com/DelphinusLab/halo2-gpu-specific.git#64ccffddc97faff24a00d248270fe84f6693c130"
 dependencies = [
  "ark-std",
  "blake2b_simd",
@@ -675,6 +675,7 @@ dependencies = [
  "ec-gpu-gen",
  "ff",
  "group",
+ "lazy_static",
  "memmap",
  "num",
  "num-bigint",
@@ -691,7 +692,7 @@ dependencies = [
 [[package]]
 name = "halo2aggregator-s"
 version = "0.1.0"
-source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git?branch=main#d93544206963b916bf074383a7ff2d403fd21ba0"
+source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git?tag=bisect-lookup-0.3.4#e4b3b3fd65d2e1c8c938f50721a48538fc43a175"
 dependencies = [
  "ark-std",
  "blake2b_simd",
@@ -708,7 +709,7 @@ dependencies = [
 [[package]]
 name = "halo2ecc-s"
 version = "0.3.2"
-source = "git+https://github.com/lanbones/halo2ecc-s.git?tag=bisect-lookup-0.3.2#35fa5cf45810aeabdafc388d1520a01ef5244f50"
+source = "git+https://github.com/lanbones/halo2ecc-s.git?tag=bisect-lookup-0.3.3#9698edde834f0bd90a82d0ac37803f5be2b093ad"
 dependencies = [
  "halo2_proofs",
  "num-bigint",
@@ -1162,7 +1163,7 @@ dependencies = [
 [[package]]
 name = "poseidon"
 version = "0.2.0"
-source = "git+https://github.com/lanbones/poseidon#ade94877c8285cc251107418c5effbce36684aa4"
+source = "git+https://github.com/lanbones/poseidon#df8891073182c5c6cc1e2e7f9d2f4297d3c1565d"
 dependencies = [
  "halo2_proofs",
  "subtle",
