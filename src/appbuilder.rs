@@ -15,6 +15,7 @@ use halo2aggregator_s::native_verifier;
 use ark_std::end_timer;
 use ark_std::start_timer;
 use halo2_proofs::poly::commitment::ParamsVerifier;
+use log::debug;
 use crate::args::HashType;
 /*
 use log::info;
@@ -92,7 +93,11 @@ pub trait AppBuilder: CommandBuilder {
                 let proof_name = sub_matches
                     .get_one::<String>("name")
                     .expect("name of the prove task is not provided");
-                batch_proofs(proof_name, output_dir, param_dir, config_files, batch_script_file, hash, k)
+
+                let batch_script_info = CommitmentCheck::load(&batch_script_file);
+                debug!("commits equivalent {:?}", batch_script_info);
+
+                batch_proofs(proof_name, output_dir, param_dir, config_files, batch_script_info, hash, k)
             }
 
             Some(("verify", sub_matches)) => {

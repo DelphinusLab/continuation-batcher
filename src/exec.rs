@@ -59,14 +59,14 @@ pub fn batch_proofs(
     output_dir: &PathBuf,
     param_dir: &PathBuf,
     config_files: Vec<PathBuf>,
-    batch_script_file: PathBuf,
+    commits: CommitmentCheck,
     hash: HashType,
     k: u32,
 ) {
     let mut target_k = None;
     let mut proofsinfo = vec![];
     let proofs = config_files.iter().map(|config| {
-            let proofloadinfo = ProofLoadInfo::load(config);
+            let proofloadinfo = ProofLoadInfo::load(&param_dir.join(config));
             proofsinfo.push(proofloadinfo.clone());
             // target batch proof needs to use poseidon hash
             assert_eq!(proofloadinfo.hashtype, HashType::Poseidon);
@@ -94,11 +94,7 @@ pub fn batch_proofs(
         expose: vec![],
     };
 
-    let batch_script_info = CommitmentCheck::load(&batch_script_file);
-
-    info!("commits equivalent {:?}", batch_script_info);
-
-    batchinfo.load_commitments_check(&proofsinfo, batch_script_info);
+    batchinfo.load_commitments_check(&proofsinfo, commits);
 
     let agg_circuit = batchinfo.build_aggregate_circuit(&param_dir, proof_name.clone(), hash);
     agg_circuit.proofloadinfo.save(&output_dir);
