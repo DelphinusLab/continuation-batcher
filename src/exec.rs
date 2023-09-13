@@ -53,7 +53,7 @@ pub fn generate_k_params(aggregate_k: u32, param_dir: &PathBuf) {
     };
 }
 
-pub fn batch_proofs(
+pub fn exec_batch_proofs(
     proof_name: &String,
     output_dir: &PathBuf,
     param_dir: &PathBuf,
@@ -132,14 +132,4 @@ pub fn batch_proofs(
             &output_dir.join(format!("{}.{}.aux.data", &agg_info.name.clone(), 0)),
         );
     }
-
 }
-
-
-
-
-
-
-
-
-

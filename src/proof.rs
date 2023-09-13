@@ -281,7 +281,7 @@ pub trait Prover<E: MultiMillerLoop> {
 }
 
 pub struct CircuitInfo<E: MultiMillerLoop, C: Circuit<E::Scalar>> {
-    pub circuits: Vec::<C>,
+    pub circuits: Vec<C>,
     pub name: String,
     pub k: usize,
     pub proofloadinfo: ProofLoadInfo,

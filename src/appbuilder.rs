@@ -4,7 +4,7 @@ use halo2aggregator_s::solidity_verifier::solidity_render;
 use std::fs;
 use std::path::PathBuf;
 use crate::batch::CommitmentCheck;
-use crate::exec::batch_proofs;
+use crate::exec::exec_batch_proofs;
 use crate::proof::ProofGenerationInfo;
 use crate::proof::ProofLoadInfo;
 use crate::proof::ProofInfo;
@@ -97,7 +97,7 @@ pub trait AppBuilder: CommandBuilder {
                 let batch_script_info = CommitmentCheck::load(&batch_script_file);
                 debug!("commits equivalent {:?}", batch_script_info);
 
-                batch_proofs(proof_name, output_dir, param_dir, config_files, batch_script_info, hash, k)
+                exec_batch_proofs(proof_name, output_dir, param_dir, config_files, batch_script_info, hash, k)
             }
 
             Some(("verify", sub_matches)) => {
