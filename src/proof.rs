@@ -259,7 +259,7 @@ pub fn load_or_build_unsafe_params<E: MultiMillerLoop>(
 impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> CircuitInfo<E, C> {
     pub fn new(c: C, name: String, instances: Vec<Vec<E::Scalar>>, k: usize, hash: HashType) -> Self {
         CircuitInfo {
-            circuit: c,
+            circuits: vec![c],
             k,
             name: name.clone(),
             proofloadinfo: ProofLoadInfo::new(
@@ -275,51 +275,26 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> CircuitInfo<E, C> {
 }
 
 pub trait Prover<E: MultiMillerLoop> {
-    fn create_proof(self, cache_folder: &Path, param_folder: &Path, index: usize) -> Vec<u8>;
+    fn create_proof(&self, params: &Params<E::G1Affine>, pkey: &ProvingKey<E::G1Affine>) -> Vec<u8>;
     fn create_witness(&self, cache_folder: &Path, param_folder: &Path, index: usize);
     fn mock_proof(&self, k: u32);
 }
 
 pub struct CircuitInfo<E: MultiMillerLoop, C: Circuit<E::Scalar>> {
-    pub circuit: C,
+    pub circuits: Vec::<C>,
     pub name: String,
     pub k: usize,
     pub proofloadinfo: ProofLoadInfo,
     pub instances: Vec<Vec<E::Scalar>>,
 }
 
-impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> {
-    fn create_witness(&self, cache_folder: &Path, param_folder: &Path, index: usize) {
+impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> CircuitInfo<E, C> {
+    pub fn exec_create_proof(&self, cache_folder: &Path, param_folder: &Path, index: usize) -> Vec<u8> {
         let params =
-            load_or_build_unsafe_params::<E>(self.k, &param_folder.join(self.proofloadinfo.param.clone()));
+            load_or_build_unsafe_params::<E>(self.k, &param_folder.join(&self.proofloadinfo.param));
         let pkey = load_or_build_pkey::<E, C>(
             &params,
-            &self.circuit,
-            &param_folder.join(self.proofloadinfo.circuit.clone()),
-            &param_folder.join(format!("{}.vkey.data", self.name)),
-        );
-
-        let cache_file = &cache_folder.join(format!("{}.{}.witness.data", self.name, index));
-
-        println!("create witness file {:?}", cache_file);
-
-        let mut fd = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open(&cache_file)
-            .unwrap();
-        create_witness(&params, &pkey, &self.circuit, &self.instances.iter().map(|x| &x[..]).collect::<Vec<_>>().as_slice(), &mut fd).unwrap()
-    }
-
-    fn create_proof(self, cache_folder: &Path, param_folder: &Path, index: usize) -> Vec<u8> {
-        use ark_std::{start_timer, end_timer};
-        let params =
-            load_or_build_unsafe_params::<E>(self.k, &param_folder.join(self.proofloadinfo.param));
-        let pkey = load_or_build_pkey::<E, C>(
-            &params,
-            &self.circuit,
+            self.circuits.first().unwrap(),
             &param_folder.join(self.proofloadinfo.circuit.clone()),
             &param_folder.join(format!("{}.vkey.data", self.name)),
         );
@@ -330,7 +305,21 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
         );
 
 
-        //let pkey = keygen_pk(&params, vkey, &self.circuit).expect("keygen_pk should not fail");
+        let r = self.create_proof(&params, &pkey);
+
+        let cache_file = &cache_folder.join(&self.proofloadinfo.transcripts[index]);
+        println!("create transcripts file {:?}", cache_file);
+        let mut fd = std::fs::File::create(&cache_file).unwrap();
+        fd.write_all(&r).unwrap();
+
+        r
+    }
+}
+
+impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> {
+    fn create_proof(&self, params: &Params<E::G1Affine>, pkey: &ProvingKey<E::G1Affine>) -> Vec<u8> {
+        use ark_std::{start_timer, end_timer};
+
         let inputs_size = self.instances.iter().fold(0, |acc, x| usize::max(acc, x.len()));
 
         let instances: Vec<&[E::Scalar]> =
@@ -346,7 +335,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
                 create_proof(
                     &params,
                     &pkey,
-                    &[self.circuit],
+                    &self.circuits,
                     &[instances.as_slice()],
                     OsRng,
                     &mut transcript,
@@ -370,7 +359,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
                 create_proof(
                     &params,
                     &pkey,
-                    &[self.circuit],
+                    &self.circuits,
                     &[instances.as_slice()],
                     OsRng,
                     &mut transcript,
@@ -392,15 +381,35 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
         };
         end_timer!(timer);
 
-        let cache_file = &cache_folder.join(self.proofloadinfo.transcripts[index].clone());
-        println!("create transcripts file {:?}", cache_file);
-        let mut fd = std::fs::File::create(&cache_file).unwrap();
-        fd.write_all(&r).unwrap();
         r
     }
 
+    fn create_witness(&self, cache_folder: &Path, param_folder: &Path, index: usize) {
+        let params =
+            load_or_build_unsafe_params::<E>(self.k, &param_folder.join(self.proofloadinfo.param.clone()));
+        let pkey = load_or_build_pkey::<E, C>(
+            &params,
+            self.circuits.first().unwrap(),
+            &param_folder.join(self.proofloadinfo.circuit.clone()),
+            &param_folder.join(format!("{}.vkey.data", self.name)),
+        );
+
+        let cache_file = &cache_folder.join(format!("{}.{}.witness.data", self.name, index));
+
+        println!("create witness file {:?}", cache_file);
+
+        let mut fd = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(&cache_file)
+            .unwrap();
+        create_witness(&params, &pkey, self.circuits.first().unwrap(), &self.instances.iter().map(|x| &x[..]).collect::<Vec<_>>().as_slice(), &mut fd).unwrap()
+    }
+
     fn mock_proof(&self, k: u32) {
-        let prover = MockProver::run(k, &self.circuit, self.instances.clone()).unwrap();
+        let prover = MockProver::run(k, self.circuits.first().unwrap(), self.instances.clone()).unwrap();
         assert_eq!(prover.verify(), Ok(()));
     }
 }
@@ -414,7 +423,7 @@ pub fn load_vkey<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
     VerifyingKey::read::<_, C>(&mut fd, params).unwrap()
 }
 
-fn load_or_build_pkey<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
+pub fn load_or_build_pkey<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
     params: &Params<E::G1Affine>,
     circuit: &C,
     cache_file: &Path,
@@ -507,7 +516,7 @@ fn batch_single_circuit() {
         circuit_info.mock_proof(K);
         let proofloadinfo = circuit_info.proofloadinfo.clone();
         circuit_info.create_witness(&Path::new("output"), &Path::new("params"), 0);
-        circuit_info.create_proof(&Path::new("output"), &Path::new("params"), 0);
+        circuit_info.exec_create_proof(&Path::new("output"), &Path::new("params"), 0);
 
         proofloadinfo.save(&Path::new("output"));
     }
@@ -529,7 +538,7 @@ fn batch_single_circuit() {
         circuit_info.mock_proof(K);
         let proofloadinfo = circuit_info.proofloadinfo.clone();
         circuit_info.create_witness(&Path::new("output"), &Path::new("params"), 0);
-        circuit_info.create_proof(&Path::new("output"), &Path::new("params"), 0);
+        circuit_info.exec_create_proof(&Path::new("output"), &Path::new("params"), 0);
 
         proofloadinfo.save(&Path::new("output"));
     }
