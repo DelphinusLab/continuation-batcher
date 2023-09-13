@@ -96,7 +96,13 @@ pub fn batch_proofs(
 
     batchinfo.load_commitments_check(&proofsinfo, commits);
 
-    let agg_circuit = batchinfo.build_aggregate_circuit(&param_dir, proof_name.clone(), hash);
+    // setup target params
+    let params = load_or_build_unsafe_params::<Bn256>(
+        batchinfo.target_k,
+        &param_dir.join(format!("K{}.params", batchinfo.target_k)),
+    );
+
+    let agg_circuit = batchinfo.build_aggregate_circuit(proof_name.clone(), hash, &params);
     agg_circuit.proofloadinfo.save(&output_dir);
     let agg_info = agg_circuit.proofloadinfo.clone();
     agg_circuit.create_proof(&output_dir, &param_dir, 0);
@@ -108,6 +114,7 @@ pub fn batch_proofs(
 
     info!("generate aux data for proof: {:?}", agg_info);
 
+    // setup batch params
     let params = load_or_build_unsafe_params::<Bn256>(
         agg_info.k as usize,
         &param_dir.join(format!("K{}.params", k)),

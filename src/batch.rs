@@ -1,13 +1,12 @@
 use crate::args::HashType;
 use crate::proof::ProofLoadInfo;
-use crate::proof::load_or_build_unsafe_params;
 use crate::proof::CircuitInfo;
 use crate::proof::ProofInfo;
 use ark_std::end_timer;
 use ark_std::start_timer;
 use halo2_proofs::arithmetic::Engine;
 use halo2_proofs::arithmetic::MultiMillerLoop;
-use halo2_proofs::poly::commitment::ParamsVerifier;
+use halo2_proofs::poly::commitment::{Params, ParamsVerifier};
 use halo2aggregator_s::circuit_verifier::G2AffineBaseHelper;
 use halo2aggregator_s::circuit_verifier::build_aggregate_verify_circuit;
 use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuit;
@@ -144,16 +143,10 @@ impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
 
     pub fn build_aggregate_circuit(
         &self,
-        param_folder: &Path,
         proof_name: String,
         hashtype: HashType,
+        params: &Params<E::G1Affine>,
     ) -> CircuitInfo<E, AggregatorCircuit<E::G1Affine>> {
-        // 1. setup params
-        let params = load_or_build_unsafe_params::<E>(
-            self.target_k,
-            &param_folder.join(format!("K{}.params", self.target_k)),
-        );
-
         let mut all_proofs = vec![];
         let mut public_inputs_size = 0;
         let mut vkeys = vec![];
