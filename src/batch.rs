@@ -56,6 +56,11 @@ impl CommitmentCheck {
         println!("read commit equivalents {:?}", equiv_file);
         serde_json::from_reader(fd).unwrap()
     }
+
+    pub fn save(&self, equiv_file: &Path) {
+        let fd = std::fs::File::create(equiv_file).unwrap();
+        serde_json::to_writer_pretty(fd, self).unwrap()
+    }
 }
 
 pub struct BatchInfo<E: MultiMillerLoop> {
