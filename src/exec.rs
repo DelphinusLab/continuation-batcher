@@ -3,7 +3,6 @@ use crate::batch::BatchInfo;
 use crate::batch::CommitmentCheck;
 use crate::proof::ProofLoadInfo;
 use crate::proof::ProofInfo;
-use crate::proof::Prover;
 use crate::proof::load_or_build_unsafe_params;
 use halo2_proofs::poly::commitment::ParamsVerifier;
 use halo2aggregator_s::solidity_verifier::codegen::solidity_aux_gen;
@@ -105,7 +104,7 @@ pub fn batch_proofs(
     let agg_circuit = batchinfo.build_aggregate_circuit(proof_name.clone(), hash, &params);
     agg_circuit.proofloadinfo.save(&output_dir);
     let agg_info = agg_circuit.proofloadinfo.clone();
-    agg_circuit.create_proof(&output_dir, &param_dir, 0);
+    agg_circuit.exec_create_proof(&output_dir, &param_dir, 0);
 
     let proof: Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &param_dir, &agg_info);
 
