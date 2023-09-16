@@ -1,8 +1,8 @@
-#rm -rf output
-#rm -rf params
+rm -rf output
+rm -rf params
 
-#mkdir output
-#mkdir params
+mkdir output
+mkdir params
 # Get the resource ready for tests
 cargo test --release
 

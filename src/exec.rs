@@ -65,7 +65,7 @@ pub fn exec_batch_proofs(
     let mut target_k = None;
     let mut proofsinfo = vec![];
     let proofs = config_files.iter().map(|config| {
-            let proofloadinfo = ProofLoadInfo::load(&param_dir.join(config));
+            let proofloadinfo = ProofLoadInfo::load(config);
             proofsinfo.push(proofloadinfo.clone());
             // target batch proof needs to use poseidon hash
             assert_eq!(proofloadinfo.hashtype, HashType::Poseidon);
