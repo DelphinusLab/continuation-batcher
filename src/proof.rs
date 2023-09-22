@@ -28,6 +28,8 @@ use std::io::Write;
 use std::path::Path;
 use serde::{Deserialize, Serialize};
 use crate::args::HashType;
+use crate::pk_cache::PkeyParams;
+use crate::pk_cache::ProvingKeyCache;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ProofGenerationInfo {
@@ -314,6 +316,146 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> CircuitInfo<E, C> {
 
         r
     }
+
+
+    pub fn create_params_pkey(
+        &self,
+        param_folder: &Path,
+        pkcache: &ProvingKeyCache<E>,
+    ) {
+        use ark_std::{start_timer, end_timer};
+        let key = format!("{}-{}-{}",
+            self.name,
+            param_folder.join(self.proofloadinfo.circuit.clone()).display(),
+            param_folder.join(format!("{}.vkey.data", self.name)).display()
+        );
+        println!("key: {}", key);
+
+        let timer = start_timer!(|| "--> load or create params:");
+        let params =
+            load_or_build_unsafe_params::<E>(self.k, &param_folder.join(self.proofloadinfo.param.clone()));
+        end_timer!(timer);
+
+        let pkey = load_or_build_pkey::<E, C>(
+            &params,
+            self.circuits.first().unwrap(),
+            &param_folder.join(self.proofloadinfo.circuit.clone()),
+            &param_folder.join(format!("{}.vkey.data", self.name)),
+            );
+        let mut cache = pkcache.pk_mem_cache.lock().unwrap();
+
+        cache.push(
+        key.clone(),
+        PkeyParams::new(pkey, params)
+        );
+    }
+
+    pub fn exec_create_witness_cached(
+        &self,
+        cache_folder: &Path,
+        param_folder: &Path,
+        index: usize,
+        pkcache: &ProvingKeyCache<E>
+    ) {
+        let key = format!("{}-{}-{}",
+            self.name,
+            param_folder.join(self.proofloadinfo.circuit.clone()).display(),
+            param_folder.join(format!("{}.vkey.data", self.name)).display()
+        );
+        println!("key: {}", key);
+
+        let cache_file = &cache_folder.join(format!("{}.{}.witness.data", self.name, index));
+        let mut fd = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(&cache_file)
+            .unwrap();
+        let hit = || {
+            let mut cache = pkcache.pk_mem_cache.lock().unwrap();
+            if cache.get(&key).is_some() {
+                println!("CACHE HIT");
+                true
+            } else {
+                println!("CACHE MISS for key: {:?}", key.clone());
+                false
+            }
+        };
+        if !hit() {
+            let _ = &self.create_params_pkey(
+                param_folder,
+                pkcache,
+            );
+        }
+
+        let mut cache_lock = pkcache.pk_mem_cache.lock().unwrap();
+        let p = cache_lock.get(&key.clone()).unwrap();
+        create_witness(
+            &p.params,
+            &p.pkey,
+            self.circuits.first().unwrap(),
+            &self.instances.iter().map(|x| &x[..]).collect::<Vec<_>>().as_slice(),
+            &mut fd
+        )
+        .unwrap();
+
+        let cache_file = &cache_folder.join(format!("{}.{}.witness.data", self.name, index));
+        println!("create witness file {:?}", cache_file);
+
+    }
+
+    pub fn exec_create_proof_cached(
+        &self,
+        cache_folder: &Path,
+        param_folder: &Path,
+        index: usize,
+        pkcache: &ProvingKeyCache<E>,
+    ) -> Vec<u8> {
+        let key = format!("{}-{}-{}",
+            self.name,
+            param_folder.join(self.proofloadinfo.circuit.clone()).display(),
+            param_folder.join(format!("{}.vkey.data", self.name)).display()
+        );
+        println!("key: {}", key);
+
+        let hit = || {
+            let mut cache = pkcache.pk_mem_cache.lock().unwrap();
+            if cache.get(&key).is_some() {
+                println!("CACHE HIT");
+                true
+            } else {
+                println!("CACHE MISS for key: {:?}", key.clone());
+                false
+            }
+        };
+        if !hit() {
+            let _ = &self.create_params_pkey(
+                param_folder,
+                pkcache,
+            );
+        }
+
+        let mut cache_lock = pkcache.pk_mem_cache.lock().unwrap();
+        let p = cache_lock.get(&key.clone()).unwrap();
+
+        let r = self.create_proof(
+            &p.params,
+            &p.pkey,
+        );
+
+        let cache_file = &cache_folder.join(&self.proofloadinfo.transcripts[index]);
+        println!("create transcripts file {:?}", cache_file);
+        let mut fd = std::fs::File::create(&cache_file).unwrap();
+        fd.write_all(&r).unwrap();
+
+        store_instance(
+            &self.instances,
+            &cache_folder.join(self.proofloadinfo.instances[index].as_str()),
+        );
+
+        r
+    }
 }
 
 impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> {
@@ -487,6 +629,10 @@ pub(crate) fn read_pk_full<E: MultiMillerLoop>(params: &Params<E::G1Affine>, cac
     pk
 }
 
+pub fn create_cache<E: MultiMillerLoop>() -> ProvingKeyCache<E> {
+    ProvingKeyCache::<E>::new()
+}
+
 #[test]
 fn batch_single_circuit() {
     //use crate::batch::BatchInfo;
@@ -497,6 +643,7 @@ fn batch_single_circuit() {
     use halo2_proofs::pairing::bn256::Bn256;
     use halo2_proofs::pairing::bn256::Fr;
     use std::path::Path;
+    use ark_std::{start_timer, end_timer};
 
     const K: u32 = 22;
     {
@@ -515,10 +662,13 @@ fn batch_single_circuit() {
 
         circuit_info.mock_proof(K);
         let proofloadinfo = circuit_info.proofloadinfo.clone();
+
+        let timer = start_timer!(|| "--> circuit1 run");
         circuit_info.create_witness(&Path::new("output"), &Path::new("params"), 0);
         circuit_info.exec_create_proof(&Path::new("output"), &Path::new("params"), 0);
 
         proofloadinfo.save(&Path::new("output"));
+        end_timer!(timer);
     }
 
     {
@@ -543,7 +693,6 @@ fn batch_single_circuit() {
         proofloadinfo.save(&Path::new("output"));
     }
 
-
     /*
     let batchinfo = BatchInfo::<Bn256> {
         proofs: ProofInfo::load_proof(&Path::new("output"), &proofloadinfo),
@@ -556,4 +705,251 @@ fn batch_single_circuit() {
     agg_circuit.create_witness(&Path::new("output"), 0);
     agg_circuit.create_proof(&Path::new("output"), 0);
     */
+}
+
+
+#[test]
+fn cache_hit_single_circuit() {
+    use crate::proof::CircuitInfo;
+    use crate::proof::Prover;
+    use crate::samples::simple::SimpleCircuit;
+    use halo2_proofs::pairing::bn256::Bn256;
+    use halo2_proofs::pairing::bn256::Fr;
+    use std::path::Path;
+
+    use ark_std::{start_timer, end_timer};
+
+    let pkcache = create_cache();
+
+    const K: u32 = 22;
+    {
+
+        println!("Circuit_1 1st run:");
+        let circuit1 = SimpleCircuit::<Fr> {
+            a: Fr::from(100u64),
+            b: Fr::from(200u64),
+        };
+
+        let circuit1_info = CircuitInfo::<Bn256, SimpleCircuit<Fr>>::new(
+            circuit1,
+            "test1".to_string(),
+            vec![vec![Fr::from(300u64)]],
+            K as usize,
+            HashType::Poseidon
+        );
+
+        circuit1_info.mock_proof(K);
+        let proofloadinfo1 = circuit1_info.proofloadinfo.clone();
+
+        let timer = start_timer!(|| "--> circuit1 1st run");
+        circuit1_info.exec_create_witness_cached(&Path::new("output"), &Path::new("params"), 0, &pkcache);
+        circuit1_info.exec_create_proof_cached(&Path::new("output"), &Path::new("params"), 0, &pkcache);
+        proofloadinfo1.save(&Path::new("output"));
+        end_timer!(timer);
+
+        println!("Circuit_1 2nd run:");
+        let circuit1 = SimpleCircuit::<Fr> {
+            a: Fr::from(100u64),
+            b: Fr::from(200u64),
+        };
+
+        let circuit1_info = CircuitInfo::<Bn256, SimpleCircuit<Fr>>::new(
+            circuit1,
+            "test1".to_string(),
+            vec![vec![Fr::from(300u64)]],
+            K as usize,
+            HashType::Poseidon
+        );
+
+        circuit1_info.mock_proof(K);
+        let proofloadinfo1 = circuit1_info.proofloadinfo.clone();
+
+        let timer = start_timer!(|| "--> circuit1 2nd run");
+        circuit1_info.exec_create_witness_cached(&Path::new("output"), &Path::new("params"), 0, &pkcache);
+        circuit1_info.exec_create_proof_cached(&Path::new("output"), &Path::new("params"), 0, &pkcache);
+        proofloadinfo1.save(&Path::new("output"));
+        end_timer!(timer);
+    }
+
+}
+
+#[test]
+fn cache_lru_multi_circuit() {
+    use crate::proof::CircuitInfo;
+    use crate::proof::Prover;
+    use crate::samples::simple::SimpleCircuit;
+    use halo2_proofs::pairing::bn256::Bn256;
+    use halo2_proofs::pairing::bn256::Fr;
+    use std::path::Path;
+
+    use ark_std::{start_timer, end_timer};
+
+
+    let pkcache = create_cache();
+
+    const K: u32 = 22;
+    {
+
+        println!("Circuit_1 1st run:");
+        let circuit1 = SimpleCircuit::<Fr> {
+            a: Fr::from(100u64),
+            b: Fr::from(200u64),
+        };
+        let circuit1_info = CircuitInfo::<Bn256, SimpleCircuit<Fr>>::new(
+            circuit1,
+            "test1".to_string(),
+            vec![vec![Fr::from(300u64)]],
+            K as usize,
+            HashType::Poseidon
+        );
+
+        circuit1_info.mock_proof(K);
+        let proofloadinfo1 = circuit1_info.proofloadinfo.clone();
+
+        let timer = start_timer!(|| "--> circuit1 1st run");
+        circuit1_info.exec_create_witness_cached(&Path::new("output"), &Path::new("params"), 0, &pkcache);
+        // circuit1_info.exec_create_proof_cached(&Path::new("output"), &Path::new("params"), 0, &pkcache);
+        proofloadinfo1.save(&Path::new("output"));
+        end_timer!(timer);
+
+
+        println!("Circuit_2:");
+        let circuit2 = SimpleCircuit::<Fr> {
+            a: Fr::from(100u64),
+            b: Fr::from(200u64),
+        };
+        let circuit2_info = CircuitInfo::<Bn256, SimpleCircuit<Fr>>::new(
+            circuit2,
+            "test2".to_string(),
+            vec![vec![Fr::from(300u64)]],
+            K as usize,
+            HashType::Poseidon
+        );
+
+
+        circuit2_info.mock_proof(K);
+        let proofloadinfo2 = circuit2_info.proofloadinfo.clone();
+
+        let timer = start_timer!(|| "--> circuit2 1st run");
+        circuit2_info.exec_create_witness_cached(&Path::new("output"), &Path::new("params"), 0, &pkcache);
+        // circuit2_info.exec_create_proof_cached(&Path::new("output"), &Path::new("params"), 0, &pkcache);
+        proofloadinfo2.save(&Path::new("output"));
+        end_timer!(timer);
+
+
+        println!("Circuit_3:");
+        let circuit3 = SimpleCircuit::<Fr> {
+            a: Fr::from(100u64),
+            b: Fr::from(200u64),
+        };
+        let circuit3_info = CircuitInfo::<Bn256, SimpleCircuit<Fr>>::new(
+            circuit3,
+            "test3".to_string(),
+            vec![vec![Fr::from(300u64)]],
+            K as usize,
+            HashType::Poseidon
+        );
+
+        circuit3_info.mock_proof(K);
+        let proofloadinfo3 = circuit3_info.proofloadinfo.clone();
+
+        let timer = start_timer!(|| "--> circuit3 1st run");
+        circuit3_info.exec_create_witness_cached(&Path::new("output"), &Path::new("params"), 0, &pkcache);
+        // circuit3_info.exec_create_proof_cached(&Path::new("output"), &Path::new("params"), 0, &pkcache);
+        proofloadinfo3.save(&Path::new("output"));
+        end_timer!(timer);
+
+
+        println!("Circuit_4:");
+        let circuit4 = SimpleCircuit::<Fr> {
+            a: Fr::from(100u64),
+            b: Fr::from(200u64),
+        };
+        let circuit4_info = CircuitInfo::<Bn256, SimpleCircuit<Fr>>::new(
+            circuit4,
+            "test4".to_string(),
+            vec![vec![Fr::from(300u64)]],
+            K as usize,
+            HashType::Poseidon
+        );
+
+        circuit4_info.mock_proof(K);
+        let proofloadinfo4 = circuit4_info.proofloadinfo.clone();
+
+        let timer = start_timer!(|| "--> circuit4 1st run");
+        circuit4_info.exec_create_witness_cached(&Path::new("output"), &Path::new("params"), 0, &pkcache);
+        // circuit4_info.exec_create_proof_cached(&Path::new("output"), &Path::new("params"), 0, &pkcache);
+        proofloadinfo4.save(&Path::new("output"));
+        end_timer!(timer);
+
+
+        println!("Circuit_5:");
+        let circuit5 = SimpleCircuit::<Fr> {
+            a: Fr::from(100u64),
+            b: Fr::from(200u64),
+        };
+        let circuit5_info = CircuitInfo::<Bn256, SimpleCircuit<Fr>>::new(
+            circuit5,
+            "test5".to_string(),
+            vec![vec![Fr::from(300u64)]],
+            K as usize,
+            HashType::Poseidon
+        );
+
+        circuit5_info.mock_proof(K);
+        let proofloadinfo5 = circuit5_info.proofloadinfo.clone();
+
+        let timer = start_timer!(|| "--> circuit5 1st run");
+        circuit5_info.exec_create_witness_cached(&Path::new("output"), &Path::new("params"), 0, &pkcache);
+        // circuit5_info.exec_create_proof_cached(&Path::new("output"), &Path::new("params"), 0, &pkcache);
+        proofloadinfo5.save(&Path::new("output"));
+        end_timer!(timer);
+
+        println!("Circuit_6:");
+        let circuit6 = SimpleCircuit::<Fr> {
+            a: Fr::from(100u64),
+            b: Fr::from(200u64),
+        };
+        let circuit6_info = CircuitInfo::<Bn256, SimpleCircuit<Fr>>::new(
+            circuit6,
+            "test6".to_string(),
+            vec![vec![Fr::from(300u64)]],
+            K as usize,
+            HashType::Poseidon
+        );
+
+        circuit6_info.mock_proof(K);
+        let proofloadinfo6 = circuit5_info.proofloadinfo.clone();
+
+        let timer = start_timer!(|| "--> circuit6 1st run");
+        circuit6_info.exec_create_witness_cached(&Path::new("output"), &Path::new("params"), 0, &pkcache);
+        // circuit6_info.exec_create_proof_cached(&Path::new("output"), &Path::new("params"), 0, &pkcache);
+        proofloadinfo6.save(&Path::new("output"));
+        end_timer!(timer);
+
+        println!("Circuit_1 2nd run:");
+        let circuit1 = SimpleCircuit::<Fr> {
+            a: Fr::from(100u64),
+            b: Fr::from(200u64),
+        };
+
+        let circuit1_info = CircuitInfo::<Bn256, SimpleCircuit<Fr>>::new(
+            circuit1,
+            "test1".to_string(),
+            vec![vec![Fr::from(300u64)]],
+            K as usize,
+            HashType::Poseidon
+        );
+
+        circuit1_info.mock_proof(K);
+        let proofloadinfo1 = circuit1_info.proofloadinfo.clone();
+
+        let timer = start_timer!(|| "--> circuit1 2nd run");
+        circuit1_info.exec_create_witness_cached(&Path::new("output"), &Path::new("params"), 0, &pkcache);
+        // circuit1_info.exec_create_proof_cached(&Path::new("output"), &Path::new("params"), 0, &pkcache);
+        proofloadinfo1.save(&Path::new("output"));
+        end_timer!(timer);
+
+    }
+
 }
