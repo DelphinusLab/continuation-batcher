@@ -5,3 +5,4 @@ pub mod command;
 pub mod exec;
 pub mod proof;
 pub mod samples;
+pub mod pk_cache;
