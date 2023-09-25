@@ -4,6 +4,7 @@ use halo2_proofs::helpers::Serializable;
 use ark_std::rand::rngs::OsRng;
 use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::dev::MockProver;
+use halo2_proofs::pairing::bn256::Bn256;
 use halo2_proofs::plonk::SingleVerifier;
 use halo2_proofs::plonk::create_proof;
 use halo2_proofs::plonk::create_proof_from_witness;
@@ -23,9 +24,11 @@ use halo2aggregator_s::transcript::poseidon::PoseidonRead;
 use halo2aggregator_s::transcript::poseidon::PoseidonWrite;
 use halo2aggregator_s::transcript::sha256::ShaRead;
 use halo2aggregator_s::transcript::sha256::ShaWrite;
+use std::collections::HashMap;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
+use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 use crate::args::HashType;
 
@@ -276,7 +279,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> CircuitInfo<E, C> {
 
 pub trait Prover<E: MultiMillerLoop> {
     fn create_proof(&self, params: &Params<E::G1Affine>, pkey: &ProvingKey<E::G1Affine>) -> Vec<u8>;
-    fn create_witness(&self, cache_folder: &Path, param_folder: &Path, index: usize);
+    fn create_witness(&self, cache_folder: &Path, param_folder: &Path, pkey_cache: &mut ProvingKeyCache<E>, index: usize);
     fn mock_proof(&self, k: u32);
 }
 
@@ -289,7 +292,13 @@ pub struct CircuitInfo<E: MultiMillerLoop, C: Circuit<E::Scalar>> {
 }
 
 impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> CircuitInfo<E, C> {
-    pub fn exec_create_proof(&self, cache_folder: &Path, param_folder: &Path, index: usize) -> Vec<u8> {
+    pub fn exec_create_proof(
+        &self,
+        cache_folder: &Path,
+        param_folder: &Path,
+        pkey_cache: &mut ProvingKeyCache<E>,
+        index: usize,
+    ) -> Vec<u8> {
         let params =
             load_or_build_unsafe_params::<E>(self.k, &param_folder.join(&self.proofloadinfo.param));
         let pkey = load_or_build_pkey::<E, C>(
@@ -297,6 +306,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> CircuitInfo<E, C> {
             self.circuits.first().unwrap(),
             &param_folder.join(self.proofloadinfo.circuit.clone()),
             &param_folder.join(format!("{}.vkey.data", self.name)),
+            pkey_cache,
         );
 
         store_instance(
@@ -384,7 +394,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
         r
     }
 
-    fn create_witness(&self, cache_folder: &Path, param_folder: &Path, index: usize) {
+    fn create_witness(&self, cache_folder: &Path, param_folder: &Path, pkey_cache: &mut ProvingKeyCache<E>, index: usize) {
         let params =
             load_or_build_unsafe_params::<E>(self.k, &param_folder.join(self.proofloadinfo.param.clone()));
         let pkey = load_or_build_pkey::<E, C>(
@@ -392,6 +402,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
             self.circuits.first().unwrap(),
             &param_folder.join(self.proofloadinfo.circuit.clone()),
             &param_folder.join(format!("{}.vkey.data", self.name)),
+            pkey_cache,
         );
 
         let cache_file = &cache_folder.join(format!("{}.{}.witness.data", self.name, index));
@@ -405,7 +416,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
             .truncate(true)
             .open(&cache_file)
             .unwrap();
-        create_witness(&params, &pkey, self.circuits.first().unwrap(), &self.instances.iter().map(|x| &x[..]).collect::<Vec<_>>().as_slice(), &mut fd).unwrap()
+        create_witness(&params, pkey, self.circuits.first().unwrap(), &self.instances.iter().map(|x| &x[..]).collect::<Vec<_>>().as_slice(), &mut fd).unwrap()
     }
 
     fn mock_proof(&self, k: u32) {
@@ -423,30 +434,61 @@ pub fn load_vkey<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
     VerifyingKey::read::<_, C>(&mut fd, params).unwrap()
 }
 
-pub fn load_or_build_pkey<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
+pub struct ProvingKeyCache<E: MultiMillerLoop> {
+    pub cache: HashMap<String, ProvingKey<E::G1Affine>>,
+}
+
+impl <E: MultiMillerLoop> ProvingKeyCache<E> {
+    pub fn new() -> Self {
+        ProvingKeyCache {
+            cache: HashMap::new()
+        }
+    }
+    pub fn contains(&self, key: &String) -> bool {
+        self.cache.contains_key(key)
+    }
+    pub fn push<'a>(&'a mut self, key: String, v: ProvingKey<E::G1Affine>) -> &'a ProvingKey<E::G1Affine> {
+        self.cache.insert(key.clone(), v);
+        self.cache.get(&key).as_ref().unwrap()
+    }
+}
+
+lazy_static::lazy_static! {
+    pub static ref PKEY_CACHE: Mutex<ProvingKeyCache<Bn256>> =
+        Mutex::new(ProvingKeyCache::new());
+}
+
+pub fn load_or_build_pkey<'a, E: MultiMillerLoop, C: Circuit<E::Scalar>>(
     params: &Params<E::G1Affine>,
     circuit: &C,
     cache_file: &Path,
     vkey_file: &Path,
-) -> ProvingKey<E::G1Affine> {
+    pkey_cache: &'a mut ProvingKeyCache<E>
+) -> &'a ProvingKey<E::G1Affine> {
     use ark_std::{start_timer, end_timer};
-    if Path::exists(&cache_file) {
-        let timer = start_timer!(|| "test read info full ...");
-        let pkey = read_pk_full::<E>(&params, &cache_file);
-        //assert_eq!(vkey.domain, pkey.get_vk().domain);
-        //assert_eq!(vkey.fixed_commitments, pkey.get_vk().fixed_commitments);
-        end_timer!(timer);
-        pkey
+    let key = cache_file.to_str().unwrap().to_string();
+    if pkey_cache.contains(&key) {
+        pkey_cache.cache.get(&key).as_ref().unwrap()
     } else {
-        let vkey = keygen_vk(&params, circuit).expect("keygen_vk should not fail");
-        println!("write vkey to {:?}", vkey_file);
-        let mut fd = std::fs::File::create(&vkey_file).unwrap();
-        vkey.write(&mut fd).unwrap();
-        let pkey = keygen_pk(&params, vkey.clone(), circuit).expect("keygen_pk should not fail");
-        let timer = start_timer!(|| "test storing info full ...");
-        store_info_full::<E, C>(&params, &vkey, circuit, cache_file);
-        end_timer!(timer);
-        pkey
+        let pkey = if Path::exists(&cache_file) {
+            let timer = start_timer!(|| "test read info full ...");
+            let pkey = read_pk_full::<E>(&params, &cache_file);
+            //assert_eq!(vkey.domain, pkey.get_vk().domain);
+            //assert_eq!(vkey.fixed_commitments, pkey.get_vk().fixed_commitments);
+            end_timer!(timer);
+            pkey
+        } else {
+            let vkey = keygen_vk(&params, circuit).expect("keygen_vk should not fail");
+            println!("write vkey to {:?}", vkey_file);
+            let mut fd = std::fs::File::create(&vkey_file).unwrap();
+            vkey.write(&mut fd).unwrap();
+            let pkey = keygen_pk(&params, vkey.clone(), circuit).expect("keygen_pk should not fail");
+            let timer = start_timer!(|| "test storing info full ...");
+            store_info_full::<E, C>(&params, &vkey, circuit, cache_file);
+            end_timer!(timer);
+            pkey
+        };
+        pkey_cache.push(key, pkey)
     }
 }
 
@@ -516,7 +558,7 @@ fn batch_single_circuit() {
         circuit_info.mock_proof(K);
         let proofloadinfo = circuit_info.proofloadinfo.clone();
         circuit_info.create_witness(&Path::new("output"), &Path::new("params"), 0);
-        circuit_info.exec_create_proof(&Path::new("output"), &Path::new("params"), 0);
+        circuit_info.exec_create_proof(&Path::new("output"), &Path::new("params"), &PKEY_CACHE, 0);
 
         proofloadinfo.save(&Path::new("output"));
     }
@@ -538,7 +580,7 @@ fn batch_single_circuit() {
         circuit_info.mock_proof(K);
         let proofloadinfo = circuit_info.proofloadinfo.clone();
         circuit_info.create_witness(&Path::new("output"), &Path::new("params"), 0);
-        circuit_info.exec_create_proof(&Path::new("output"), &Path::new("params"), 0);
+        circuit_info.exec_create_proof(&Path::new("output"), &Path::new("params"), &PKEY_CACHE, 0);
 
         proofloadinfo.save(&Path::new("output"));
     }
