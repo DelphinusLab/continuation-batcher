@@ -557,8 +557,8 @@ fn batch_single_circuit() {
 
         circuit_info.mock_proof(K);
         let proofloadinfo = circuit_info.proofloadinfo.clone();
-        circuit_info.create_witness(&Path::new("output"), &Path::new("params"), 0);
-        circuit_info.exec_create_proof(&Path::new("output"), &Path::new("params"), &PKEY_CACHE, 0);
+        circuit_info.create_witness(&Path::new("output"), &Path::new("params"), PKEY_CACHE.lock().as_mut().unwrap(), 0);
+        circuit_info.exec_create_proof(&Path::new("output"), &Path::new("params"), PKEY_CACHE.lock().as_mut().unwrap(), 0);
 
         proofloadinfo.save(&Path::new("output"));
     }
@@ -579,8 +579,8 @@ fn batch_single_circuit() {
 
         circuit_info.mock_proof(K);
         let proofloadinfo = circuit_info.proofloadinfo.clone();
-        circuit_info.create_witness(&Path::new("output"), &Path::new("params"), 0);
-        circuit_info.exec_create_proof(&Path::new("output"), &Path::new("params"), &PKEY_CACHE, 0);
+        circuit_info.create_witness(&Path::new("output"), &Path::new("params"), PKEY_CACHE.lock().as_mut().unwrap(), 0);
+        circuit_info.exec_create_proof(&Path::new("output"), &Path::new("params"), PKEY_CACHE.lock().as_mut().unwrap(), 0);
 
         proofloadinfo.save(&Path::new("output"));
     }
