@@ -70,14 +70,14 @@ impl ProofGenerationInfo {
     pub fn save(&self, cache_folder: &Path) {
         let cache_file = cache_folder.join(format!("{}.loadinfo.json", &self.name));
         let json = serde_json::to_string_pretty(self).unwrap();
-        println!("write proof load info {:?}", cache_file);
+        log::info!("write proof load info {:?}", cache_file);
         let mut fd = std::fs::File::create(&cache_file).unwrap();
         fd.write(json.as_bytes()).unwrap();
     }
 
     pub fn load(configfile: &Path) -> Self {
         let fd = std::fs::File::open(configfile).unwrap();
-        println!("read proof load info {:?}", configfile);
+        log::info!("read proof load info {:?}", configfile);
         serde_json::from_reader(fd).unwrap()
     }
 
@@ -121,6 +121,7 @@ impl ProofGenerationInfo {
                         &mut witnessreader,
                     )
                     .expect("proof generation should not fail");
+                    log::info!("proof created with instance ... {:?}", self.instances);
 
                     let r = transcript.finalize();
                     verify_proof(
@@ -130,7 +131,7 @@ impl ProofGenerationInfo {
                         &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
                         &mut PoseidonRead::init(&r[..])
                     ).unwrap();
-                    println!("verify halo2 proof succeed");
+                    log::info!("verify halo2 proof succeed");
                     r
                 },
 
@@ -147,7 +148,7 @@ impl ProofGenerationInfo {
                     .expect("proof generation should not fail");
 
                     let r = transcript.finalize();
-                    println!("instance ... {:?}", self.instances);
+                    log::info!("proof created with instance ... {:?}", self.instances);
                     verify_proof(
                         &params_verifier,
                         &pkey.get_vk(),
@@ -155,13 +156,13 @@ impl ProofGenerationInfo {
                         &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
                         &mut ShaRead::<_, _, _, sha2::Sha256>::init(&r[..])
                     ).unwrap();
-                    println!("verify halo2 proof succeed");
+                    log::info!("verify halo2 proof succeed");
                     r
                 },
             };
 
             let cache_file = &cache_folder.join(trans.clone());
-            println!("create transcripts file {:?}", cache_file);
+            log::info!("create transcripts file {:?}", cache_file);
             let mut fd = std::fs::File::create(&cache_file).unwrap();
             fd.write_all(&r).unwrap();
         }
@@ -202,14 +203,14 @@ impl ProofLoadInfo {
     }
     pub fn save(&self, cache_folder: &Path) {
         let cache_file = cache_folder.join(format!("{}.loadinfo.json", &self.name));
-        println!("write proof load info {:?}", cache_file);
+        log::info!("write proof load info {:?}", cache_file);
         let json = serde_json::to_string_pretty(self).unwrap();
         let mut fd = std::fs::File::create(&cache_file).unwrap();
         fd.write(json.as_bytes()).unwrap();
     }
 
     pub fn load(configfile: &Path) -> Self {
-        println!("read proof load info {:?}", configfile);
+        log::info!("read proof load info {:?}", configfile);
         let fd = std::fs::File::open(configfile).unwrap();
         serde_json::from_reader(fd).unwrap()
     }
@@ -246,14 +247,14 @@ pub fn load_or_build_unsafe_params<E: MultiMillerLoop>(
     cache_file: &Path,
 ) -> Params<E::G1Affine> {
     if Path::exists(&cache_file) {
-        println!("read params K={} from {:?}", k, cache_file);
+        log::info!("read params K={} from {:?}", k, cache_file);
         let mut fd = std::fs::File::open(&cache_file).unwrap();
         return Params::<E::G1Affine>::read(&mut fd).unwrap();
     }
 
     let params = Params::<E::G1Affine>::unsafe_setup::<E>(k as u32);
 
-    println!("write params K={} to {:?}", k, cache_file);
+    log::info!("write params K={} to {:?}", k, cache_file);
     let mut fd = std::fs::File::create(&cache_file).unwrap();
     params.write(&mut fd).unwrap();
     params
@@ -318,7 +319,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> CircuitInfo<E, C> {
         let r = self.create_proof(&params, &pkey);
 
         let cache_file = &cache_folder.join(&self.proofloadinfo.transcripts[index]);
-        println!("create transcripts file {:?}", cache_file);
+        log::debug!("create transcripts file {:?}", cache_file);
         let mut fd = std::fs::File::create(&cache_file).unwrap();
         fd.write_all(&r).unwrap();
 
@@ -353,7 +354,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
                 .expect("proof generation should not fail");
 
                 let r = transcript.finalize();
-                println!("instance ... {:?}", self.instances);
+                log::info!("proof created with instance: {:?}", self.instances);
                 verify_proof(
                     &params_verifier,
                     &pkey.get_vk(),
@@ -361,7 +362,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
                     &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
                     &mut PoseidonRead::init(&r[..])
                 ).unwrap();
-                println!("verify halo2 proof with native vkey succeed");
+                log::info!("verify halo2 proof succeed");
                 r
             },
             HashType::Sha => {
@@ -377,7 +378,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
                 .expect("proof generation should not fail");
 
                 let r = transcript.finalize();
-                println!("instance ... {:?}", self.instances);
+                log::info!("proof created with instance ... {:?}", self.instances);
                 verify_proof(
                     &params_verifier,
                     &pkey.get_vk(),
@@ -385,7 +386,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
                     &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
                     &mut ShaRead::<_, _, _, sha2::Sha256>::init(&r[..])
                 ).unwrap();
-                println!("verify halo2 proof succeed");
+                log::info!("verify halo2 proof succeed");
                 r
             },
         };
@@ -407,7 +408,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
 
         let cache_file = &cache_folder.join(format!("{}.{}.witness.data", self.name, index));
 
-        println!("create witness file {:?}", cache_file);
+        log::info!("create witness file {:?}", cache_file);
 
         let mut fd = OpenOptions::new()
             .read(true)
@@ -429,7 +430,7 @@ pub fn load_vkey<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
     params: &Params<E::G1Affine>,
     param_folder: &Path,
 ) -> VerifyingKey<E::G1Affine> {
-    println!("read vkey from {:?}", param_folder);
+    log::info!("read vkey from {:?}", param_folder);
     let mut fd = std::fs::File::open(&param_folder).unwrap();
     VerifyingKey::read::<_, C>(&mut fd, params).unwrap()
 }
@@ -468,8 +469,10 @@ pub fn load_or_build_pkey<'a, E: MultiMillerLoop, C: Circuit<E::Scalar>>(
     use ark_std::{start_timer, end_timer};
     let key = cache_file.to_str().unwrap().to_string();
     if pkey_cache.contains(&key) {
+        log::info!("pkey find in cache.");
         pkey_cache.cache.get(&key).as_ref().unwrap()
     } else {
+        log::info!("pkey not found in cache.");
         let pkey = if Path::exists(&cache_file) {
             let timer = start_timer!(|| "test read info full ...");
             let pkey = read_pk_full::<E>(&params, &cache_file);
@@ -479,7 +482,7 @@ pub fn load_or_build_pkey<'a, E: MultiMillerLoop, C: Circuit<E::Scalar>>(
             pkey
         } else {
             let vkey = keygen_vk(&params, circuit).expect("keygen_vk should not fail");
-            println!("write vkey to {:?}", vkey_file);
+            log::info!("write vkey to {:?}", vkey_file);
             let mut fd = std::fs::File::create(&vkey_file).unwrap();
             vkey.write(&mut fd).unwrap();
             let pkey = keygen_pk(&params, vkey.clone(), circuit).expect("keygen_pk should not fail");
@@ -498,7 +501,7 @@ fn store_info_full<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
     circuit: &C,
     cache_file: &Path
 ) {
-    println!("store vkey full to {:?}", cache_file);
+    log::info!("store vkey full to {:?}", cache_file);
     let mut fd = OpenOptions::new()
        .read(true)
        .write(true)
@@ -511,7 +514,7 @@ fn store_info_full<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
 }
 
 pub(crate) fn read_vkey_full<E: MultiMillerLoop>(cache_file: &Path) -> VerifyingKey<E::G1Affine> {
-    println!("read vkey full from {:?}", cache_file);
+    log::info!("read vkey full from {:?}", cache_file);
     let mut fd = std::fs::File::open(&cache_file).unwrap();
     VerifyingKey::<E::G1Affine>::fetch(&mut fd).unwrap()
 }
@@ -519,7 +522,7 @@ pub(crate) fn read_vkey_full<E: MultiMillerLoop>(cache_file: &Path) -> Verifying
 pub(crate) fn read_pk_full<E: MultiMillerLoop>(params: &Params<E::G1Affine>, cache_file: &Path) -> ProvingKey<E::G1Affine> {
     use ark_std::{start_timer, end_timer};
     let timer = start_timer!(|| "fetch vkey full ...");
-    println!("read vkey full from {:?}", cache_file);
+    log::info!("read vkey full from {:?}", cache_file);
     let mut fd = std::fs::File::open(&cache_file).unwrap();
     let vk = VerifyingKey::<E::G1Affine>::fetch(&mut fd).unwrap();
     end_timer!(timer);
@@ -539,6 +542,8 @@ fn batch_single_circuit() {
     use halo2_proofs::pairing::bn256::Bn256;
     use halo2_proofs::pairing::bn256::Fr;
     use std::path::Path;
+
+    env_logger::init();
 
     const K: u32 = 22;
     {
