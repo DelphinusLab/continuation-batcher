@@ -628,8 +628,6 @@ fn lru_drop() {
         let mut cproofloadinfo: Vec<ProofLoadInfo> = Vec::new();
         let mut cinfo: Vec<CircuitInfo<Bn256, SimpleCircuit<Fr>>> = Vec::new();
         for i in 1..=(DEFAULT_CACHE_SIZE + 1) {
-            println!("Iteration {}", i);
-
             let circuit = || {
                 SimpleCircuit::<Fr> {
                     a: Fr::from(100u64),
