@@ -10,7 +10,6 @@ use halo2_proofs::plonk::create_proof;
 use halo2_proofs::plonk::create_proof_from_witness;
 use halo2_proofs::plonk::create_witness;
 use halo2_proofs::plonk::keygen_pk;
-use halo2_proofs::plonk::keygen_vk;
 use halo2_proofs::plonk::Circuit;
 use halo2_proofs::plonk::VerifyingKey;
 use halo2_proofs::plonk::verify_proof;
@@ -20,6 +19,7 @@ use halo2_proofs::poly::commitment::ParamsVerifier;
 use halo2aggregator_s::circuits::utils::load_instance;
 use halo2aggregator_s::circuits::utils::load_proof;
 use halo2aggregator_s::circuits::utils::store_instance;
+use halo2aggregator_s::circuits::utils::load_or_build_vkey;
 use halo2aggregator_s::transcript::poseidon::PoseidonRead;
 use halo2aggregator_s::transcript::poseidon::PoseidonWrite;
 use halo2aggregator_s::transcript::sha256::ShaRead;
@@ -487,10 +487,7 @@ pub fn load_or_build_pkey<'a, E: MultiMillerLoop, C: Circuit<E::Scalar>>(
             end_timer!(timer);
             pkey
         } else {
-            let vkey = keygen_vk(&params, circuit).expect("keygen_vk should not fail");
-            log::info!("write vkey to {:?}", vkey_file);
-            let mut fd = std::fs::File::create(&vkey_file).unwrap();
-            vkey.write(&mut fd).unwrap();
+            let vkey = load_or_build_vkey::<E, C>(params, circuit, Some(vkey_file));
             let pkey = keygen_pk(&params, vkey.clone(), circuit).expect("keygen_pk should not fail");
             let timer = start_timer!(|| "test storing info full ...");
             store_info_full::<E, C>(&params, &vkey, circuit, cache_file);
