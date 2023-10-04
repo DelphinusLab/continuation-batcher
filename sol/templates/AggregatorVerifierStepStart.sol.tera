@@ -9,7 +9,9 @@ contract AggregatorVerifierCoreStep{{step_index}} {
         uint256[] calldata transcript,
         uint256[] calldata aux,
         uint256[] memory buf
-    ) public view {
+    ) public view returns (uint256[] memory)  {
         {{ step }}
+
+        return buf;
     }
 }

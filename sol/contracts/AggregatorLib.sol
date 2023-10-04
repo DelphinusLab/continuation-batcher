@@ -36,6 +36,12 @@ library AggregatorLib {
         uint256 offset,
         uint256 count
     ) internal view {
+        if (count == 0) {
+            input[offset] = 0;
+            input[offset + 1] = 0;
+            return;
+        }
+
         bool ret = false;
         offset = offset * 0x20 + 0x20;
         uint256 start = offset + count * 0x60 - 0x60;
@@ -115,6 +121,7 @@ library AggregatorLib {
     function fr_div(uint256 a, uint256 b, uint256 aux) internal pure returns (uint256) {
         uint256 r = mulmod(b, aux, p_mod);
         require(a == r, "div fail");
+        require(b != 0, "div zero");
         return aux % p_mod;
     }
 }
