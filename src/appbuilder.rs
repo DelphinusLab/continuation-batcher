@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use crate::batch::CommitmentCheck;
 use crate::exec::exec_batch_proofs;
 use crate::exec::exec_solidity_gen;
+use crate::proof::PKEY_CACHE;
 use crate::proof::ProofGenerationInfo;
 use crate::proof::ProofLoadInfo;
 use crate::proof::ProofInfo;
@@ -97,7 +98,7 @@ pub trait AppBuilder: CommandBuilder {
                 let batch_script_info = CommitmentCheck::load(&batch_script_file);
                 debug!("commits equivalent {:?}", batch_script_info);
 
-                exec_batch_proofs(proof_name, output_dir, param_dir, config_files, batch_script_info, hash, k)
+                exec_batch_proofs(PKEY_CACHE.lock().as_mut().unwrap(), proof_name, output_dir, param_dir, config_files, batch_script_info, hash, k)
             }
 
             Some(("verify", sub_matches)) => {

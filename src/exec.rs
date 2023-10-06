@@ -1,9 +1,9 @@
 use crate::args::HashType;
 use crate::batch::BatchInfo;
 use crate::batch::CommitmentCheck;
-use crate::proof::PKEY_CACHE;
 use crate::proof::ProofLoadInfo;
 use crate::proof::ProofInfo;
+use crate::proof::ProvingKeyCache;
 use crate::proof::load_or_build_unsafe_params;
 use halo2_proofs::poly::commitment::ParamsVerifier;
 use halo2aggregator_s::solidity_verifier::codegen::solidity_aux_gen;
@@ -56,6 +56,7 @@ pub fn generate_k_params(aggregate_k: u32, param_dir: &PathBuf) {
 }
 
 pub fn exec_batch_proofs(
+    pkey_cache: &mut ProvingKeyCache<Bn256>,
     proof_name: &String,
     output_dir: &PathBuf,
     param_dir: &PathBuf,
@@ -106,7 +107,7 @@ pub fn exec_batch_proofs(
     let agg_circuit = batchinfo.build_aggregate_circuit(proof_name.clone(), hash, &params);
     agg_circuit.proofloadinfo.save(&output_dir);
     let agg_info = agg_circuit.proofloadinfo.clone();
-    agg_circuit.exec_create_proof(&output_dir, &param_dir, PKEY_CACHE.lock().as_mut().unwrap(), 0);
+    agg_circuit.exec_create_proof(&output_dir, &param_dir, pkey_cache, 0);
 
     let proof: Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &param_dir, &agg_info);
 
