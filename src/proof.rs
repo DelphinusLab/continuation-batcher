@@ -150,9 +150,9 @@ impl ProofGenerationInfo {
 }
 
 impl ProofGenerationInfo {
-    pub fn create_proofs<E: MultiMillerLoop>(&self, cache_folder: &Path, param_folder: &Path) {
+    pub fn create_proofs<E: MultiMillerLoop>(&self, cache_folder: &Path, param_folder: &Path, params_cache: &mut ParamsCache<E>,) {
         let params =
-            load_or_build_unsafe_params::<E>(self.k, &param_folder.join(self.param.clone()), K_PARAMS_CACHE.lock().as_mut().unwrap());
+            load_or_build_unsafe_params::<E>(self.k, &param_folder.join(self.param.clone()), params_cache);
 
         let pkey = read_pk_full::<E>(&params, &param_folder.join(self.circuit.clone()));
 
@@ -386,6 +386,7 @@ pub trait Prover<E: MultiMillerLoop> {
         param_folder: &Path,
         pkey_cache: &mut ProvingKeyCache<E>,
         index: usize,
+        params_cache: &mut ParamsCache<E>,
     );
     fn mock_proof(&self, k: u32);
 }
@@ -405,9 +406,10 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> CircuitInfo<E, C> {
         param_folder: &Path,
         pkey_cache: &mut ProvingKeyCache<E>,
         index: usize,
+        param_cache: &mut ParamsCache<E>,
     ) -> Vec<u8> {
         let params =
-            load_or_build_unsafe_params::<E>(self.k, &param_folder.join(&self.proofloadinfo.param), K_PARAMS_CACHE.lock().as_mut().unwrap());
+            load_or_build_unsafe_params::<E>(self.k, &param_folder.join(&self.proofloadinfo.param), param_cache);
         let pkey = load_or_build_pkey::<E, C>(
             &params,
             self.circuits.first().unwrap(),
@@ -515,11 +517,12 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
         param_folder: &Path,
         pkey_cache: &mut ProvingKeyCache<E>,
         index: usize,
+        param_cache: &mut ParamsCache<E>,
     ) {
         let params = load_or_build_unsafe_params::<E>(
             self.k,
             &param_folder.join(self.proofloadinfo.param.clone()),
-            K_PARAMS_CACHE.lock().as_mut().unwrap()
+            param_cache
         );
         let pkey = load_or_build_pkey::<E, C>(
             &params,
@@ -680,12 +683,14 @@ fn batch_single_circuit() {
             &Path::new("params"),
             PKEY_CACHE.lock().as_mut().unwrap(),
             0,
+            K_PARAMS_CACHE.lock().as_mut().unwrap(),
         );
         circuit_info.exec_create_proof(
             &Path::new("output"),
             &Path::new("params"),
             PKEY_CACHE.lock().as_mut().unwrap(),
             0,
+            K_PARAMS_CACHE.lock().as_mut().unwrap(),
         );
 
         proofloadinfo.save(&Path::new("output"));
@@ -712,12 +717,14 @@ fn batch_single_circuit() {
             &Path::new("params"),
             PKEY_CACHE.lock().as_mut().unwrap(),
             0,
+            K_PARAMS_CACHE.lock().as_mut().unwrap(),
         );
         circuit_info.exec_create_proof(
             &Path::new("output"),
             &Path::new("params"),
             PKEY_CACHE.lock().as_mut().unwrap(),
             0,
+            K_PARAMS_CACHE.lock().as_mut().unwrap(),
         );
 
         proofloadinfo.save(&Path::new("output"));
@@ -778,6 +785,7 @@ fn lru_drop() {
                 &Path::new("params"),
                 PKEY_CACHE.lock().as_mut().unwrap(),
                 0,
+                K_PARAMS_CACHE.lock().as_mut().unwrap(),
             );
             cproofloadinfo.get(i).unwrap().save(&Path::new("output"));
             end_timer!(timer);
@@ -789,6 +797,7 @@ fn lru_drop() {
             &Path::new("params"),
             PKEY_CACHE.lock().as_mut().unwrap(),
             0,
+            K_PARAMS_CACHE.lock().as_mut().unwrap(),
         );
         cproofloadinfo.get(0).unwrap().save(&Path::new("output"));
         end_timer!(timer);
@@ -799,6 +808,7 @@ fn lru_drop() {
             &Path::new("params"),
             PKEY_CACHE.lock().as_mut().unwrap(),
             0,
+            K_PARAMS_CACHE.lock().as_mut().unwrap(),
         );
         cproofloadinfo.get(5).unwrap().save(&Path::new("output"));
         end_timer!(timer);
