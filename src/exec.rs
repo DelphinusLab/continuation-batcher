@@ -7,6 +7,7 @@ use crate::proof::ProofInfo;
 use crate::proof::load_or_build_unsafe_params;
 use halo2_proofs::poly::commitment::ParamsVerifier;
 use halo2aggregator_s::solidity_verifier::codegen::solidity_aux_gen;
+use halo2aggregator_s::solidity_verifier::solidity_render;
 
 /*
 use crate::profile::Profiler;
@@ -134,3 +135,67 @@ pub fn exec_batch_proofs(
         );
     }
 }
+
+pub fn exec_solidity_gen(
+    param_dir: &PathBuf,
+    output_dir: &PathBuf,
+    k: u32,
+    n_proofs: usize,
+    sol_path: &PathBuf,
+    aggregate_proof_info: &ProofLoadInfo,
+    batch_script: &CommitmentCheck,
+) {
+
+    let max_public_inputs_size = 12;
+    let aggregate_k = aggregate_proof_info.k;
+
+    let proof_params = load_or_build_unsafe_params::<Bn256>(
+        k as usize,
+        &param_dir.join(format!("K{}.params", k)),
+    );
+
+    let proof_params_verifier: ParamsVerifier<Bn256> = proof_params.verifier(max_public_inputs_size).unwrap();
+
+    println!("nproof {}", n_proofs);
+
+    let public_inputs_size = 3 * (n_proofs + batch_script.expose.len());
+
+    let agg_params = load_or_build_unsafe_params::<Bn256>(
+        aggregate_k,
+        &param_dir.join(format!("K{}.params", aggregate_k)),
+    );
+
+
+    let agg_params_verifier = agg_params.verifier(public_inputs_size).unwrap();
+
+    let proof: Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &param_dir, aggregate_proof_info);
+
+    let path_in = {
+        let mut path = sol_path.clone();
+        path.push("templates");
+        path
+    };
+    let path_out = {
+        let mut path = sol_path.clone();
+        path.push("contracts");
+        path
+    };
+
+    solidity_render(
+        &(path_in.to_str().unwrap().to_owned() + "/*"),
+        path_out.to_str().unwrap(),
+        vec![(
+            "AggregatorConfig.sol.tera".to_owned(),
+            "AggregatorConfig.sol".to_owned(),
+        )],
+        "AggregatorVerifierStepStart.sol.tera",
+        "AggregatorVerifierStepEnd.sol.tera",
+        |i| format!("AggregatorVerifierStep{}.sol", i + 1),
+        &proof_params_verifier,
+        &agg_params_verifier,
+        &proof[0].vkey,
+        &proof[0].instances[0],
+        proof[0].transcripts.clone(),
+    );
+}
+
