@@ -108,10 +108,11 @@ pub trait AppBuilder: CommandBuilder {
                 for config_file in config_files.iter() {
                     let proofloadinfo = ProofLoadInfo::load(config_file);
                     let proofs:Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &param_dir, &proofloadinfo);
+                    let mut param_cache_lock = K_PARAMS_CACHE.lock(); //This is tricky. Cannot put this directly in the load_or_build_unsafe_params. Have to do this.
                     let params = load_or_build_unsafe_params::<Bn256>(
                         proofloadinfo.k,
                         &param_dir.join(format!("K{}.params", proofloadinfo.k)),
-                        K_PARAMS_CACHE.lock().as_mut().unwrap(),
+                        param_cache_lock.as_mut().unwrap(),
                     );
                     let mut public_inputs_size = 0;
                     for proof in proofs.iter() {
