@@ -6,6 +6,7 @@ use crate::batch::CommitmentCheck;
 use crate::exec::exec_batch_proofs;
 use crate::exec::exec_solidity_gen;
 use crate::proof::PKEY_CACHE;
+use crate::proof::K_PARAMS_CACHE;
 use crate::proof::ProofGenerationInfo;
 use crate::proof::ProofLoadInfo;
 use crate::proof::ProofInfo;
@@ -110,6 +111,7 @@ pub trait AppBuilder: CommandBuilder {
                     let params = load_or_build_unsafe_params::<Bn256>(
                         proofloadinfo.k,
                         &param_dir.join(format!("K{}.params", proofloadinfo.k)),
+                        K_PARAMS_CACHE.lock().as_mut().unwrap()
                     );
                     let mut public_inputs_size = 0;
                     for proof in proofs.iter() {
