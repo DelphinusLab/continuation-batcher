@@ -4,7 +4,7 @@ use crate::batch::CommitmentCheck;
 use crate::proof::ProofLoadInfo;
 use crate::proof::ProofInfo;
 use crate::proof::ProvingKeyCache;
-use crate::proof::K_PARAMS_CACHE;
+use crate::proof::ParamsCache;
 use crate::proof::load_or_build_unsafe_params;
 use halo2_proofs::poly::commitment::ParamsVerifier;
 use halo2aggregator_s::solidity_verifier::codegen::solidity_aux_gen;
@@ -46,17 +46,18 @@ use log::info;
 
 use std::path::PathBuf;
 
-pub fn generate_k_params(aggregate_k: u32, param_dir: &PathBuf) {
+pub fn generate_k_params(aggregate_k: u32, param_dir: &PathBuf, params_cache: &mut ParamsCache<Bn256>) {
     info!("Generating K Params file");
 
     // Setup Aggregate Circuit Params
     {
         let params_path = &param_dir.join(format!("K{}.params", aggregate_k));
-        load_or_build_unsafe_params::<Bn256>(aggregate_k as usize, params_path, K_PARAMS_CACHE.lock().as_mut().unwrap())
+        load_or_build_unsafe_params::<Bn256>(aggregate_k as usize, params_path, params_cache)
     };
 }
 
 pub fn exec_batch_proofs(
+    params_cache: &mut ParamsCache<Bn256>,
     pkey_cache: &mut ProvingKeyCache<Bn256>,
     proof_name: &String,
     output_dir: &PathBuf,
@@ -103,13 +104,13 @@ pub fn exec_batch_proofs(
     let params = load_or_build_unsafe_params::<Bn256>(
         batchinfo.target_k,
         &param_dir.join(format!("K{}.params", batchinfo.target_k)),
-        K_PARAMS_CACHE.lock().as_mut().unwrap()
+        params_cache
     );
 
     let agg_circuit = batchinfo.build_aggregate_circuit(proof_name.clone(), hash, &params);
     agg_circuit.proofloadinfo.save(&output_dir);
     let agg_info = agg_circuit.proofloadinfo.clone();
-    agg_circuit.exec_create_proof(&output_dir, &param_dir, pkey_cache, 0);
+    agg_circuit.exec_create_proof(&output_dir, &param_dir, pkey_cache, 0, params_cache);
 
     let proof: Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &param_dir, &agg_info);
 
@@ -122,7 +123,7 @@ pub fn exec_batch_proofs(
     let params = load_or_build_unsafe_params::<Bn256>(
         agg_info.k as usize,
         &param_dir.join(format!("K{}.params", k)),
-        K_PARAMS_CACHE.lock().as_mut().unwrap()
+        params_cache,
     );
 
     let params_verifier: ParamsVerifier<Bn256> = params.verifier(public_inputs_size).unwrap();
@@ -148,6 +149,7 @@ pub fn exec_solidity_gen(
     sol_path: &PathBuf,
     aggregate_proof_info: &ProofLoadInfo,
     batch_script: &CommitmentCheck,
+    params_cache: &mut ParamsCache<Bn256>,
 ) {
 
     let max_public_inputs_size = 12;
@@ -156,7 +158,7 @@ pub fn exec_solidity_gen(
     let proof_params = load_or_build_unsafe_params::<Bn256>(
         k as usize,
         &param_dir.join(format!("K{}.params", k)),
-        K_PARAMS_CACHE.lock().as_mut().unwrap()
+        params_cache
     );
 
     let proof_params_verifier: ParamsVerifier<Bn256> = proof_params.verifier(max_public_inputs_size).unwrap();
@@ -168,7 +170,7 @@ pub fn exec_solidity_gen(
     let agg_params = load_or_build_unsafe_params::<Bn256>(
         aggregate_k,
         &param_dir.join(format!("K{}.params", aggregate_k)),
-        K_PARAMS_CACHE.lock().as_mut().unwrap()
+        params_cache
     );
 
 

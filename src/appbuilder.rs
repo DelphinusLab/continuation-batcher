@@ -72,7 +72,7 @@ pub trait AppBuilder: CommandBuilder {
         match top_matches.subcommand() {
             Some(("setup", sub_matches)) => {
                 let k: u32 = Self::parse_zkwasm_k_arg(&sub_matches).unwrap();
-                generate_k_params(k, &output_dir);
+                generate_k_params(k, &output_dir, K_PARAMS_CACHE.lock().as_mut().unwrap());
             }
 
             Some(("prove", sub_matches)) => {
@@ -83,7 +83,7 @@ pub trait AppBuilder: CommandBuilder {
                 }).collect::<Vec<_>>();
 
                 for proof in proofs {
-                    proof.create_proofs::<Bn256>(output_dir, param_dir);
+                    proof.create_proofs::<Bn256>(output_dir, param_dir, K_PARAMS_CACHE.lock().as_mut().unwrap());
                 }
             }
 
@@ -99,7 +99,7 @@ pub trait AppBuilder: CommandBuilder {
                 let batch_script_info = CommitmentCheck::load(&batch_script_file);
                 debug!("commits equivalent {:?}", batch_script_info);
 
-                exec_batch_proofs(PKEY_CACHE.lock().as_mut().unwrap(), proof_name, output_dir, param_dir, config_files, batch_script_info, hash, k)
+                exec_batch_proofs(K_PARAMS_CACHE.lock().as_mut().unwrap(),PKEY_CACHE.lock().as_mut().unwrap(), proof_name, output_dir, param_dir, config_files, batch_script_info, hash, k)
             }
 
             Some(("verify", sub_matches)) => {
@@ -111,7 +111,7 @@ pub trait AppBuilder: CommandBuilder {
                     let params = load_or_build_unsafe_params::<Bn256>(
                         proofloadinfo.k,
                         &param_dir.join(format!("K{}.params", proofloadinfo.k)),
-                        K_PARAMS_CACHE.lock().as_mut().unwrap()
+                        K_PARAMS_CACHE.lock().as_mut().unwrap(),
                     );
                     let mut public_inputs_size = 0;
                     for proof in proofs.iter() {
@@ -148,7 +148,7 @@ pub trait AppBuilder: CommandBuilder {
 
                 let commits_equiv_file = Self::parse_commits_equiv_info_arg(sub_matches);
                 let commits_equiv_info = CommitmentCheck::load(&commits_equiv_file);
-                exec_solidity_gen(param_dir, output_dir, k, n_proofs, &sol_path, &proofloadinfo, &commits_equiv_info);
+                exec_solidity_gen(param_dir, output_dir, k, n_proofs, &sol_path, &proofloadinfo, &commits_equiv_info, K_PARAMS_CACHE.lock().as_mut().unwrap());
             }
 
             Some((_, _)) => todo!(),
