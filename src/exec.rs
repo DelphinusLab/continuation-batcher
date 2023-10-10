@@ -146,7 +146,8 @@ pub fn exec_solidity_gen(
     output_dir: &PathBuf,
     k: u32,
     n_proofs: usize,
-    sol_path: &PathBuf,
+    sol_path_in: &PathBuf,
+    sol_path_out: &PathBuf,
     aggregate_proof_info: &ProofLoadInfo,
     batch_script: &CommitmentCheck,
     params_cache: &mut ParamsCache<Bn256>,
@@ -178,20 +179,9 @@ pub fn exec_solidity_gen(
 
     let proof: Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &param_dir, aggregate_proof_info);
 
-    let path_in = {
-        let mut path = sol_path.clone();
-        path.push("templates");
-        path
-    };
-    let path_out = {
-        let mut path = sol_path.clone();
-        path.push("contracts");
-        path
-    };
-
     solidity_render(
-        &(path_in.to_str().unwrap().to_owned() + "/*"),
-        path_out.to_str().unwrap(),
+        &(sol_path_in.to_str().unwrap().to_owned() + "/*"),
+        sol_path_out.to_str().unwrap(),
         vec![(
             "AggregatorConfig.sol.tera".to_owned(),
             "AggregatorConfig.sol".to_owned(),

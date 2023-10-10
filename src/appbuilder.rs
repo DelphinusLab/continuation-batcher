@@ -145,11 +145,15 @@ pub trait AppBuilder: CommandBuilder {
                 let config_file = Self::parse_proof_load_info_arg(sub_matches);
                 let n_proofs = config_file.len() - 1;
                 let sol_path: PathBuf = Self::parse_sol_dir_arg(&sub_matches);
+                let mut sol_path_templates: PathBuf = sol_path.clone();
+                sol_path_templates.push("templates");
+                let mut sol_path_contracts: PathBuf = sol_path.clone();
+                sol_path_contracts.push("contracts");
                 let proofloadinfo = ProofLoadInfo::load(&config_file[0]);
 
                 let commits_equiv_file = Self::parse_commits_equiv_info_arg(sub_matches);
                 let commits_equiv_info = CommitmentCheck::load(&commits_equiv_file);
-                exec_solidity_gen(param_dir, output_dir, k, n_proofs, &sol_path, &proofloadinfo, &commits_equiv_info, K_PARAMS_CACHE.lock().as_mut().unwrap());
+                exec_solidity_gen(param_dir, output_dir, k, n_proofs, &sol_path_templates, &sol_path_contracts, &proofloadinfo, &commits_equiv_info, K_PARAMS_CACHE.lock().as_mut().unwrap());
             }
 
             Some((_, _)) => todo!(),
