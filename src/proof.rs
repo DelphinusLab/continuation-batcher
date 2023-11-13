@@ -400,6 +400,49 @@ pub struct CircuitInfo<E: MultiMillerLoop, C: Circuit<E::Scalar>> {
 }
 
 impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> CircuitInfo<E, C> {
+    pub fn get_param<'a>(
+        &'a self,
+        param_folder: &Path,
+        param_cache: &'a mut ParamsCache<E>,
+    ) -> &'a Params<E::G1Affine> {
+       load_or_build_unsafe_params::<E>(self.k, &param_folder.join(&self.proofloadinfo.param), param_cache)
+    }
+    pub fn get_pkey<'a>(
+        &'a self,
+        params: &'a Params<E::G1Affine>,
+        param_folder: &Path,
+        pkey_cache: &'a mut ProvingKeyCache<E>,
+    ) -> &'a ProvingKey<E::G1Affine> {
+        load_or_build_pkey::<E, C>(
+            &params,
+            self.circuits.first().unwrap(),
+            &param_folder.join(self.proofloadinfo.circuit.clone()),
+            &param_folder.join(format!("{}.vkey.data", self.name)),
+            pkey_cache,
+        )
+    }
+
+    pub fn exec_create_proof_with_params(
+        &self,
+        params: &Params<E::G1Affine>,
+        pkey: &ProvingKey<E::G1Affine>,
+        cache_folder: &Path,
+        index: usize,
+    ) -> Vec<u8> {
+        store_instance(
+            &self.instances,
+            &cache_folder.join(self.proofloadinfo.instances[index].as_str()),
+        );
+
+        let r = self.create_proof(params, pkey);
+
+        let cache_file = &cache_folder.join(&self.proofloadinfo.transcripts[index]);
+        log::debug!("create transcripts file {:?}", cache_file);
+        let mut fd = std::fs::File::create(&cache_file).unwrap();
+        fd.write_all(&r).unwrap();
+        r
+    }
+
     pub fn exec_create_proof(
         &self,
         cache_folder: &Path,
@@ -417,20 +460,7 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> CircuitInfo<E, C> {
             &param_folder.join(format!("{}.vkey.data", self.name)),
             pkey_cache,
         );
-
-        store_instance(
-            &self.instances,
-            &cache_folder.join(self.proofloadinfo.instances[index].as_str()),
-        );
-
-        let r = self.create_proof(&params, &pkey);
-
-        let cache_file = &cache_folder.join(&self.proofloadinfo.transcripts[index]);
-        log::debug!("create transcripts file {:?}", cache_file);
-        let mut fd = std::fs::File::create(&cache_file).unwrap();
-        fd.write_all(&r).unwrap();
-
-        r
+        self.exec_create_proof_with_params(params, pkey, cache_folder, index)
     }
 }
 
