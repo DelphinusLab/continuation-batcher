@@ -400,18 +400,18 @@ pub struct CircuitInfo<E: MultiMillerLoop, C: Circuit<E::Scalar>> {
 }
 
 impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> CircuitInfo<E, C> {
-    pub fn get_param<'a>(
+    pub fn get_param<'a, 'b:'a>(
         &'a self,
         param_folder: &Path,
-        param_cache: &'a mut ParamsCache<E>,
+        param_cache: &'b mut ParamsCache<E>,
     ) -> &'a Params<E::G1Affine> {
        load_or_build_unsafe_params::<E>(self.k, &param_folder.join(&self.proofloadinfo.param), param_cache)
     }
-    pub fn get_pkey<'a>(
+    pub fn get_pkey<'a, 'b:'a>(
         &'a self,
         params: &'a Params<E::G1Affine>,
         param_folder: &Path,
-        pkey_cache: &'a mut ProvingKeyCache<E>,
+        pkey_cache: &'b mut ProvingKeyCache<E>,
     ) -> &'a ProvingKey<E::G1Affine> {
         load_or_build_pkey::<E, C>(
             &params,
