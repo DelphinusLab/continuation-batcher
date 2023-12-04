@@ -11,9 +11,6 @@ contract AggregatorVerifierCoreStep{{step_index}} {
         uint256[] memory buf
     ) public view returns (uint256[] memory)  {
         {{ step }}
-        
-        AggregatorLib.msm(buf, {{ msm_w_x_start }}, {{ msm_w_x_len }});
-        AggregatorLib.msm(buf, {{ msm_w_g_start }}, {{ msm_w_g_len }});
 
         uint256[] memory ret = new uint256[](4);
         ret[0] = buf[{{ msm_w_x_start }}];
