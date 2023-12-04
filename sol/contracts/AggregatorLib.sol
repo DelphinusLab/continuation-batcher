@@ -86,6 +86,46 @@ library AggregatorLib {
         }
     }
 
+    function ecc_mul(
+        uint256[] memory input,
+        uint256 offset
+    ) internal view {
+        return msm(input, offset, 1);
+    }
+
+    function ecc_mul_add(
+        uint256[] memory input,
+        uint256 offset
+    ) internal view {
+        bool ret = false;
+        uint256 p1 = offset * 0x20 + 0x20;
+        uint256 p2 = p1 + 0x40;
+
+        assembly {
+            ret := staticcall(
+                gas(),
+                7,
+                add(input, p2),
+                0x60,
+                add(input, p2),
+                0x40
+            )
+        }
+        require(ret);
+
+        assembly {
+            ret := staticcall(
+                gas(),
+                6,
+                add(input, p1),
+                0x80,
+                add(input, p1),
+                0x40
+            )
+        }
+        require(ret);
+    }
+
     function fr_pow(uint256 a, uint256 power) internal view returns (uint256) {
         uint256[6] memory input;
         uint256[1] memory result;

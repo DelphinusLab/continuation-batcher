@@ -58,7 +58,7 @@ contract AggregatorVerifier {
 
         {
             // step 1: calculate verify circuit instance commitment
-            uint256[] memory buf = new uint256[](371);
+            uint256[] memory buf = new uint256[](180);
             AggregatorConfig.calc_verify_circuit_lagrange(buf, verify_instance);
 
             // step 2: calculate challenge
