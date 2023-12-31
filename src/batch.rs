@@ -52,7 +52,7 @@ pub struct CommitmentCheck{
 
 impl CommitmentCheck {
     pub fn load(equiv_file: &Path) -> Self {
-        let fd = std::fs::File::open(equiv_file).unwrap();
+        let fd = std::fs::File::open(equiv_file).expect("Can not find batch config for commitment arith. [--commits]");
         println!("read commit equivalents {:?}", equiv_file);
         serde_json::from_reader(fd).unwrap()
     }
