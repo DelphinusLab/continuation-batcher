@@ -549,6 +549,9 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
         index: usize,
         param_cache: &mut ParamsCache<E>,
     ) {
+        std::fs::create_dir_all(cache_folder).unwrap();
+        std::fs::create_dir_all(param_folder).unwrap();
+
         let params = load_or_build_unsafe_params::<E>(
             self.k,
             &param_folder.join(self.proofloadinfo.param.clone()),

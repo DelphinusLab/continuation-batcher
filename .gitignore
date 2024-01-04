@@ -1,0 +1,6 @@
+target/*
+output/*
+params/*
+.idea/
+sol/contracts/AggregatorConfig.sol
+sol/contracts/AggregatorVerifierStep*
