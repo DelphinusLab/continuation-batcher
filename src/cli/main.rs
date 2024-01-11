@@ -2,6 +2,9 @@ use circuits_batcher::appbuilder::AppBuilder;
 use circuits_batcher::args::ArgBuilder;
 use circuits_batcher::command::CommandBuilder;
 
+pub mod appbuilder;
+pub mod helpers;
+
 struct CircuitBatcherApp;
 
 impl ArgBuilder for CircuitBatcherApp {
