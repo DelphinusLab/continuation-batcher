@@ -1,22 +1,28 @@
-use crate::args::HashType;
-use crate::names::name_of_params;
-use crate::setup::params::build_params;
 use ark_std::end_timer;
 use ark_std::start_timer;
+use circuits_batcher::batch_prover::commitment_check::CommitmentCheck;
+use circuits_batcher::names::name_of_params;
+use circuits_batcher::names::name_of_solidity_aux;
+use circuits_batcher::setup::params::build_params;
+use circuits_batcher::single_prover::prover::Prover;
+use circuits_batcher::single_prover::verifier::Verifier;
+use circuits_batcher::HashType;
 use clap::App;
 use clap::AppSettings;
 use halo2_proofs::pairing::bn256::Bn256;
 use halo2_proofs::poly::commitment::ParamsVerifier;
 use halo2aggregator_s::circuits::utils::TranscriptHash;
 use halo2aggregator_s::native_verifier;
+use halo2aggregator_s::solidity_verifier::codegen::solidity_aux_gen;
 use log::debug;
 use std::fs;
+use std::fs::File;
 use std::path::PathBuf;
-/*
-use log::info;
-*/
 
-use super::command::CommandBuilder;
+use crate::command::CommandBuilder;
+use crate::multi_proofs::MultiProofsRequest;
+use crate::request::BatchRequest;
+use crate::request::Request;
 
 pub trait AppBuilder: CommandBuilder {
     const NAME: &'static str;
@@ -72,18 +78,14 @@ pub trait AppBuilder: CommandBuilder {
             Some(("prove", sub_matches)) => {
                 let target_proving_requests = Self::parse_proof_load_info_arg(sub_matches);
 
-                let proofs = config_files
-                    .iter()
-                    .map(|config| ProofGenerationInfo::load(config))
-                    .collect::<Vec<_>>();
+                for request_path in target_proving_requests {
+                    let mut fd = File::open(&request_path)?;
+                    let request = MultiProofsRequest::read(&mut fd)?;
 
-                for proof in proofs {
-                    proof.create_proofs::<Bn256>(
-                        output_dir,
-                        param_dir,
-                        K_PARAMS_CACHE.lock().as_mut().unwrap(),
-                    );
+                    request.exec_create_proof(param_dir, output_dir)?;
                 }
+
+                Ok(())
             }
 
             Some(("batch", sub_matches)) => {
@@ -95,78 +97,61 @@ pub trait AppBuilder: CommandBuilder {
                     .get_one::<String>("name")
                     .expect("name of the prove task is not provided");
 
-                let batch_script_info = CommitmentCheck::load(&batch_script_file);
-                debug!("commits equivalent {:?}", batch_script_info);
+                let target_proofs = config_files
+                    .iter()
+                    .map(|target_proof| Request::read(&mut File::open(target_proof)?))
+                    .collect::<Result<Vec<_>, _>>()?;
+                let commitment_check = CommitmentCheck::read(&mut File::open(batch_script_file)?)?;
+                let request = BatchRequest::new(k, hash, target_proofs, commitment_check);
 
-                exec_batch_proofs(
-                    K_PARAMS_CACHE.lock().as_mut().unwrap(),
-                    PKEY_CACHE.lock().as_mut().unwrap(),
-                    proof_name,
-                    output_dir,
-                    param_dir,
-                    config_files,
-                    batch_script_info,
-                    hash,
-                    k,
-                )
+                let prover = request.into_prover(param_dir, output_dir)?;
+
+                let aggregator_circuit_prover = prover.build_aggregate_circuit();
+                let proof = aggregator_circuit_prover.create_proof();
+
+                // If hash type is SHA, generate aux data for solidity verifier
+                if hash == HashType::Sha {
+                    aggregator_circuit_prover.gen_solidity_aux(
+                        proof,
+                        &output_dir.join(name_of_solidity_aux(proof_name)),
+                    )?;
+                }
+
+                Ok(())
             }
 
             Some(("verify", sub_matches)) => {
-                let config_files = Self::parse_proof_load_info_arg(&sub_matches);
+                let target_proving_requests = Self::parse_proof_load_info_arg(&sub_matches);
                 let hash = Self::parse_hashtype(&sub_matches);
-                for config_file in config_files.iter() {
-                    let proofloadinfo = ProofLoadInfo::load(config_file);
-                    let proofs: Vec<ProofInfo<Bn256>> =
-                        ProofInfo::load_proof(&output_dir, &param_dir, &proofloadinfo);
-                    let mut param_cache_lock = K_PARAMS_CACHE.lock(); //This is tricky. Cannot put this directly in the load_or_build_unsafe_params. Have to do this.
-                    let params = load_or_build_unsafe_params::<Bn256>(
-                        proofloadinfo.k,
-                        &param_dir.join(format!("K{}.params", proofloadinfo.k)),
-                        param_cache_lock.as_mut().unwrap(),
-                    );
-                    let mut public_inputs_size = 0;
-                    for proof in proofs.iter() {
-                        public_inputs_size = usize::max(
-                            public_inputs_size,
-                            proof
-                                .instances
-                                .iter()
-                                .fold(0, |acc, x| usize::max(acc, x.len())),
-                        );
-                    }
 
-                    let params_verifier: ParamsVerifier<Bn256> =
-                        params.verifier(public_inputs_size).unwrap();
-                    let timer = start_timer!(|| "native verify single proof");
-                    for (_, proof) in proofs.iter().enumerate() {
-                        native_verifier::verify_single_proof::<Bn256>(
-                            &params_verifier,
-                            &proof.vkey,
-                            &proof.instances,
-                            proof.transcripts.clone(),
-                            match hash {
-                                HashType::Poseidon => TranscriptHash::Poseidon,
-                                HashType::Sha => TranscriptHash::Sha,
-                            },
-                        );
-                    }
-                    end_timer!(timer);
+                for request_path in target_proving_requests {
+                    let request = Request::read(&mut File::open(&request_path)?)?;
+
+                    let verifier = request
+                        .into_loader::<Bn256>(&param_dir, &output_dir)?
+                        .as_verifier()?;
+
+                    verifier.verify_proof()?;
                 }
+
+                Ok(())
             }
 
             Some(("solidity", sub_matches)) => {
                 let k: u32 = Self::parse_zkwasm_k_arg(&sub_matches).unwrap();
                 let config_file = Self::parse_proof_load_info_arg(sub_matches);
                 let n_proofs = config_file.len() - 1;
+
                 let sol_path: PathBuf = Self::parse_sol_dir_arg(&sub_matches);
-                let mut sol_path_templates: PathBuf = sol_path.clone();
-                sol_path_templates.push("templates");
-                let mut sol_path_contracts: PathBuf = sol_path.clone();
-                sol_path_contracts.push("contracts");
+                let sol_path_templates: PathBuf = sol_path.join("templates");
+                let sol_path_contracts: PathBuf = sol_path.join("contracts");
+
                 let proofloadinfo = ProofLoadInfo::load(&config_file[0]);
 
                 let commits_equiv_file = Self::parse_commits_equiv_info_arg(sub_matches);
-                let commits_equiv_info = CommitmentCheck::load(&commits_equiv_file);
+                let commits_equiv_info =
+                    CommitmentCheck::read(&mut File::open(commits_equiv_file)?)?;
+
                 exec_solidity_gen(
                     param_dir,
                     output_dir,
@@ -176,8 +161,9 @@ pub trait AppBuilder: CommandBuilder {
                     &sol_path_contracts,
                     &proofloadinfo,
                     &commits_equiv_info,
-                    K_PARAMS_CACHE.lock().as_mut().unwrap(),
                 );
+
+                Ok(())
             }
 
             Some((_, _)) => todo!(),

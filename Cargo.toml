@@ -49,3 +49,6 @@ cuda = ["halo2_proofs/cuda"]
 
 [profile.dev]
 opt-level = 3
+
+[patch."https://github.com/DelphinusLab/halo2-gpu-specific.git"]
+halo2_proofs = { path = "../zkWasm/halo2-gpu-specific/halo2_proofs" }

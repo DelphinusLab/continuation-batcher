@@ -8,7 +8,7 @@ use halo2aggregator_s::circuits::utils::load_instance;
 use serde::Deserialize;
 use serde::Serialize;
 
-use crate::args::HashType;
+use crate::HashType;
 
 pub struct ProofInfo<E: MultiMillerLoop> {
     pub instances: Vec<Vec<E::Scalar>>,

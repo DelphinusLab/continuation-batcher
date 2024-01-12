@@ -1,18 +1,11 @@
 use std::path::PathBuf;
 
+use circuits_batcher::HashType;
 use clap::arg;
 use clap::value_parser;
 use clap::Arg;
 use clap::ArgAction;
 use clap::ArgMatches;
-use serde::{Deserialize, Serialize};
-
-#[derive(clap::ArgEnum, Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
-pub enum HashType {
-    Poseidon,
-    Sha,
-}
-
 
 pub trait ArgBuilder {
     fn hashtype<'a>() -> Arg<'a> {
@@ -74,22 +67,23 @@ pub trait ArgBuilder {
     fn output_path_arg<'a>() -> Arg<'a> {
         arg!(
             -o --output [OUTPUT_PATH] "Path of the output files."
-        ).value_parser(value_parser!(PathBuf))
+        )
+        .value_parser(value_parser!(PathBuf))
     }
 
     fn param_path_arg<'a>() -> Arg<'a> {
         arg!(
             -p --param [PARAM_PATH] "Path of the param files."
-        ).value_parser(value_parser!(PathBuf))
+        )
+        .value_parser(value_parser!(PathBuf))
     }
-
 
     fn proof_name_arg<'a>() -> Arg<'a> {
         arg!(
             -n --name [PROOF_NAME] "name of this task."
-        ).value_parser(value_parser!(String))
+        )
+        .value_parser(value_parser!(String))
     }
-
 
     fn sol_dir_arg<'a>() -> Arg<'a> {
         arg!(

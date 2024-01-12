@@ -1,9 +1,14 @@
-use circuits_batcher::appbuilder::AppBuilder;
-use circuits_batcher::args::ArgBuilder;
-use circuits_batcher::command::CommandBuilder;
+use appbuilder::AppBuilder;
+use args::ArgBuilder;
+use command::CommandBuilder;
 
 pub mod appbuilder;
-pub mod helpers;
+pub mod args;
+pub mod batch;
+pub mod command;
+pub mod helper;
+pub mod multi_proofs;
+pub mod request;
 
 struct CircuitBatcherApp;
 
@@ -22,8 +27,10 @@ impl AppBuilder for CircuitBatcherApp {
 }
 
 /// Simple program to greet a person
-fn main() {
+fn main() -> anyhow::Result<()> {
     let app = CircuitBatcherApp::app_builder();
 
-    CircuitBatcherApp::exec(app)
+    CircuitBatcherApp::exec(app)?;
+
+    Ok(())
 }

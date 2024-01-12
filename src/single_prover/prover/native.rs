@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::dev::MockProver;
 use halo2_proofs::plonk::create_proof;
@@ -10,17 +12,20 @@ use halo2_proofs::poly::commitment::Params;
 use halo2_proofs::poly::commitment::ParamsVerifier;
 use halo2_proofs::poly::LagrangeCoeff;
 use halo2_proofs::poly::Polynomial;
+use halo2aggregator_s::solidity_verifier::codegen::solidity_aux_gen;
 use halo2aggregator_s::transcript::poseidon::PoseidonRead;
 use halo2aggregator_s::transcript::poseidon::PoseidonWrite;
 use halo2aggregator_s::transcript::sha256::ShaRead;
 use halo2aggregator_s::transcript::sha256::ShaWrite;
 use rand::rngs::OsRng;
 
+use crate::HashType;
+
 use super::Prover;
-use crate::args::HashType;
 
 pub struct NativeProver<E: MultiMillerLoop, ConcreteCircuit: Circuit<E::Scalar>> {
-    pub name: String,
+    pub params: Params<E::G1Affine>,
+    pub pkey: ProvingKey<E::G1Affine>,
     pub k: u32,
     pub circuit: ConcreteCircuit,
     pub instances: Vec<Vec<E::Scalar>>,
@@ -29,14 +34,16 @@ pub struct NativeProver<E: MultiMillerLoop, ConcreteCircuit: Circuit<E::Scalar>>
 
 impl<E: MultiMillerLoop, ConcreteCircuit: Circuit<E::Scalar>> NativeProver<E, ConcreteCircuit> {
     pub fn new(
-        name: String,
+        params: Params<E::G1Affine>,
+        pkey: ProvingKey<E::G1Affine>,
         circuit: ConcreteCircuit,
         k: u32,
         instances: Vec<Vec<E::Scalar>>,
         hash_type: HashType,
     ) -> Self {
         NativeProver {
-            name,
+            params,
+            pkey,
             k,
             circuit,
             instances,
@@ -45,10 +52,10 @@ impl<E: MultiMillerLoop, ConcreteCircuit: Circuit<E::Scalar>> NativeProver<E, Co
     }
 }
 
-impl<E: MultiMillerLoop, ConcreteCircuit: Circuit<E::Scalar>> Prover<E>
+impl<E: MultiMillerLoop, ConcreteCircuit: Circuit<E::Scalar> + Clone> Prover<E>
     for NativeProver<E, ConcreteCircuit>
 {
-    fn create_proof(self, params: &Params<E::G1Affine>, pkey: &ProvingKey<E::G1Affine>) -> Vec<u8> {
+    fn create_proof(&self) -> Vec<u8> {
         use ark_std::end_timer;
         use ark_std::start_timer;
 
@@ -60,7 +67,7 @@ impl<E: MultiMillerLoop, ConcreteCircuit: Circuit<E::Scalar>> Prover<E>
         let instances: Vec<&[E::Scalar]> =
             self.instances.iter().map(|x| &x[..]).collect::<Vec<_>>();
 
-        let params_verifier: ParamsVerifier<E> = params.verifier(inputs_size).unwrap();
+        let params_verifier: ParamsVerifier<E> = self.params.verifier(inputs_size).unwrap();
         let strategy = SingleVerifier::new(&params_verifier);
 
         let timer = start_timer!(|| "creating proof ...");
@@ -68,9 +75,9 @@ impl<E: MultiMillerLoop, ConcreteCircuit: Circuit<E::Scalar>> Prover<E>
             HashType::Poseidon => {
                 let mut transcript = PoseidonWrite::init(vec![]);
                 create_proof(
-                    &params,
-                    &pkey,
-                    &[self.circuit],
+                    &self.params,
+                    &self.pkey,
+                    &[self.circuit.clone()],
                     &[instances.as_slice()],
                     OsRng,
                     &mut transcript,
@@ -81,7 +88,7 @@ impl<E: MultiMillerLoop, ConcreteCircuit: Circuit<E::Scalar>> Prover<E>
                 log::info!("proof created with instance: {:?}", self.instances);
                 verify_proof(
                     &params_verifier,
-                    &pkey.get_vk(),
+                    &self.pkey.get_vk(),
                     strategy,
                     &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
                     &mut PoseidonRead::init(&r[..]),
@@ -93,9 +100,9 @@ impl<E: MultiMillerLoop, ConcreteCircuit: Circuit<E::Scalar>> Prover<E>
             HashType::Sha => {
                 let mut transcript = ShaWrite::<_, _, _, sha2::Sha256>::init(vec![]);
                 create_proof(
-                    &params,
-                    &pkey,
-                    &[self.circuit],
+                    &self.params,
+                    &self.pkey,
+                    &[self.circuit.clone()],
                     &[instances.as_slice()],
                     OsRng,
                     &mut transcript,
@@ -106,7 +113,7 @@ impl<E: MultiMillerLoop, ConcreteCircuit: Circuit<E::Scalar>> Prover<E>
                 log::info!("proof created with instance ... {:?}", self.instances);
                 verify_proof(
                     &params_verifier,
-                    &pkey.get_vk(),
+                    &self.pkey.get_vk(),
                     strategy,
                     &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
                     &mut ShaRead::<_, _, _, sha2::Sha256>::init(&r[..]),
@@ -150,5 +157,22 @@ impl<E: MultiMillerLoop, ConcreteCircuit: Circuit<E::Scalar>> NativeProver<E, Co
         let prover = MockProver::run(self.k, &self.circuit, self.instances.clone()).unwrap();
 
         assert_eq!(prover.verify(), Ok(()));
+    }
+
+    pub fn gen_solidity_aux(&self, proof: Vec<u8>, aux_file: &Path) -> anyhow::Result<()> {
+        assert_eq!(self.instances.len(), 1);
+        assert_eq!(self.hash_type, HashType::Sha);
+
+        let params_verifier: ParamsVerifier<E> = self.params.verifier(self.instances[0].len())?;
+
+        solidity_aux_gen(
+            &params_verifier,
+            self.pkey.get_vk(),
+            &self.instances[0],
+            proof,
+            aux_file,
+        );
+
+        Ok(())
     }
 }

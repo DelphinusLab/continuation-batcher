@@ -18,11 +18,9 @@ use rand::rngs::OsRng;
 use serde::Deserialize;
 use serde::Serialize;
 
-use crate::args::HashType;
+use crate::HashType;
 
 use super::Prover;
-
-
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ProofGenerationInfo {
@@ -86,16 +84,17 @@ impl ProofGenerationInfo {
     }
 }
 
-pub struct WitnessProver<E: MultiMillerLoop> {
-    pub name: String,
-    pub k: usize,
+pub struct WitnessProver<'a, E: MultiMillerLoop> {
+    pub params: &'a Params<E::G1Affine>,
+    pub pkey: &'a ProvingKey<E::G1Affine>,
+    pub k: u32,
     pub witness: Vec<Polynomial<E::Scalar, LagrangeCoeff>>,
     pub instances: Vec<Vec<E::Scalar>>,
     pub hash_type: HashType,
 }
 
-impl<E: MultiMillerLoop> Prover<E> for WitnessProver<E> {
-    fn create_proof(self, params: &Params<E::G1Affine>, pkey: &ProvingKey<E::G1Affine>) -> Vec<u8> {
+impl<'a, E: MultiMillerLoop> Prover<E> for WitnessProver<'a, E> {
+    fn create_proof(&self) -> Vec<u8> {
         let inputs_size = self
             .instances
             .iter()
@@ -104,16 +103,16 @@ impl<E: MultiMillerLoop> Prover<E> for WitnessProver<E> {
         let instances: Vec<&[E::Scalar]> =
             self.instances.iter().map(|x| &x[..]).collect::<Vec<_>>();
 
-        let params_verifier: ParamsVerifier<E> = params.verifier(inputs_size).unwrap();
+        let params_verifier: ParamsVerifier<E> = self.params.verifier(inputs_size).unwrap();
         let strategy = SingleVerifier::new(&params_verifier);
 
         match self.hash_type {
             HashType::Poseidon => {
                 let mut transcript = PoseidonWrite::init(vec![]);
                 create_proof_from_witness(
-                    &params,
-                    &pkey,
-                    vec![self.witness],
+                    &self.params,
+                    &self.pkey,
+                    vec![self.witness.clone()],
                     &[instances.as_slice()],
                     OsRng,
                     &mut transcript,
@@ -124,7 +123,7 @@ impl<E: MultiMillerLoop> Prover<E> for WitnessProver<E> {
                 let r = transcript.finalize();
                 verify_proof(
                     &params_verifier,
-                    &pkey.get_vk(),
+                    &self.pkey.get_vk(),
                     strategy,
                     &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
                     &mut PoseidonRead::init(&r[..]),
@@ -137,9 +136,9 @@ impl<E: MultiMillerLoop> Prover<E> for WitnessProver<E> {
             HashType::Sha => {
                 let mut transcript = ShaWrite::<_, _, _, sha2::Sha256>::init(vec![]);
                 create_proof_from_witness(
-                    &params,
-                    &pkey,
-                    vec![self.witness],
+                    &self.params,
+                    &self.pkey,
+                    vec![self.witness.clone()],
                     &[instances.as_slice()],
                     OsRng,
                     &mut transcript,
@@ -150,7 +149,7 @@ impl<E: MultiMillerLoop> Prover<E> for WitnessProver<E> {
                 log::info!("proof created with instance ... {:?}", self.instances);
                 verify_proof(
                     &params_verifier,
-                    &pkey.get_vk(),
+                    &self.pkey.get_vk(),
                     strategy,
                     &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
                     &mut ShaRead::<_, _, _, sha2::Sha256>::init(&r[..]),

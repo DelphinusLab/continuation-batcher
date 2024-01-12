@@ -38,7 +38,7 @@ pub struct CommitmentCheck {
 }
 
 impl CommitmentCheck {
-    pub fn load(fd: &File) -> io::Result<Self> {
+    pub fn read(fd: &File) -> io::Result<Self> {
         let commitment_check = serde_json::from_reader(fd)?;
 
         Ok(commitment_check)
