@@ -5,8 +5,6 @@ pub mod appbuilder;
 pub mod multi_proofs;
 pub mod request;
 
-mod test;
-
 struct CircuitBatcherApp;
 
 impl AppBuilder for CircuitBatcherApp {
