@@ -94,7 +94,7 @@ pub struct WitnessProver<'a, E: MultiMillerLoop> {
 }
 
 impl<'a, E: MultiMillerLoop> Prover<E> for WitnessProver<'a, E> {
-    fn create_proof(&self) -> Vec<u8> {
+    fn create_proof(&self) -> anyhow::Result<Vec<u8>> {
         let inputs_size = self
             .instances
             .iter()
@@ -116,21 +116,20 @@ impl<'a, E: MultiMillerLoop> Prover<E> for WitnessProver<'a, E> {
                     &[instances.as_slice()],
                     OsRng,
                     &mut transcript,
-                )
-                .expect("proof generation should not fail");
+                )?;
                 log::info!("proof created with instance ... {:?}", self.instances);
-
                 let r = transcript.finalize();
+
                 verify_proof(
                     &params_verifier,
                     &self.pkey.get_vk(),
                     strategy,
                     &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
                     &mut PoseidonRead::init(&r[..]),
-                )
-                .unwrap();
+                )?;
                 log::info!("verify halo2 proof succeed");
-                r
+
+                Ok(r)
             }
 
             HashType::Sha => {
@@ -142,21 +141,20 @@ impl<'a, E: MultiMillerLoop> Prover<E> for WitnessProver<'a, E> {
                     &[instances.as_slice()],
                     OsRng,
                     &mut transcript,
-                )
-                .expect("proof generation should not fail");
-
-                let r = transcript.finalize();
+                )?;
                 log::info!("proof created with instance ... {:?}", self.instances);
+                let r = transcript.finalize();
+
                 verify_proof(
                     &params_verifier,
                     &self.pkey.get_vk(),
                     strategy,
                     &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
                     &mut ShaRead::<_, _, _, sha2::Sha256>::init(&r[..]),
-                )
-                .unwrap();
+                )?;
                 log::info!("verify halo2 proof succeed");
-                r
+
+                Ok(r)
             }
         }
     }

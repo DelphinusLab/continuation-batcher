@@ -72,10 +72,9 @@ impl MultiProofsRequest {
                 hash_type: self.hash_type,
             };
 
-            let proof = prover.create_proof();
+            let proof = prover.create_proof()?;
 
-            let mut fd = File::create(output_dir.join(proof_request.transcript_output))?;
-            fd.write(&proof)?;
+            todo!("write proof");
         }
 
         Ok(())

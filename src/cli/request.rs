@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io,
+    io::{self, Write},
     path::{Path, PathBuf},
 };
 
@@ -17,52 +17,13 @@ use halo2_proofs::{
     poly::commitment::Params,
 };
 use halo2aggregator_s::circuits::utils::load_proof;
+use lru::LruCache;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-pub struct Request {
-    params: String,
-    proving_key: String,
-    k: u32,
-    hash_type: HashType,
-
-    witness: String,
-    instances: String,
-    transcript: String,
-}
-
-impl Request {
-    pub fn read(fd: &mut File) -> io::Result<Self> {
-        let request = serde_json::from_reader(fd)?;
-
-        Ok(request)
-    }
-
-    pub fn into_loader<E: MultiMillerLoop>(
-        self,
-        params_dir: &Path,
-        outputs_dir: &Path,
-    ) -> anyhow::Result<RequestLoader<E>> {
-        let params = Params::<E::G1Affine>::read(&mut File::open(params_dir.join(&self.params))?)?;
-        let pkey = ProvingKeyBuilder::read(&mut File::open(params_dir.join(&self.proving_key))?)?
-            .into_pkey(&params)?;
-
-        Ok(RequestLoader {
-            params,
-            pkey,
-            k: self.k,
-            hash_type: self.hash_type,
-
-            witness: outputs_dir.join(self.witness),
-            instances: outputs_dir.join(self.instances),
-            transcript: outputs_dir.join(self.transcript),
-        })
-    }
-}
-
-struct RequestLoader<E: MultiMillerLoop> {
-    params: Params<E::G1Affine>,
-    pkey: ProvingKey<E::G1Affine>,
+pub(crate) struct Request {
+    params: PathBuf,
+    proving_key: PathBuf,
     k: u32,
     hash_type: HashType,
 
@@ -71,8 +32,61 @@ struct RequestLoader<E: MultiMillerLoop> {
     transcript: PathBuf,
 }
 
-impl<E: MultiMillerLoop> RequestLoader<E> {
-    pub fn as_witness_prover<'a>(&'a self) -> anyhow::Result<WitnessProver<'a, E>> {
+impl Request {
+    pub(crate) fn read(fd: &mut File) -> io::Result<Self> {
+        let request = serde_json::from_reader(fd)?;
+
+        Ok(request)
+    }
+
+    pub(crate) fn write_proof<P: AsRef<Vec<u8>>>(&self, proof: P) -> io::Result<()> {
+        let mut fd = File::create(&self.transcript)?;
+
+        fd.write_all(proof.as_ref())?;
+
+        Ok(())
+    }
+
+    pub(crate) fn into_loader<'a, E: MultiMillerLoop>(
+        &self,
+        params_cache: &'a mut LruCache<PathBuf, Params<E::G1Affine>>,
+        proving_key_cache: &'a mut LruCache<PathBuf, ProvingKey<E::G1Affine>>,
+    ) -> anyhow::Result<RequestLoader<'a, E>> {
+        let params = params_cache.try_get_or_insert(self.params.canonicalize().unwrap(), || {
+            Params::read(&mut File::open(&self.params)?)
+        })?;
+
+        let pkey = proving_key_cache
+            .try_get_or_insert(self.proving_key.canonicalize().unwrap(), || {
+                ProvingKeyBuilder::read(&mut File::open(&self.proving_key)?)?.into_pkey(&params)
+            })?;
+
+        Ok(RequestLoader {
+            params,
+            pkey,
+            k: self.k,
+            hash_type: self.hash_type,
+
+            witness: self.witness.clone(),
+            instances: self.instances.clone(),
+            transcript: self.transcript.clone(),
+        })
+    }
+}
+
+pub(crate) struct RequestLoader<'a, E: MultiMillerLoop> {
+    params: &'a Params<E::G1Affine>,
+    pkey: &'a ProvingKey<E::G1Affine>,
+    k: u32,
+    hash_type: HashType,
+
+    witness: PathBuf,
+    instances: PathBuf,
+    transcript: PathBuf,
+}
+
+impl<'a, E: MultiMillerLoop> RequestLoader<'a, E> {
+    pub fn as_witness_prover(&'a self) -> anyhow::Result<WitnessProver<'a, E>> {
         let witness =
             AssignWitnessCollection::fetch_witness(&self.params, &mut File::open(&self.witness)?)?;
 
@@ -88,7 +102,7 @@ impl<E: MultiMillerLoop> RequestLoader<E> {
         })
     }
 
-    pub fn as_verifier<'a>(&'a self) -> anyhow::Result<SingleVerifier<'a, E>> {
+    pub fn as_verifier(&'a self) -> anyhow::Result<SingleVerifier<'a, E>> {
         let instances = load_instances::<E>(todo!(), &mut File::open(&self.instances)?)?;
 
         // Load proof from self.proof
@@ -142,7 +156,7 @@ pub struct BatchRequest {
 }
 
 impl BatchRequest {
-    pub fn new(
+    pub(crate) fn new(
         batch_k: u32,
         hash_type: HashType,
         target_proofs: Vec<Request>,

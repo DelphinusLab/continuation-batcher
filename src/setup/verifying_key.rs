@@ -1,8 +1,6 @@
 use std::num::NonZeroUsize;
-use std::sync::Mutex;
 
 use halo2_proofs::arithmetic::MultiMillerLoop;
-use halo2_proofs::pairing::bn256::Bn256;
 use halo2_proofs::plonk::ProvingKey;
 use lru::LruCache;
 

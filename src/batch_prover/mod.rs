@@ -1,4 +1,8 @@
+use std::path::Path;
+
+use halo2_proofs::poly::commitment::ParamsVerifier;
 use halo2_proofs::{arithmetic::MultiMillerLoop, plonk::VerifyingKey, poly::commitment::Params};
+use halo2aggregator_s::solidity_verifier::solidity_render;
 use halo2aggregator_s::{
     circuit_verifier::{
         build_aggregate_verify_circuit, circuit::AggregatorCircuit, G2AffineBaseHelper,
@@ -11,92 +15,6 @@ use crate::{single_prover::prover::native::NativeProver, HashType};
 
 pub mod commitment_check;
 pub mod loader;
-// use crate::args::HashType;
-// use ark_std::end_timer;
-// use ark_std::start_timer;
-// use halo2_proofs::arithmetic::Engine;
-// use halo2_proofs::arithmetic::MultiMillerLoop;
-// use halo2_proofs::poly::commitment::Params;
-// use halo2_proofs::poly::commitment::ParamsVerifier;
-// use halo2aggregator_s::circuit_verifier::build_aggregate_verify_circuit;
-// use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuit;
-// use halo2aggregator_s::circuit_verifier::G2AffineBaseHelper;
-// use halo2aggregator_s::circuits::utils::TranscriptHash;
-// use halo2aggregator_s::native_verifier;
-// use halo2ecc_s::circuit::pairing_chip::PairingChipOps;
-// use halo2ecc_s::context::NativeScalarEccContext;
-// use serde::Deserialize;
-// use serde::Serialize;
-// use std::path::Path;
-
-// impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
-// where
-//     NativeScalarEccContext<<E as Engine>::G1Affine>:
-//         PairingChipOps<<E as Engine>::G1Affine, <E as Engine>::Scalar>,
-// {
-//     fn get_commitment_index(
-//         &self,
-//         proofsinfo: &Vec<ProofLoadInfo>,
-//         cn: &CommitmentName,
-//     ) -> (usize, usize) {
-//         let mut idx = 0;
-//         let mut column_idx = None;
-//         for proofinfo in proofsinfo.iter() {
-//             if proofinfo.name == cn.name {
-//                 idx += cn.proof_idx;
-//                 let c = self.proofs[idx]
-//                     .vkey
-//                     .cs
-//                     .named_advices
-//                     .iter()
-//                     .position(|r| r.0 == cn.column_name)
-//                     .unwrap();
-//                 column_idx = Some(self.proofs[idx].vkey.cs.named_advices[c].1);
-//                 break;
-//             } else {
-//                 idx += proofinfo.transcripts.len()
-//             }
-//         }
-//         (idx, column_idx.unwrap() as usize)
-//     }
-
-//     fn get_instance_index(
-//         &self,
-//         proofsinfo: &Vec<ProofLoadInfo>,
-//         ci: &CommitmentInInstance,
-//     ) -> [usize; 3] {
-//         let mut idx = 0;
-//         for proofinfo in proofsinfo.iter() {
-//             if proofinfo.name == ci.name {
-//                 idx += ci.proof_idx;
-//                 break;
-//             } else {
-//                 idx += proofinfo.transcripts.len()
-//             }
-//         }
-//         [idx, 0, ci.group_idx * 3] // each commitment as instances are grouped by 3
-//     }
-
-//     pub fn load_commitments_check(
-//         &mut self,
-//         proofsinfo: &Vec<ProofLoadInfo>,
-//         commits: CommitmentCheck,
-//     ) {
-//         for eqs in commits.equivalents.iter() {
-//             let src = self.get_commitment_index(proofsinfo, &eqs.source);
-//             let target = self.get_commitment_index(proofsinfo, &eqs.target);
-//             self.equivalents.push([src.0, src.1, target.0, target.1])
-//         }
-//         for exp in commits.expose.iter() {
-//             let s = self.get_commitment_index(proofsinfo, exp);
-//             self.expose.push([s.0, s.1]);
-//         }
-//         for absorb in commits.absorb.iter() {
-//             let s = self.get_instance_index(proofsinfo, &absorb.instance_idx);
-//             let t = self.get_commitment_index(proofsinfo, &absorb.target);
-//             self.absorb.push((s, [t.0, t.1]));
-//         }
-//     }
 
 struct TargetProof<E: MultiMillerLoop> {
     vkey: VerifyingKey<E::G1Affine>,
@@ -165,6 +83,50 @@ where
             instances: vec![instances],
             hash_type: self.hash_type,
         }
+    }
+
+    pub fn generate_solidity(
+        &self,
+        solidity_template_path: &Path,
+        solidity_output_path: &Path,
+    ) -> anyhow::Result<()> {
+        // Why 12?
+        let max_public_inputs_size = 12;
+
+        let target_params_verifier: ParamsVerifier<E> =
+            self.target_params.verifier(max_public_inputs_size).unwrap();
+
+        let public_inputs_size = 3 * (self.target_proofs.len() + self.expose.len());
+
+        let agg_params_verifier = self.batch_params.verifier(public_inputs_size).unwrap();
+
+        let vkey = &self.target_proofs[0].vkey;
+        let instances = &self.target_proofs[0].instances[0];
+        assert_eq!(
+            instances.len(),
+            1,
+            "only support one instance column for target circuit now."
+        );
+        let proof = self.target_proofs[0].transcripts.clone();
+
+        solidity_render(
+            &(solidity_template_path.to_str().unwrap().to_owned() + "/*"),
+            solidity_output_path.to_str().unwrap(),
+            vec![(
+                "AggregatorConfig.sol.tera".to_owned(),
+                "AggregatorConfig.sol".to_owned(),
+            )],
+            "AggregatorVerifierStepStart.sol.tera",
+            "AggregatorVerifierStepEnd.sol.tera",
+            |i| format!("AggregatorVerifierStep{}.sol", i + 1),
+            &target_params_verifier,
+            &agg_params_verifier,
+            vkey,
+            instances,
+            proof,
+        );
+
+        Ok(())
     }
 }
 

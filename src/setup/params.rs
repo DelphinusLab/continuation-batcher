@@ -1,11 +1,7 @@
 use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::poly::commitment::Params;
 use lru::LruCache;
-use std::fs::File;
-use std::io;
 use std::num::NonZeroUsize;
-
-use crate::names::name_of_params;
 
 pub fn build_params<E: MultiMillerLoop>(k: u32) -> Params<E::G1Affine> {
     Params::<E::G1Affine>::unsafe_setup::<E>(k)

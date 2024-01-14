@@ -55,7 +55,7 @@ impl<E: MultiMillerLoop, ConcreteCircuit: Circuit<E::Scalar>> NativeProver<E, Co
 impl<E: MultiMillerLoop, ConcreteCircuit: Circuit<E::Scalar> + Clone> Prover<E>
     for NativeProver<E, ConcreteCircuit>
 {
-    fn create_proof(&self) -> Vec<u8> {
+    fn create_proof(&self) -> anyhow::Result<Vec<u8>> {
         use ark_std::end_timer;
         use ark_std::start_timer;
 
@@ -81,8 +81,7 @@ impl<E: MultiMillerLoop, ConcreteCircuit: Circuit<E::Scalar> + Clone> Prover<E>
                     &[instances.as_slice()],
                     OsRng,
                     &mut transcript,
-                )
-                .expect("proof generation should not fail");
+                )?;
 
                 let r = transcript.finalize();
                 log::info!("proof created with instance: {:?}", self.instances);
@@ -92,8 +91,8 @@ impl<E: MultiMillerLoop, ConcreteCircuit: Circuit<E::Scalar> + Clone> Prover<E>
                     strategy,
                     &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
                     &mut PoseidonRead::init(&r[..]),
-                )
-                .unwrap();
+                )?;
+
                 log::info!("verify halo2 proof succeed");
                 r
             }
@@ -106,10 +105,9 @@ impl<E: MultiMillerLoop, ConcreteCircuit: Circuit<E::Scalar> + Clone> Prover<E>
                     &[instances.as_slice()],
                     OsRng,
                     &mut transcript,
-                )
-                .expect("proof generation should not fail");
-
+                )?;
                 let r = transcript.finalize();
+
                 log::info!("proof created with instance ... {:?}", self.instances);
                 verify_proof(
                     &params_verifier,
@@ -117,15 +115,14 @@ impl<E: MultiMillerLoop, ConcreteCircuit: Circuit<E::Scalar> + Clone> Prover<E>
                     strategy,
                     &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
                     &mut ShaRead::<_, _, _, sha2::Sha256>::init(&r[..]),
-                )
-                .unwrap();
+                )?;
                 log::info!("verify halo2 proof succeed");
                 r
             }
         };
         end_timer!(timer);
 
-        r
+        Ok(r)
     }
 }
 

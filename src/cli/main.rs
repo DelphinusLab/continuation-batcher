@@ -1,25 +1,14 @@
 use appbuilder::AppBuilder;
-use args::ArgBuilder;
-use command::CommandBuilder;
+use halo2_proofs::pairing::bn256::Bn256;
 
 pub mod appbuilder;
-pub mod args;
-pub mod batch;
-pub mod command;
-pub mod helper;
 pub mod multi_proofs;
 pub mod request;
 
+mod test;
+
 struct CircuitBatcherApp;
 
-impl ArgBuilder for CircuitBatcherApp {
-    /*
-    fn parse_aggregate_private_args(matches: &ArgMatches) -> Vec<Vec<u64>> {
-        vec![]
-    }
-    */
-}
-impl CommandBuilder for CircuitBatcherApp {}
 impl AppBuilder for CircuitBatcherApp {
     const NAME: &'static str = "auto-circuit-batcher";
     const VERSION: &'static str = "v0.1-beta";
@@ -28,9 +17,36 @@ impl AppBuilder for CircuitBatcherApp {
 
 /// Simple program to greet a person
 fn main() -> anyhow::Result<()> {
-    let app = CircuitBatcherApp::app_builder();
-
-    CircuitBatcherApp::exec(app)?;
+    CircuitBatcherApp::exec::<Bn256>()?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use assert_cmd::Command;
+
+    #[test]
+    fn test_setup() {
+        let mut cmd = Command::cargo_bin("circuit-batcher").unwrap();
+
+        cmd.arg("setup")
+            .arg("-k")
+            .arg("18")
+            .arg("--params")
+            .arg("./params")
+            .assert()
+            .success();
+    }
+
+    #[test]
+    fn test_prove() {
+        let mut cmd = Command::cargo_bin("circuit-batcher").unwrap();
+
+        cmd.arg("prove")
+            .arg("--proofs")
+            .arg("./proofs")
+            .assert()
+            .success();
+    }
 }
