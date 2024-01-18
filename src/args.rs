@@ -13,7 +13,6 @@ pub enum HashType {
     Sha,
 }
 
-
 pub trait ArgBuilder {
     fn hashtype<'a>() -> Arg<'a> {
         arg!(-c --challenge<CHALLENGE_HASH_TYPE>... "HashType of Challenge")
@@ -74,22 +73,23 @@ pub trait ArgBuilder {
     fn output_path_arg<'a>() -> Arg<'a> {
         arg!(
             -o --output [OUTPUT_PATH] "Path of the output files."
-        ).value_parser(value_parser!(PathBuf))
+        )
+        .value_parser(value_parser!(PathBuf))
     }
 
     fn param_path_arg<'a>() -> Arg<'a> {
         arg!(
             -p --param [PARAM_PATH] "Path of the param files."
-        ).value_parser(value_parser!(PathBuf))
+        )
+        .value_parser(value_parser!(PathBuf))
     }
-
 
     fn proof_name_arg<'a>() -> Arg<'a> {
         arg!(
             -n --name [PROOF_NAME] "name of this task."
-        ).value_parser(value_parser!(String))
+        )
+        .value_parser(value_parser!(String))
     }
-
 
     fn sol_dir_arg<'a>() -> Arg<'a> {
         arg!(

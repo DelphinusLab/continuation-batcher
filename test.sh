@@ -10,7 +10,7 @@ cargo test --release
 cargo run --release --features cuda -- --param ./params --output ./output verify --challenge poseidon --info output/test1.loadinfo.json
 
 # batch test proofs
-cargo run --release --features cuda -- --param ./params --output ./output batch -k 22 --challenge sha --info output/test2.loadinfo.json output/test1.loadinfo.json --name batchsample --commits sample/batchinfo1.json --cont
+cargo run --release --features cuda -- --param ./params --output ./output batch -k 22 --challenge sha --info output/test2.loadinfo.json output/test1.loadinfo.json --name batchsample --commits sample/batchinfo1.json
 
 
 # verify generated proof for test circuits

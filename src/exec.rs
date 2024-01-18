@@ -1,12 +1,12 @@
 use crate::args::HashType;
 use crate::batch::BatchInfo;
 use crate::batch::CommitmentCheck;
-use crate::proof::ProofLoadInfo;
-use crate::proof::ProofInfo;
-use crate::proof::ProvingKeyCache;
-use crate::proof::ProofPieceInfo;
-use crate::proof::ParamsCache;
 use crate::proof::load_or_build_unsafe_params;
+use crate::proof::ParamsCache;
+use crate::proof::ProofInfo;
+use crate::proof::ProofLoadInfo;
+use crate::proof::ProofPieceInfo;
+use crate::proof::ProvingKeyCache;
 use halo2_proofs::poly::commitment::ParamsVerifier;
 use halo2aggregator_s::solidity_verifier::codegen::solidity_aux_gen;
 use halo2aggregator_s::solidity_verifier::solidity_render;
@@ -47,7 +47,11 @@ use log::info;
 
 use std::path::PathBuf;
 
-pub fn generate_k_params(aggregate_k: u32, param_dir: &PathBuf, params_cache: &mut ParamsCache<Bn256>) {
+pub fn generate_k_params(
+    aggregate_k: u32,
+    param_dir: &PathBuf,
+    params_cache: &mut ParamsCache<Bn256>,
+) {
     info!("Generating K Params file");
 
     // Setup Aggregate Circuit Params
@@ -70,22 +74,21 @@ pub fn exec_batch_proofs(
 ) {
     let mut target_k = None;
     let mut proofsinfo = vec![];
-    let proofs = config_files.iter().map(|config| {
+    let proofs = config_files
+        .iter()
+        .map(|config| {
             let proofloadinfo = ProofLoadInfo::load(config);
             proofsinfo.push(proofloadinfo.clone());
             // target batch proof needs to use poseidon hash
             assert_eq!(proofloadinfo.hashtype, HashType::Poseidon);
-            target_k = target_k.map_or(
-                Some(proofloadinfo.k),
-                |x| {
-                    // proofs in the same batch needs to have same size
-                    assert_eq!(x, proofloadinfo.k);
-                    Some(x)
-                }
-            );
+            target_k = target_k.map_or(Some(proofloadinfo.k), |x| {
+                // proofs in the same batch needs to have same size
+                assert_eq!(x, proofloadinfo.k);
+                Some(x)
+            });
             ProofInfo::load_proof(&output_dir, &param_dir, &proofloadinfo)
-        }
-    ).collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>()
         .into_iter()
         .flatten()
         .collect::<Vec<_>>();
@@ -107,40 +110,34 @@ pub fn exec_batch_proofs(
     let params = load_or_build_unsafe_params::<Bn256>(
         batchinfo.target_k,
         &param_dir.join(format!("K{}.params", batchinfo.target_k)),
-        params_cache
+        params_cache,
     );
 
     let (agg_circuit, agg_instances) = batchinfo.build_aggregate_circuit(&params);
-    
 
-    let circuit_info = ProofPieceInfo::new(proof_name.clone(), 0, 1);
+    let circuit_info = ProofPieceInfo::new(proof_name.clone(), 0, agg_instances.len() as u32);
 
-    let mut proof_load_info = ProofLoadInfo::new(
-        proof_name,
-        batchinfo.batch_k as usize,
-        hash
-    );
-
+    let mut proof_load_info = ProofLoadInfo::new(proof_name, batchinfo.batch_k as usize, hash);
 
     circuit_info.exec_create_proof(
-            &agg_circuit,
-            &vec![agg_instances],
-            &output_dir, 
-            &param_dir,
-            param_file.clone(),
-            proof_load_info.k as usize,
-            pkey_cache,
-            params_cache,
-            hash
-        );
+        &agg_circuit,
+        &vec![agg_instances],
+        &output_dir,
+        &param_dir,
+        param_file.clone(),
+        proof_load_info.k as usize,
+        pkey_cache,
+        params_cache,
+        hash,
+    );
+
+    let public_inputs_size = circuit_info.instance_size as usize;
 
     proof_load_info.append_single_proof(circuit_info);
     proof_load_info.save(&output_dir);
 
-    let proof: Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &param_dir, &proof_load_info);
-
-    let public_inputs_size =
-            proof[0].instances.iter().fold(0, |acc, x| usize::max(acc, x.len()));
+    let proof: Vec<ProofInfo<Bn256>> =
+        ProofInfo::load_proof(&output_dir, &param_dir, &proof_load_info);
 
     info!("generate aux data for proof: {:?}", proof_load_info);
 
@@ -150,6 +147,7 @@ pub fn exec_batch_proofs(
         &param_dir.join(param_file),
         params_cache,
     );
+
 
     let params_verifier: ParamsVerifier<Bn256> = params.verifier(public_inputs_size).unwrap();
 
@@ -177,17 +175,17 @@ pub fn exec_solidity_gen(
     batch_script: &CommitmentCheck,
     params_cache: &mut ParamsCache<Bn256>,
 ) {
-
     let max_public_inputs_size = 12;
     let aggregate_k = aggregate_proof_info.k;
 
     let proof_params = load_or_build_unsafe_params::<Bn256>(
         k as usize,
         &param_dir.join(format!("K{}.params", k)),
-        params_cache
+        params_cache,
     );
 
-    let proof_params_verifier: ParamsVerifier<Bn256> = proof_params.verifier(max_public_inputs_size).unwrap();
+    let proof_params_verifier: ParamsVerifier<Bn256> =
+        proof_params.verifier(max_public_inputs_size).unwrap();
 
     println!("nproof {}", n_proofs);
 
@@ -196,13 +194,13 @@ pub fn exec_solidity_gen(
     let agg_params = load_or_build_unsafe_params::<Bn256>(
         aggregate_k,
         &param_dir.join(format!("K{}.params", aggregate_k)),
-        params_cache
+        params_cache,
     );
-
 
     let agg_params_verifier = agg_params.verifier(public_inputs_size).unwrap();
 
-    let proof: Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &param_dir, aggregate_proof_info);
+    let proof: Vec<ProofInfo<Bn256>> =
+        ProofInfo::load_proof(&output_dir, &param_dir, aggregate_proof_info);
 
     solidity_render(
         &(sol_path_in.to_str().unwrap().to_owned() + "/*"),
@@ -221,4 +219,3 @@ pub fn exec_solidity_gen(
         proof[0].transcripts.clone(),
     );
 }
-
