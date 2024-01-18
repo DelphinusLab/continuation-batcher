@@ -1,6 +1,4 @@
-use crate::args::HashType;
 use crate::proof::ProofLoadInfo;
-use crate::proof::CircuitInfo;
 use crate::proof::ProofInfo;
 use ark_std::end_timer;
 use ark_std::start_timer;
@@ -100,7 +98,7 @@ impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
                 );
                 break;
             } else {
-                idx += proofinfo.transcripts.len()
+                idx += proofinfo.proofs.len()
             }
         }
         (idx, column_idx.unwrap() as usize)
@@ -117,7 +115,7 @@ impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
                 idx += ci.proof_idx;
                 break;
             } else {
-                idx += proofinfo.transcripts.len()
+                idx += proofinfo.proofs.len()
             }
         }
         [idx, 0, ci.group_idx * 3] // each commitment as instances are grouped by 3
@@ -148,10 +146,8 @@ impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
 
     pub fn build_aggregate_circuit(
         &self,
-        proof_name: String,
-        hashtype: HashType,
         params: &Params<E::G1Affine>,
-    ) -> CircuitInfo<E, AggregatorCircuit<E::G1Affine>> {
+    ) -> (AggregatorCircuit<<E as Engine>::G1Affine>, Vec<<E as Engine>::Scalar>) { 
         let mut all_proofs = vec![];
         let mut public_inputs_size = 0;
         let mut vkeys = vec![];
@@ -210,6 +206,6 @@ impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
         );
 
         end_timer!(timer);
-        CircuitInfo::new(circuit, proof_name, vec![instances], self.batch_k, hashtype)
+        (circuit, instances)
     }
 }

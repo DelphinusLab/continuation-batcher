@@ -4,6 +4,7 @@ use crate::batch::CommitmentCheck;
 use crate::proof::ProofLoadInfo;
 use crate::proof::ProofInfo;
 use crate::proof::ProvingKeyCache;
+use crate::proof::ProofPieceInfo;
 use crate::proof::ParamsCache;
 use crate::proof::load_or_build_unsafe_params;
 use halo2_proofs::poly::commitment::ParamsVerifier;
@@ -102,6 +103,8 @@ pub fn exec_batch_proofs(
 
     batchinfo.load_commitments_check(&proofsinfo, commits);
 
+    let param_file = format!("K{}.params", batchinfo.target_k);
+
     // setup target params
     let params = load_or_build_unsafe_params::<Bn256>(
         batchinfo.target_k,
@@ -109,22 +112,44 @@ pub fn exec_batch_proofs(
         params_cache
     );
 
-    let agg_circuit = batchinfo.build_aggregate_circuit(proof_name.clone(), hash, &params);
-    agg_circuit.proofloadinfo.save(&output_dir);
-    let agg_info = agg_circuit.proofloadinfo.clone();
-    agg_circuit.exec_create_proof(&output_dir, &param_dir, pkey_cache, 0, params_cache);
+    let (agg_circuit, agg_instances) = batchinfo.build_aggregate_circuit(&params);
+    
 
-    let proof: Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &param_dir, &agg_info);
+    let circuit_info = ProofPieceInfo::new(proof_name.clone(), 0, 1);
+
+    let mut proof_load_info = ProofLoadInfo::new(
+        proof_name,
+        batchinfo.batch_k as usize,
+        hash
+    );
+
+
+    circuit_info.exec_create_proof(
+            &agg_circuit,
+            &vec![agg_instances],
+            &output_dir, 
+            &param_dir,
+            param_file.clone(),
+            proof_load_info.k as usize,
+            pkey_cache,
+            params_cache,
+            hash
+        );
+
+    proof_load_info.append_single_proof(circuit_info);
+    proof_load_info.save(&output_dir);
+
+    let proof: Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &param_dir, &proof_load_info);
 
     let public_inputs_size =
             proof[0].instances.iter().fold(0, |acc, x| usize::max(acc, x.len()));
 
-    info!("generate aux data for proof: {:?}", agg_info);
+    info!("generate aux data for proof: {:?}", proof_load_info);
 
     // setup batch params
     let params = load_or_build_unsafe_params::<Bn256>(
-        agg_info.k as usize,
-        &param_dir.join(format!("K{}.params", k)),
+        proof_load_info.k as usize,
+        &param_dir.join(param_file),
         params_cache,
     );
 
@@ -140,7 +165,7 @@ pub fn exec_batch_proofs(
                 &proof[0].vkey,
                 &proof[0].instances[0],
                 proof[0].transcripts.clone(),
-                &output_dir.join(format!("{}.{}.aux.data", &agg_info.name.clone(), 0)),
+                &output_dir.join(format!("{}.{}.aux.data", &proof_load_info.name.clone(), 0)),
             );
         }
         HashType::Keccak => {
@@ -149,7 +174,7 @@ pub fn exec_batch_proofs(
                 &proof[0].vkey,
                 &proof[0].instances[0],
                 proof[0].transcripts.clone(),
-                &output_dir.join(format!("{}.{}.aux.data", &agg_info.name.clone(), 0)),
+                &output_dir.join(format!("{}.{}.aux.data", &proof_load_info.name.clone(), 0)),
             );
         },
         HashType::Poseidon => unreachable!()
