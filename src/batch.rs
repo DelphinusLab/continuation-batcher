@@ -10,11 +10,12 @@ use halo2_proofs::poly::commitment::{Params, ParamsVerifier};
 use halo2aggregator_s::circuit_verifier::G2AffineBaseHelper;
 use halo2aggregator_s::circuit_verifier::build_aggregate_verify_circuit;
 use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuit;
-use halo2aggregator_s::circuits::utils::TranscriptHash;
+use halo2aggregator_s::circuits::utils::{TranscriptHash, load_or_build_vkey, load_or_create_proof};
 use halo2aggregator_s::native_verifier;
 use halo2ecc_s::circuit::pairing_chip::PairingChipOps;
 use halo2ecc_s::context::NativeScalarEccContext;
 use std::path::Path;
+use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -70,6 +71,12 @@ pub struct BatchInfo<E: MultiMillerLoop> {
     pub equivalents: Vec<[usize; 4]>,
     pub expose: Vec<[usize; 2]>,
     pub absorb: Vec<([usize; 3], [usize; 2])>,
+}
+
+pub struct LastAggInfo<E: MultiMillerLoop> {
+    pub circuit: Option<AggregatorCircuit<E::G1Affine>>,
+    pub instances: Option<Vec<E::Scalar>>,
+    pub idx: usize
 }
 
 impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
@@ -151,26 +158,70 @@ impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
         proof_name: String,
         hashtype: HashType,
         params: &Params<E::G1Affine>,
-    ) -> CircuitInfo<E, AggregatorCircuit<E::G1Affine>> {
+        cache_folder: &PathBuf,
+        last_agg: Option<LastAggInfo<E>>,
+        target_aggregator_constant_hash_instance_offset: &Vec<(usize, usize, E::Scalar)>, // (proof_index, instance_col, hash)
+    ) -> (CircuitInfo<E, AggregatorCircuit<E::G1Affine>>, E::Scalar) {
         let mut all_proofs = vec![];
-        let mut public_inputs_size = 0;
         let mut vkeys = vec![];
         let mut instances = vec![];
-        for (_, proof) in self.proofs.iter().enumerate() {
+
+        // for agg
+        let agg_vkey;
+        let last_agg_instance_vec;
+        let mut public_inputs_size = 0;
+        if let Some(last_agg) = last_agg {  
+            // push proof
+            let proof = &self.proofs[last_agg.idx];
             all_proofs.push((&proof.transcripts).clone());
             vkeys.push(&proof.vkey);
-            //public_inputs_size += proof.instances.len() * 3;
-            public_inputs_size =
-                usize::max(public_inputs_size, proof.instances.iter().fold(0, |acc, x| usize::max(acc, x.len())));
             instances.push(&proof.instances);
-
+            // push agg when idx > 0
+            let mut agg_idx = last_agg.idx;
+            public_inputs_size = 10;
+            if agg_idx > 0 {  // not the first circuit
+                agg_idx -= 1;
+                let agg_circuit = last_agg.circuit.unwrap();
+                let last_agg_instance = last_agg.instances.unwrap();
+                agg_vkey = load_or_build_vkey::<E, _>(
+                    &params,
+                    &agg_circuit,
+                    Some(&cache_folder.join(format!("{}.agg.{}.vkey.data", proof_name, agg_idx))),
+                );
+                vkeys.push(&agg_vkey);
+            
+                let agg_proof = load_or_create_proof::<E, _>(
+                    &params,
+                    agg_vkey.clone(),
+                    agg_circuit,
+                    &[&last_agg_instance[..]][..],
+                    Some(&cache_folder.join(format!("{}.agg.{}.transcript.data", proof_name, agg_idx))),
+                    hashtype.into(),
+                    true,
+                );
+                all_proofs.push(agg_proof);
+                last_agg_instance_vec = vec![last_agg_instance];
+                instances.push(&last_agg_instance_vec);
+                public_inputs_size = 0;
+            }
+            
+        } else { // for common batching
+            for (_, proof) in self.proofs.iter().enumerate() {
+                all_proofs.push((&proof.transcripts).clone());
+                vkeys.push(&proof.vkey);
+                //public_inputs_size += proof.instances.len() * 3;
+                instances.push(&proof.instances);
+            } 
         }
-        println!("public input size {}", public_inputs_size);
+
+        // 4. many verify
+        public_inputs_size += instances.iter().fold(0usize, |acc, x| {
+            usize::max(acc, x.iter().fold(0, |acc, x| usize::max(acc, x.len())))
+        });
 
         let params_verifier: ParamsVerifier<E> = params.verifier(public_inputs_size).unwrap();
-
-        println!("check single proof for each proof info:");
-        if true {
+        if false {
+            println!("check single proof for each proof info:");
             let timer = start_timer!(|| "native verify single proof");
             for (_, proof) in self.proofs.iter().enumerate() {
                 //println!("proof is {:?}", proof.transcripts);
@@ -198,7 +249,7 @@ impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
 
         // circuit multi check
         let timer = start_timer!(|| "build aggregate verify circuit");
-        let (circuit, instances) = build_aggregate_verify_circuit::<E>(
+        let (circuit, instances, hash) = build_aggregate_verify_circuit::<E>(
             &params_verifier,
             &vkeys,
             instances,
@@ -207,9 +258,10 @@ impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
             self.equivalents.clone(),
             self.expose.clone(),
             self.absorb.clone(),
+            target_aggregator_constant_hash_instance_offset
         );
 
         end_timer!(timer);
-        CircuitInfo::new(circuit, proof_name, vec![instances], self.batch_k, hashtype)
+        (CircuitInfo::new(circuit, proof_name, vec![instances], self.batch_k, hashtype), hash)
     }
 }

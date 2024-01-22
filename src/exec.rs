@@ -1,11 +1,13 @@
 use crate::args::HashType;
 use crate::batch::BatchInfo;
 use crate::batch::CommitmentCheck;
+use crate::batch::LastAggInfo;
 use crate::proof::ProofLoadInfo;
 use crate::proof::ProofInfo;
 use crate::proof::ProvingKeyCache;
 use crate::proof::ParamsCache;
 use crate::proof::load_or_build_unsafe_params;
+use halo2_proofs::pairing::bn256::Fr;
 use halo2_proofs::poly::commitment::ParamsVerifier;
 use halo2aggregator_s::solidity_verifier::codegen::solidity_aux_gen;
 use halo2aggregator_s::solidity_verifier::solidity_render;
@@ -107,7 +109,14 @@ pub fn exec_batch_proofs(
         params_cache
     );
 
-    let agg_circuit = batchinfo.build_aggregate_circuit(proof_name.clone(), hash, &params);
+    let (agg_circuit, _) = batchinfo.build_aggregate_circuit(
+        proof_name.clone(), 
+        hash, 
+        &params,
+        output_dir,
+        None,
+        &vec![],
+    );
     agg_circuit.proofloadinfo.save(&output_dir);
     let agg_info = agg_circuit.proofloadinfo.clone();
     agg_circuit.exec_create_proof(&output_dir, &param_dir, pkey_cache, 0, params_cache);
@@ -139,6 +148,90 @@ pub fn exec_batch_proofs(
             &output_dir.join(format!("{}.{}.aux.data", &agg_info.name.clone(), 0)),
         );
     }
+}
+
+
+pub fn exec_batch_proofs_cont(
+    params_cache: &mut ParamsCache<Bn256>,
+    proof_name: &String,
+    output_dir: &PathBuf,
+    param_dir: &PathBuf,
+    config_files: Vec<PathBuf>,
+    commits: CommitmentCheck,
+    hash: HashType,
+    k: u32,
+) -> Fr {
+    let mut target_k = None;
+    let mut proofsinfo = vec![];
+    let proofs = config_files.iter().map(|config| {
+            let proofloadinfo = ProofLoadInfo::load(config);
+            proofsinfo.push(proofloadinfo.clone());
+            // target batch proof needs to use poseidon hash
+            assert_eq!(proofloadinfo.hashtype, HashType::Poseidon);
+            target_k = target_k.map_or(
+                Some(proofloadinfo.k),
+                |x| {
+                    // proofs in the same batch needs to have same size
+                    assert_eq!(x, proofloadinfo.k);
+                    Some(x)
+                }
+            );
+            ProofInfo::load_proof(&output_dir, &param_dir, &proofloadinfo)
+        }
+    ).collect::<Vec<_>>()
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
+
+    let mut batchinfo = BatchInfo::<Bn256> {
+        proofs,
+        target_k: target_k.unwrap(),
+        batch_k: k as usize,
+        equivalents: vec![[0, 0, 0, 0]],
+        absorb: vec![],
+        expose: vec![],
+    };
+
+    batchinfo.load_commitments_check(&proofsinfo, commits);
+
+    // setup target params
+    let params = load_or_build_unsafe_params::<Bn256>(
+        batchinfo.target_k,
+        &param_dir.join(format!("K{}.params", batchinfo.target_k)),
+        params_cache
+    );
+
+
+    let (mut last_agg, mut last_hash) = batchinfo.build_aggregate_circuit(
+        proof_name.clone(), 
+        hash, 
+        &params,
+        output_dir,
+        Some(LastAggInfo {
+            circuit: None,
+            instances: None,
+            idx: 0
+        }),
+        &vec![],
+    );
+
+    for i in 1..batchinfo.proofs.len() {
+        let last_agginfo = LastAggInfo {
+            circuit: Some(last_agg.circuits.pop().unwrap()),
+            instances: Some(last_agg.instances.pop().unwrap()),
+            idx: i
+        };
+        (last_agg, last_hash) = batchinfo.build_aggregate_circuit(
+            proof_name.clone(), 
+            hash, 
+            &params,
+            output_dir,
+            Some(last_agginfo),
+            &vec![(1, 0, last_hash)],
+        );
+    }
+
+    last_hash
 }
 
 pub fn exec_solidity_gen(

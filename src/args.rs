@@ -5,12 +5,22 @@ use clap::value_parser;
 use clap::Arg;
 use clap::ArgAction;
 use clap::ArgMatches;
+use halo2aggregator_s::circuits::utils::TranscriptHash;
 use serde::{Deserialize, Serialize};
 
 #[derive(clap::ArgEnum, Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
 pub enum HashType {
     Poseidon,
     Sha,
+}
+
+impl From<HashType> for TranscriptHash {
+    fn from(value: HashType) -> Self {
+        match value {
+            HashType::Poseidon => TranscriptHash::Poseidon,
+            HashType::Sha => TranscriptHash::Sha
+        }
+    }
 }
 
 
