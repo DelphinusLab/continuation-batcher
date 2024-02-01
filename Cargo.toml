@@ -12,7 +12,7 @@ anyhow = "1.0.68"
 ark-std = { version = "0.4.0" }
 downcast-rs = "1.2.0"
 env_logger = "0.9.3"
-halo2aggregator-s = { git = "https://github.com/DelphinusLab/halo2aggregator-s.git", branch="keccak", features = ["unsafe"] }
+halo2aggregator-s = { git = "https://github.com/DelphinusLab/halo2aggregator-s.git", branch="uniform-vkey", features = ["unsafe"] }
 halo2_proofs = { git = "https://github.com/DelphinusLab/halo2-gpu-specific.git", default-features = true }
 halo2ecc-s = { git = "https://github.com/lanbones/halo2ecc-s.git", tag = "bisect-lookup-0.3.3" }
 ff = "0.12"

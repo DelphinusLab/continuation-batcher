@@ -476,7 +476,7 @@ source = "git+https://github.com/lanbones/ec-gpu#165d1dd6215f6fd1dd85c83cf430ff5
 [[package]]
 name = "ec-gpu-gen"
 version = "0.4.0"
-source = "git+https://github.com/lanbones/ec-gpu?branch=halo2-opt-v2#784eda53754a5344f75e4b3c533361d628ad1402"
+source = "git+https://github.com/lanbones/ec-gpu?branch=halo2-opt-v2#5481be558da026bb9bddcd5807f973f6b1a8346e"
 dependencies = [
  "ark-std 0.3.0",
  "bitvec",
@@ -694,9 +694,9 @@ dependencies = [
 [[package]]
 name = "halo2_proofs"
 version = "0.1.0-beta.1"
-source = "git+https://github.com/DelphinusLab/halo2-gpu-specific.git#9ac108049b488df640eecdd5eb18751062442898"
+source = "git+https://github.com/DelphinusLab/halo2-gpu-specific.git#a2c3fba52ab2a46e08a3f161f352cf0ecd43c08b"
 dependencies = [
- "ark-std 0.3.0",
+ "ark-std 0.4.0",
  "blake2b_simd",
  "bumpalo",
  "cfg-if 0.1.10",
@@ -706,6 +706,7 @@ dependencies = [
  "ff",
  "group",
  "lazy_static",
+ "log",
  "memmap",
  "num",
  "num-bigint",
@@ -722,9 +723,9 @@ dependencies = [
 [[package]]
 name = "halo2aggregator-s"
 version = "0.1.0"
-source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git?branch=keccak#d2e3cbeb3c26a0fb562b1a4b8ac9f32afbcb6c08"
+source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git?branch=uniform-vkey#ae1d1a58b75ef52c7affbf5c7f3c343a3a0d8925"
 dependencies = [
- "ark-std 0.4.0",
+ "ark-std 0.3.0",
  "blake2b_simd",
  "halo2_proofs",
  "halo2ecc-s",
@@ -1222,7 +1223,7 @@ dependencies = [
 [[package]]
 name = "poseidon"
 version = "0.2.0"
-source = "git+https://github.com/lanbones/poseidon#df8891073182c5c6cc1e2e7f9d2f4297d3c1565d"
+source = "git+https://github.com/lanbones/poseidon#58835e054512ad7833df6d20479e9e0e034a073b"
 dependencies = [
  "halo2_proofs",
  "subtle",

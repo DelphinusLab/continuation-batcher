@@ -8,12 +8,15 @@ use halo2_proofs::poly::commitment::{Params, ParamsVerifier};
 use halo2aggregator_s::circuit_verifier::build_aggregate_verify_circuit;
 use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuit;
 use halo2aggregator_s::circuit_verifier::G2AffineBaseHelper;
-use halo2aggregator_s::circuits::utils::TranscriptHash;
+use halo2aggregator_s::circuits::utils::{
+    load_or_build_vkey, load_or_create_proof, TranscriptHash,
+};
 use halo2aggregator_s::native_verifier;
 use halo2ecc_s::circuit::pairing_chip::PairingChipOps;
 use halo2ecc_s::context::NativeScalarEccContext;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
+use std::path::PathBuf;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct CommitmentName {
@@ -46,6 +49,12 @@ pub struct CommitmentCheck {
     pub equivalents: Vec<CommitmentEquivPair>,
     pub expose: Vec<CommitmentName>,
     pub absorb: Vec<CommitmentAbsorb>,
+}
+
+pub struct LastAggInfo<E: MultiMillerLoop> {
+    pub circuit: Option<AggregatorCircuit<E::G1Affine>>,
+    pub instances: Option<Vec<E::Scalar>>,
+    pub idx: usize,
 }
 
 impl CommitmentCheck {
@@ -152,34 +161,80 @@ where
 
     pub fn build_aggregate_circuit(
         &self,
+        proof_name: String,
         params: &Params<E::G1Affine>,
+        param_folder: &PathBuf,
+        cache_folder: &PathBuf,
+        last_agg: Option<LastAggInfo<E>>,
+        target_aggregator_constant_hash_instance_offset: &Vec<(usize, usize, E::Scalar)>, // (proof_index, instance_col, hash)
     ) -> (
         AggregatorCircuit<<E as Engine>::G1Affine>,
         Vec<<E as Engine>::Scalar>,
+        <E as Engine>::Scalar,
     ) {
         let mut all_proofs = vec![];
         let mut public_inputs_size = 0;
         let mut vkeys = vec![];
         let mut instances = vec![];
-        for (_, proof) in self.proofs.iter().enumerate() {
+
+        let agg_vkey;
+        let last_agg_instance_vec;
+
+        if let Some(last_agg) = last_agg {
+            // push proof
+            let proof = &self.proofs[last_agg.idx];
             all_proofs.push((&proof.transcripts).clone());
             vkeys.push(&proof.vkey);
-            //public_inputs_size += proof.instances.len() * 3;
-            public_inputs_size = usize::max(
-                public_inputs_size,
-                proof
-                    .instances
-                    .iter()
-                    .fold(0, |acc, x| usize::max(acc, x.len())),
-            );
             instances.push(&proof.instances);
+
+            // push agg when idx > 0
+            let mut agg_idx = last_agg.idx;
+            // need to generalize this
+            public_inputs_size = 10;
+            if agg_idx > 0 {
+                // not the first circuit
+                agg_idx -= 1;
+                let agg_circuit = last_agg.circuit.unwrap();
+                let last_agg_instance = last_agg.instances.unwrap();
+                agg_vkey = load_or_build_vkey::<E, _>(
+                    &params,
+                    &agg_circuit,
+                    Some(&param_folder.join(format!("{}.{}.vkey.data", proof_name, agg_idx))),
+                );
+                vkeys.push(&agg_vkey);
+
+                let agg_proof = load_or_create_proof::<E, _>(
+                    &params,
+                    agg_vkey.clone(),
+                    agg_circuit,
+                    &[&last_agg_instance[..]][..],
+                    Some(&cache_folder.join(format!("{}.{}.transcript.data", proof_name, agg_idx))),
+                    TranscriptHash::Poseidon,
+                    true,
+                );
+                all_proofs.push(agg_proof);
+                last_agg_instance_vec = vec![last_agg_instance];
+                instances.push(&last_agg_instance_vec);
+                public_inputs_size = 0;
+            }
+        } else {
+            for (_, proof) in self.proofs.iter().enumerate() {
+                all_proofs.push((&proof.transcripts).clone());
+                vkeys.push(&proof.vkey);
+                instances.push(&proof.instances);
+            }
         }
+        //public_inputs_size += proof.instances.len() * 3;
+        public_inputs_size += instances.iter().fold(0usize, |acc, x| {
+            usize::max(acc, x.iter().fold(0, |acc, x| usize::max(acc, x.len())))
+        });
+
         println!("public input size {}", public_inputs_size);
 
         let params_verifier: ParamsVerifier<E> = params.verifier(public_inputs_size).unwrap();
 
-        println!("check single proof for each proof info:");
-        if true {
+        if false {
+            println!("check single proof for each proof info:");
             let timer = start_timer!(|| "native verify single proof");
             for (_, proof) in self.proofs.iter().enumerate() {
                 //println!("proof is {:?}", proof.transcripts);
@@ -206,7 +261,7 @@ where
 
         // circuit multi check
         let timer = start_timer!(|| "build aggregate verify circuit");
-        let (circuit, instances) = build_aggregate_verify_circuit::<E>(
+        let (circuit, instances, hash) = build_aggregate_verify_circuit::<E>(
             &params_verifier,
             &vkeys,
             instances,
@@ -215,9 +270,10 @@ where
             self.equivalents.clone(),
             self.expose.clone(),
             self.absorb.clone(),
+            target_aggregator_constant_hash_instance_offset,
         );
 
         end_timer!(timer);
-        (circuit, instances)
+        (circuit, instances, hash)
     }
 }
