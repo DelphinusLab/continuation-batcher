@@ -53,6 +53,17 @@ pub trait ArgBuilder {
             .collect::<Vec<_>>()
     }
 
+    fn cont_arg<'a>() -> Arg<'a> {
+        arg!(
+            --cont "Is continuation's loadinfo."
+        )
+        .action(ArgAction::SetTrue)
+    }
+
+    fn parse_cont_arg(matches: &ArgMatches) -> bool {
+        matches.get_one::<bool>("cont").map_or(false, |&x| x)
+    }
+
     fn commits_info_arg<'a>() -> Arg<'a> {
         Arg::new("commits")
             .long("commits")

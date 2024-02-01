@@ -1,6 +1,7 @@
 use crate::args::HashType;
 use crate::batch::BatchInfo;
 use crate::batch::CommitmentCheck;
+use crate::batch::LastAggInfo;
 use crate::proof::load_or_build_unsafe_params;
 use crate::proof::ParamsCache;
 use crate::proof::ProofInfo;
@@ -71,6 +72,7 @@ pub fn exec_batch_proofs(
     commits: CommitmentCheck,
     hash: HashType,
     k: u32,
+    cont: bool,
 ) {
     let mut target_k = None;
     let mut proofsinfo = vec![];
@@ -113,7 +115,46 @@ pub fn exec_batch_proofs(
         params_cache,
     );
 
-    let (agg_circuit, agg_instances) = batchinfo.build_aggregate_circuit(&params);
+    let (agg_circuit, agg_instances, _) = if cont {
+        let (mut last_agg, mut instances, mut last_hash) = batchinfo.build_aggregate_circuit(
+            proof_name.clone(),
+            &params,
+            &param_dir.clone(),
+            &output_dir.clone(),
+            Some(LastAggInfo {
+                circuit: None,
+                instances: None,
+                idx: 0,
+            }),
+            &vec![],
+        );
+
+        for i in 1..batchinfo.proofs.len() {
+            let last_agginfo = LastAggInfo {
+                circuit: Some(last_agg),
+                instances: Some(instances),
+                idx: i,
+            };
+            (last_agg, instances, last_hash) = batchinfo.build_aggregate_circuit(
+                proof_name.clone(),
+                &params,
+                &param_dir.clone(),
+                &output_dir.clone(),
+                Some(last_agginfo),
+                &vec![(1, 0, last_hash)],
+            );
+        }
+        (last_agg, instances, last_hash)
+    } else {
+        batchinfo.build_aggregate_circuit(
+            proof_name.clone(),
+            &params,
+            &param_dir.clone(),
+            &output_dir.clone(),
+            None,
+            &vec![],
+        )
+    };
 
     let circuit_info = ProofPieceInfo::new(proof_name.clone(), 0, agg_instances.len() as u32);
 
@@ -147,7 +188,6 @@ pub fn exec_batch_proofs(
         &param_dir.join(param_file),
         params_cache,
     );
-
 
     let params_verifier: ParamsVerifier<Bn256> = params.verifier(public_inputs_size).unwrap();
 

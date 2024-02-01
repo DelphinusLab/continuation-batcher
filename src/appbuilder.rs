@@ -94,13 +94,13 @@ pub trait AppBuilder: CommandBuilder {
                 let hash = Self::parse_hashtype(&sub_matches);
                 let config_files = Self::parse_proof_load_info_arg(sub_matches);
                 let batch_script_file = Self::parse_commits_equiv_info_arg(sub_matches);
+                let cont = Self::parse_cont_arg(sub_matches);
                 let proof_name = sub_matches
                     .get_one::<String>("name")
                     .expect("name of the prove task is not provided");
 
                 let batch_script_info = CommitmentCheck::load(&batch_script_file);
                 debug!("commits equivalent {:?}", batch_script_info);
-
                 exec_batch_proofs(
                     K_PARAMS_CACHE.lock().as_mut().unwrap(),
                     PKEY_CACHE.lock().as_mut().unwrap(),
@@ -111,6 +111,7 @@ pub trait AppBuilder: CommandBuilder {
                     batch_script_info,
                     hash,
                     k,
+                    cont,
                 )
             }
 
