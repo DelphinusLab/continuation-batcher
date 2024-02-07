@@ -117,6 +117,7 @@ pub fn exec_batch_proofs(
         params_cache,
     );
 
+    let mut circuit_info_idx = 0;
     let (agg_circuit, agg_instances, _) = if cont {
         let (mut last_agg, mut instances, mut last_hash) = batchinfo.build_aggregate_circuit(
             proof_name.clone(),
@@ -146,6 +147,7 @@ pub fn exec_batch_proofs(
                 &vec![(1, 0, last_hash)],
             );
         }
+        circuit_info_idx = batchinfo.proofs.len();
         (last_agg, instances, last_hash)
     } else {
         batchinfo.build_aggregate_circuit(
@@ -158,8 +160,7 @@ pub fn exec_batch_proofs(
         )
     };
 
-    let circuit_info = ProofPieceInfo::new(proof_name.clone(), 0, agg_instances.len() as u32);
-
+    let circuit_info = ProofPieceInfo::new(proof_name.clone(), circuit_info_idx, agg_instances.len() as u32);
     let mut proof_load_info = ProofLoadInfo::new(proof_name, batchinfo.batch_k as usize, hash);
 
     circuit_info.exec_create_proof(
