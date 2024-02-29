@@ -132,15 +132,29 @@ pub fn exec_batch_proofs(
 
     // generate solidity aux data
     // it only makes sense if the transcript challenge is poseidon
-    if hash == HashType::Sha {
-        solidity_aux_gen::<_, sha3::Keccak256>(
-            &params_verifier,
-            &proof[0].vkey,
-            &proof[0].instances[0],
-            proof[0].transcripts.clone(),
-            &output_dir.join(format!("{}.{}.aux.data", &agg_info.name.clone(), 0)),
-        );
+    match hash {
+
+        HashType::Sha => {
+            solidity_aux_gen::<_, sha2::Sha256>(
+                &params_verifier,
+                &proof[0].vkey,
+                &proof[0].instances[0],
+                proof[0].transcripts.clone(),
+                &output_dir.join(format!("{}.{}.aux.data", &agg_info.name.clone(), 0)),
+            );
+        }
+        HashType::Keccak => {
+            solidity_aux_gen::<_, sha3::Keccak256>(
+                &params_verifier,
+                &proof[0].vkey,
+                &proof[0].instances[0],
+                proof[0].transcripts.clone(),
+                &output_dir.join(format!("{}.{}.aux.data", &agg_info.name.clone(), 0)),
+            );
+        },
+        HashType::Poseidon => unreachable!()
     }
+   
 }
 
 pub fn exec_solidity_gen<D: Digest + Clone>(
