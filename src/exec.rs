@@ -7,6 +7,7 @@ use crate::proof::ProvingKeyCache;
 use crate::proof::ParamsCache;
 use crate::proof::load_or_build_unsafe_params;
 use halo2_proofs::poly::commitment::ParamsVerifier;
+use halo2aggregator_s::circuits::utils::TranscriptHash;
 use halo2aggregator_s::solidity_verifier::codegen::solidity_aux_gen;
 use halo2aggregator_s::solidity_verifier::solidity_render;
 
@@ -43,6 +44,7 @@ use halo2aggregator_s::transcript::poseidon::PoseidonRead;
 use halo2aggregator_s::transcript::sha256::ShaRead;
 */
 use log::info;
+use sha2::Digest;
 
 use std::path::PathBuf;
 
@@ -131,7 +133,7 @@ pub fn exec_batch_proofs(
     // generate solidity aux data
     // it only makes sense if the transcript challenge is poseidon
     if hash == HashType::Sha {
-        solidity_aux_gen(
+        solidity_aux_gen::<_, sha3::Keccak256>(
             &params_verifier,
             &proof[0].vkey,
             &proof[0].instances[0],
@@ -141,7 +143,7 @@ pub fn exec_batch_proofs(
     }
 }
 
-pub fn exec_solidity_gen(
+pub fn exec_solidity_gen<D: Digest + Clone>(
     param_dir: &PathBuf,
     output_dir: &PathBuf,
     k: u32,
@@ -151,6 +153,7 @@ pub fn exec_solidity_gen(
     aggregate_proof_info: &ProofLoadInfo,
     batch_script: &CommitmentCheck,
     params_cache: &mut ParamsCache<Bn256>,
+    hasher: TranscriptHash,
 ) {
 
     let max_public_inputs_size = 12;
@@ -179,7 +182,7 @@ pub fn exec_solidity_gen(
 
     let proof: Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &param_dir, aggregate_proof_info);
 
-    solidity_render(
+    solidity_render::<_,D>(
         &(sol_path_in.to_str().unwrap().to_owned() + "/*"),
         sol_path_out.to_str().unwrap(),
         vec![(
@@ -189,6 +192,7 @@ pub fn exec_solidity_gen(
         "AggregatorVerifierStepStart.sol.tera",
         "AggregatorVerifierStepEnd.sol.tera",
         |i| format!("AggregatorVerifierStep{}.sol", i + 1),
+        hasher,
         &proof_params_verifier,
         &agg_params_verifier,
         &proof[0].vkey,

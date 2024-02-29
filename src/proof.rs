@@ -228,6 +228,31 @@ impl ProofGenerationInfo {
                     .unwrap();
                     log::info!("verify halo2 proof succeed");
                     r
+                },
+                HashType::Keccak => {
+                    let mut transcript = ShaWrite::<_, _, _, sha3::Keccak256>::init(vec![]);
+                    create_proof_from_witness(
+                        &params,
+                        &pkey,
+                        &[instances.as_slice()],
+                        OsRng,
+                        &mut transcript,
+                        &mut witnessreader,
+                    )
+                    .expect("proof generation should not fail");
+
+                    let r = transcript.finalize();
+                    log::info!("proof created with instance ... {:?}", self.instances);
+                    verify_proof(
+                        &params_verifier,
+                        &pkey.get_vk(),
+                        strategy,
+                        &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
+                        &mut ShaRead::<_, _, _, sha3::Keccak256>::init(&r[..]),
+                    )
+                    .unwrap();
+                    log::info!("verify halo2 proof succeed");
+                    r
                 }
             };
 
@@ -530,6 +555,31 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
                     strategy,
                     &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
                     &mut ShaRead::<_, _, _, sha2::Sha256>::init(&r[..]),
+                )
+                .unwrap();
+                log::info!("verify halo2 proof succeed");
+                r
+            },
+            HashType::Keccak => {
+                let mut transcript = ShaWrite::<_, _, _, sha3::Keccak256>::init(vec![]);
+                create_proof(
+                    &params,
+                    &pkey,
+                    &self.circuits,
+                    &[instances.as_slice()],
+                    OsRng,
+                    &mut transcript,
+                )
+                .expect("proof generation should not fail");
+
+                let r = transcript.finalize();
+                log::info!("proof created with instance ... {:?}", self.instances);
+                verify_proof(
+                    &params_verifier,
+                    &pkey.get_vk(),
+                    strategy,
+                    &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
+                    &mut ShaRead::<_, _, _, sha3::Keccak256>::init(&r[..]),
                 )
                 .unwrap();
                 log::info!("verify halo2 proof succeed");

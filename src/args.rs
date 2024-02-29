@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 pub enum HashType {
     Poseidon,
     Sha,
+    Keccak,
 }
 
 

@@ -70,13 +70,15 @@ library AggregatorConfig {
         view
         returns (bytes32[1] memory v)
     {
+        {% if hasher == "sha256" %}
         bool success;
+        uint256 len = length * 32 + 1;
         assembly {
             success := staticcall(
                 sub(gas(), 2000),
                 2,
                 add(absorbing, 0x20),
-                length,
+                len,
                 v,
                 32
             )
@@ -86,11 +88,23 @@ library AggregatorConfig {
             }
         }
         assert(success);
+        {% elif hasher == "keccak" %}
+        bytes memory tmp = new bytes(32 * length + 1);
+        tmp[length * 32] = 0;
+        for (uint256 i = 0; i < length; i++) {
+            uint256 offset = 32 + (i * 32);
+            uint256 data = absorbing[i];
+            assembly { mstore(add(tmp, offset), data) }
+        }
+        v[0] = keccak256(tmp);
+        {% else %}
+        require(false);
+        {% endif %}
     }
 
     function squeeze_challenge(uint256[] memory absorbing, uint256 length) internal view returns (uint256 v) {
         absorbing[length] = 0;
-        bytes32 res = hash(absorbing, length * 32 + 1)[0];
+        bytes32 res = hash(absorbing, length)[0];
         absorbing[0] = uint256(res);
         v = absorbing[0] % AggregatorLib.p_mod;
     }
