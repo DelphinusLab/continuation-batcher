@@ -45,6 +45,7 @@ pub trait CommandBuilder: ArgBuilder {
     fn append_generate_solidity_verifier(app: App) -> App {
         let command = Command::new("solidity")
             .arg(Self::zkwasm_k_arg())
+            .arg(Self::hashtype())
             .arg(Self::commits_info_arg())
             .arg(Self::sol_dir_arg())
             .arg(Self::proof_load_info_arg());
