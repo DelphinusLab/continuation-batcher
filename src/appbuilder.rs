@@ -153,6 +153,8 @@ pub trait AppBuilder: CommandBuilder {
                                 HashType::Sha => TranscriptHash::Sha,
                                 HashType::Keccak => TranscriptHash::Keccak,
                             },
+                            true,
+                            &vec![],
                         );
                     }
                     end_timer!(timer);

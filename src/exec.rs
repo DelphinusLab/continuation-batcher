@@ -12,6 +12,7 @@ use halo2_proofs::poly::commitment::ParamsVerifier;
 use halo2aggregator_s::circuits::utils::TranscriptHash;
 use halo2aggregator_s::solidity_verifier::codegen::solidity_aux_gen;
 use halo2aggregator_s::solidity_verifier::solidity_render;
+use halo2aggregator_s::transcript::sha256;
 
 /*
 use crate::profile::Profiler;
@@ -118,8 +119,8 @@ pub fn exec_batch_proofs(
     );
 
     let mut circuit_info_idx = 0;
-    let (agg_circuit, agg_instances, _) = if cont {
-        let (mut last_agg, mut instances, mut last_hash) = batchinfo.build_aggregate_circuit(
+    let (agg_circuit, agg_instances, fake_instances, _) = if cont {
+        let (mut last_agg, mut instances, mut fake_instances, mut last_hash) = batchinfo.build_aggregate_circuit(
             proof_name.clone(),
             &params,
             &param_dir.clone(),
@@ -129,6 +130,7 @@ pub fn exec_batch_proofs(
                 instances: None,
                 idx: 0,
             }),
+            false,
             &vec![],
         );
 
@@ -138,17 +140,18 @@ pub fn exec_batch_proofs(
                 instances: Some(instances),
                 idx: i,
             };
-            (last_agg, instances, last_hash) = batchinfo.build_aggregate_circuit(
+            (last_agg, instances, fake_instances, last_hash) = batchinfo.build_aggregate_circuit(
                 proof_name.clone(),
                 &params,
                 &param_dir.clone(),
                 &output_dir.clone(),
                 Some(last_agginfo),
+                false,
                 &vec![(1, 0, last_hash)],
             );
         }
         circuit_info_idx = batchinfo.proofs.len();
-        (last_agg, instances, last_hash)
+        (last_agg, instances, fake_instances, last_hash)
     } else {
         batchinfo.build_aggregate_circuit(
             proof_name.clone(),
@@ -156,6 +159,7 @@ pub fn exec_batch_proofs(
             &param_dir.clone(),
             &output_dir.clone(),
             None,
+            false,
             &vec![],
         )
     };
@@ -255,7 +259,7 @@ pub fn exec_solidity_gen<D: Digest + Clone>(
         params_cache,
     );
 
-    let agg_params_verifier = agg_params.verifier(public_inputs_size).unwrap();
+    //let agg_params_verifier = agg_params.verifier(public_inputs_size).unwrap();
 
     let proof: Vec<ProofInfo<Bn256>> =
         ProofInfo::load_proof(&output_dir, &param_dir, aggregate_proof_info);
@@ -272,7 +276,7 @@ pub fn exec_solidity_gen<D: Digest + Clone>(
         |i| format!("AggregatorVerifierStep{}.sol", i + 1),
         hasher,
         &proof_params_verifier,
-        &agg_params_verifier,
+        //&agg_params_verifier,
         &proof[0].vkey,
         &proof[0].instances[0],
         proof[0].transcripts.clone(),

@@ -2,8 +2,7 @@ use crate::args::HashType;
 use ark_std::rand::rngs::OsRng;
 use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::dev::MockProver;
-use halo2_proofs::helpers::fetch_pk_info;
-use halo2_proofs::helpers::store_pk_info;
+use halo2_proofs::plonk::CircuitData;
 use halo2_proofs::helpers::Serializable;
 use halo2_proofs::pairing::bn256::Bn256;
 use halo2_proofs::plonk::create_proof;
@@ -183,7 +182,7 @@ impl ProofGenerationInfo {
                     create_proof_from_witness(
                         &params,
                         &pkey,
-                        &[instances.as_slice()],
+                        [instances.as_slice()].as_slice(),
                         OsRng,
                         &mut transcript,
                         &mut witnessreader,
@@ -212,7 +211,7 @@ impl ProofGenerationInfo {
                     create_proof_from_witness(
                         &params,
                         &pkey,
-                        &[instances.as_slice()],
+                        [instances.as_slice()].as_slice(),
                         OsRng,
                         &mut transcript,
                         &mut witnessreader,
@@ -240,7 +239,7 @@ impl ProofGenerationInfo {
                     create_proof_from_witness(
                         &params,
                         &pkey,
-                        &[instances.as_slice()],
+                        [instances.as_slice()].as_slice(),
                         OsRng,
                         &mut transcript,
                         &mut witnessreader,
@@ -248,7 +247,7 @@ impl ProofGenerationInfo {
                     .expect("proof generation should not fail");
 
                     let r = transcript.finalize();
-                    log::info!("proof created with instance ... {:?}", self.instances);
+                    log::info!("proof created with instance ... {:?}", instances);
                     verify_proof(
                         &params_verifier,
                         &pkey.get_vk(),
@@ -485,7 +484,7 @@ impl Prover for ProofPieceInfo {
                     &params,
                     &pkey,
                     std::slice::from_ref(c),
-                    &[instances.as_slice()],
+                    [instances.as_slice()].as_slice(),
                     OsRng,
                     &mut transcript,
                 )
@@ -510,7 +509,7 @@ impl Prover for ProofPieceInfo {
                     &params,
                     &pkey,
                     std::slice::from_ref(c),
-                    &[instances.as_slice()],
+                    [instances.as_slice()].as_slice(),
                     OsRng,
                     &mut transcript,
                 )
@@ -534,15 +533,15 @@ impl Prover for ProofPieceInfo {
                 create_proof(
                     &params,
                     &pkey,
-                    &self.circuits,
-                    &[instances.as_slice()],
+                    std::slice::from_ref(c),
+                    [instances.as_slice()].as_slice(),
                     OsRng,
                     &mut transcript,
                 )
                 .expect("proof generation should not fail");
 
                 let r = transcript.finalize();
-                log::info!("proof created with instance ... {:?}", self.instances);
+                log::info!("proof created with instance ... {:?}", instances);
                 verify_proof(
                     &params_verifier,
                     &pkey.get_vk(),
@@ -653,7 +652,7 @@ pub fn load_or_build_pkey<'a, E: MultiMillerLoop, C: Circuit<E::Scalar>>(
             let pkey =
                 keygen_pk(&params, vkey.clone(), circuit).expect("keygen_pk should not fail");
             let timer = start_timer!(|| "test storing info full ...");
-            store_info_full::<E, C>(&params, &vkey, circuit, cache_file);
+            store_info_full::<E, C>(&params, vkey, circuit, cache_file);
             end_timer!(timer);
             pkey
         };
@@ -663,7 +662,7 @@ pub fn load_or_build_pkey<'a, E: MultiMillerLoop, C: Circuit<E::Scalar>>(
 
 fn store_info_full<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
     params: &Params<E::G1Affine>,
-    vkey: &VerifyingKey<E::G1Affine>,
+    vkey: VerifyingKey<E::G1Affine>,
     circuit: &C,
     cache_file: &Path,
 ) {
@@ -675,8 +674,9 @@ fn store_info_full<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
         .truncate(true)
         .open(&cache_file)
         .unwrap();
-    vkey.store(&mut fd).unwrap();
-    store_pk_info(params, vkey, circuit, &mut fd).unwrap();
+    let data = CircuitData::new(params, vkey, circuit).unwrap();
+    data.write(&mut fd).unwrap();
+
 }
 
 pub(crate) fn read_vkey_full<E: MultiMillerLoop>(cache_file: &Path) -> VerifyingKey<E::G1Affine> {
@@ -696,7 +696,8 @@ pub(crate) fn read_pk_full<E: MultiMillerLoop>(
     let vk = VerifyingKey::<E::G1Affine>::fetch(&mut fd).unwrap();
     end_timer!(timer);
     let timer = start_timer!(|| "fetch pk full ...");
-    let pk = fetch_pk_info(params, &vk, &mut fd).unwrap();
+    let circuit_data = CircuitData::read(&mut fd).unwrap();
+    let pk = circuit_data.into_proving_key(params);
     end_timer!(timer);
     pk
 }

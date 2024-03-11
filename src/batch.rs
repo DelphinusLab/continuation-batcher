@@ -10,10 +10,11 @@ use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuit;
 use halo2aggregator_s::circuit_verifier::G2AffineBaseHelper;
 use halo2aggregator_s::circuits::utils::{
     load_or_build_vkey, load_or_create_proof, TranscriptHash,
+    AggregatorConfig,
 };
 use halo2aggregator_s::native_verifier;
-use halo2ecc_s::circuit::pairing_chip::PairingChipOps;
-use halo2ecc_s::context::NativeScalarEccContext;
+use halo2aggregator_s::PairingChipOps;
+use halo2aggregator_s::NativeScalarEccContext;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::path::PathBuf;
@@ -166,9 +167,11 @@ where
         param_folder: &PathBuf,
         cache_folder: &PathBuf,
         last_agg: Option<LastAggInfo<E>>,
+        is_final: bool,
         target_aggregator_constant_hash_instance_offset: &Vec<(usize, usize, E::Scalar)>, // (proof_index, instance_col, hash)
     ) -> (
         AggregatorCircuit<<E as Engine>::G1Affine>,
+        Vec<<E as Engine>::Scalar>,
         Vec<<E as Engine>::Scalar>,
         <E as Engine>::Scalar,
     ) {
@@ -211,6 +214,7 @@ where
                     Some(&cache_folder.join(format!("{}.{}.transcript.data", proof_name, agg_idx))),
                     TranscriptHash::Poseidon,
                     true,
+                    true,
                 );
                 all_proofs.push(agg_proof);
                 last_agg_instance_vec = vec![last_agg_instance];
@@ -229,6 +233,12 @@ where
             usize::max(acc, x.iter().fold(0, |acc, x| usize::max(acc, x.len())))
         });
 
+        let target_proof_max_instance = instances.iter().map(|x| {
+            x.iter().map(|x| x.len()).collect::<Vec<_>>()
+        }).collect::<Vec<_>>();
+
+        
+
         println!("public input size {}", public_inputs_size);
 
         let params_verifier: ParamsVerifier<E> = params.verifier(public_inputs_size).unwrap();
@@ -245,6 +255,8 @@ where
                     &proof.instances,
                     proof.transcripts.clone(),
                     TranscriptHash::Poseidon,
+                    true,
+                    &vec![]
                 );
             }
             end_timer!(timer);
@@ -259,21 +271,32 @@ where
         println!("commitment expose: {:?}", self.expose);
         println!("commitment absorb: {:?}", self.absorb);
 
+        let config = &AggregatorConfig {
+            hash: TranscriptHash::Poseidon,
+            commitment_check: self.equivalents.clone(),
+            expose: self.expose.clone(),
+            absorb: self.absorb.clone(),
+            target_aggregator_constant_hash_instance_offset: target_aggregator_constant_hash_instance_offset.clone(),
+            target_proof_with_shplonk: vec![],
+            target_proof_with_shplonk_as_default: false,
+            target_proof_max_instance,
+            is_final_aggregator: is_final,
+            prev_aggregator_skip_instance: vec![],
+            absorb_instance: vec![],
+        };
+
+
         // circuit multi check
         let timer = start_timer!(|| "build aggregate verify circuit");
-        let (circuit, instances, hash) = build_aggregate_verify_circuit::<E>(
+        let (circuit, instances, fake_instance, hash) = build_aggregate_verify_circuit::<E>(
             &params_verifier,
             &vkeys,
             instances,
             all_proofs,
-            TranscriptHash::Poseidon,
-            self.equivalents.clone(),
-            self.expose.clone(),
-            self.absorb.clone(),
-            target_aggregator_constant_hash_instance_offset,
+            config,
         );
 
         end_timer!(timer);
-        (circuit, instances, hash)
+        (circuit, instances, fake_instance, hash)
     }
 }

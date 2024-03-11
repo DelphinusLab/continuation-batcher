@@ -237,7 +237,6 @@ dependencies = [
  "ff",
  "halo2_proofs",
  "halo2aggregator-s",
- "halo2ecc-s",
  "hex",
  "lazy_static",
  "log",
@@ -248,7 +247,6 @@ dependencies = [
  "num-derive",
  "num-integer",
  "num-traits",
- "poseidon",
  "quote",
  "rand",
  "rusty-fork",
@@ -694,7 +692,7 @@ dependencies = [
 [[package]]
 name = "halo2_proofs"
 version = "0.1.0-beta.1"
-source = "git+https://github.com/DelphinusLab/halo2-gpu-specific.git#a2c3fba52ab2a46e08a3f161f352cf0ecd43c08b"
+source = "git+https://github.com/DelphinusLab/halo2-gpu-specific.git#600c9d1e01d75effe3d683bde81dc34b7f6ec62f"
 dependencies = [
  "ark-std 0.4.0",
  "blake2b_simd",
@@ -723,9 +721,9 @@ dependencies = [
 [[package]]
 name = "halo2aggregator-s"
 version = "0.1.0"
-source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git?branch=uniform-vkey#ae1d1a58b75ef52c7affbf5c7f3c343a3a0d8925"
+source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git?branch=explorer-integration#eb2329050971f00a6fc2f2a1416b80d2f91f69a4"
 dependencies = [
- "ark-std 0.3.0",
+ "ark-std 0.4.0",
  "blake2b_simd",
  "halo2_proofs",
  "halo2ecc-s",
@@ -741,12 +739,13 @@ dependencies = [
 [[package]]
 name = "halo2ecc-s"
 version = "0.3.2"
-source = "git+https://github.com/lanbones/halo2ecc-s.git?tag=bisect-lookup-0.3.3#9698edde834f0bd90a82d0ac37803f5be2b093ad"
+source = "git+https://github.com/lanbones/halo2ecc-s.git?branch=no-select-chip#2fc9b6017892bec85e52c30c5fa8aa169b36936b"
 dependencies = [
  "halo2_proofs",
  "num-bigint",
  "num-integer",
  "rayon",
+ "sha3",
 ]
 
 [[package]]
