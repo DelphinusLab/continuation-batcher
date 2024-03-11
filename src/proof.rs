@@ -488,17 +488,17 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
         let strategy = SingleVerifier::new(&params_verifier);
 
         assert_eq!(self.circuits.len(), 1);
-        let mut advices = Arc::new(prepare_advice_buffer(pkey));
+        let mut advices = Arc::new(prepare_advice_buffer(pkey, false));
 
         generate_advice_from_synthesize(
             &params,
             pkey,
             &self.circuits[0],
             &instances,
-            unsafe { Arc::get_mut_unchecked(&mut advices) }
+            &mut unsafe { Arc::get_mut_unchecked(&mut advices) }
                 .iter_mut()
-                .map(|x| (&mut x[..]) as *mut [_])
-                .collect(),
+                .map(|x| &mut x[..])
+                .collect::<Vec<_>>()[..],
         );
 
         let timer = start_timer!(|| "creating proof ...");
