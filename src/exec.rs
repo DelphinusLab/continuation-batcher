@@ -12,7 +12,7 @@ use halo2_proofs::poly::commitment::ParamsVerifier;
 use halo2aggregator_s::circuits::utils::TranscriptHash;
 use halo2aggregator_s::solidity_verifier::codegen::solidity_aux_gen;
 use halo2aggregator_s::solidity_verifier::solidity_render;
-use halo2aggregator_s::transcript::sha256;
+use halo2aggregator_s::circuits::utils::store_instance;
 
 /*
 use crate::profile::Profiler;
@@ -109,6 +109,8 @@ pub fn exec_batch_proofs(
 
     batchinfo.load_commitments_check(&proofsinfo, commits);
 
+    let is_final = hash == HashType::Sha || hash == HashType::Keccak;
+
     let param_file = format!("K{}.params", batchinfo.target_k);
 
     // setup target params
@@ -119,8 +121,8 @@ pub fn exec_batch_proofs(
     );
 
     let mut circuit_info_idx = 0;
-    let (agg_circuit, agg_instances, fake_instances, _) = if cont {
-        let (mut last_agg, mut instances, mut fake_instances, mut last_hash) = batchinfo.build_aggregate_circuit(
+    let (agg_circuit, agg_instances, shadow_instances, _) = if cont {
+        let (mut last_agg, mut instances, mut shadow_instances, mut last_hash) = batchinfo.build_aggregate_circuit(
             proof_name.clone(),
             &params,
             &param_dir.clone(),
@@ -140,7 +142,7 @@ pub fn exec_batch_proofs(
                 instances: Some(instances),
                 idx: i,
             };
-            (last_agg, instances, fake_instances, last_hash) = batchinfo.build_aggregate_circuit(
+            (last_agg, instances, shadow_instances, last_hash) = batchinfo.build_aggregate_circuit(
                 proof_name.clone(),
                 &params,
                 &param_dir.clone(),
@@ -151,7 +153,7 @@ pub fn exec_batch_proofs(
             );
         }
         circuit_info_idx = batchinfo.proofs.len();
-        (last_agg, instances, fake_instances, last_hash)
+        (last_agg, instances, shadow_instances, last_hash)
     } else {
         batchinfo.build_aggregate_circuit(
             proof_name.clone(),
@@ -159,7 +161,7 @@ pub fn exec_batch_proofs(
             &param_dir.clone(),
             &output_dir.clone(),
             None,
-            false,
+            is_final,
             &vec![],
         )
     };
@@ -210,6 +212,7 @@ pub fn exec_batch_proofs(
                 proof[0].transcripts.clone(),
                 &output_dir.join(format!("{}.{}.aux.data", &proof_load_info.name.clone(), 0)),
             );
+            store_instance(&vec![shadow_instances], &output_dir.join(format!("{}.{}.shadowinstance.data", &proof_load_info.name.clone(), 0)))
         }
         HashType::Keccak => {
             solidity_aux_gen::<_, sha3::Keccak256>(
@@ -219,6 +222,7 @@ pub fn exec_batch_proofs(
                 proof[0].transcripts.clone(),
                 &output_dir.join(format!("{}.{}.aux.data", &proof_load_info.name.clone(), 0)),
             );
+            store_instance(&vec![shadow_instances], &output_dir.join(format!("{}.{}.shadowinstance.data", &proof_load_info.name.clone(), 0)))
         },
         HashType::Poseidon => unreachable!()
     }
@@ -233,12 +237,10 @@ pub fn exec_solidity_gen<D: Digest + Clone>(
     sol_path_in: &PathBuf,
     sol_path_out: &PathBuf,
     aggregate_proof_info: &ProofLoadInfo,
-    batch_script: &CommitmentCheck,
     params_cache: &mut ParamsCache<Bn256>,
     hasher: TranscriptHash,
 ) {
     let max_public_inputs_size = 12;
-    let aggregate_k = aggregate_proof_info.k;
 
     let proof_params = load_or_build_unsafe_params::<Bn256>(
         k as usize,
@@ -250,16 +252,6 @@ pub fn exec_solidity_gen<D: Digest + Clone>(
         proof_params.verifier(max_public_inputs_size).unwrap();
 
     println!("nproof {}", n_proofs);
-
-    let public_inputs_size = 3 * (n_proofs + batch_script.expose.len());
-
-    let agg_params = load_or_build_unsafe_params::<Bn256>(
-        aggregate_k,
-        &param_dir.join(format!("K{}.params", aggregate_k)),
-        params_cache,
-    );
-
-    //let agg_params_verifier = agg_params.verifier(public_inputs_size).unwrap();
 
     let proof: Vec<ProofInfo<Bn256>> =
         ProofInfo::load_proof(&output_dir, &param_dir, aggregate_proof_info);

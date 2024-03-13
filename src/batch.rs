@@ -276,19 +276,20 @@ where
             commitment_check: self.equivalents.clone(),
             expose: self.expose.clone(),
             absorb: self.absorb.clone(),
-            target_aggregator_constant_hash_instance_offset: target_aggregator_constant_hash_instance_offset.clone(),
+            target_aggregator_constant_hash_instance_offset: target_aggregator_constant_hash_instance_offset.clone(), // hash instance of the proof index
             target_proof_with_shplonk: vec![],
-            target_proof_with_shplonk_as_default: false,
+            target_proof_with_shplonk_as_default: true,
             target_proof_max_instance,
             is_final_aggregator: is_final,
-            prev_aggregator_skip_instance: vec![],
+            //is_final_aggregator: true,
+            prev_aggregator_skip_instance: vec![], // hash get absorbed automatically
             absorb_instance: vec![],
         };
 
 
         // circuit multi check
         let timer = start_timer!(|| "build aggregate verify circuit");
-        let (circuit, instances, fake_instance, hash) = build_aggregate_verify_circuit::<E>(
+        let (circuit, instances, shadow_instance, hash) = build_aggregate_verify_circuit::<E>(
             &params_verifier,
             &vkeys,
             instances,
@@ -297,6 +298,6 @@ where
         );
 
         end_timer!(timer);
-        (circuit, instances, fake_instance, hash)
+        (circuit, instances, shadow_instance, hash)
     }
 }

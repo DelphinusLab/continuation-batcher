@@ -38,28 +38,27 @@ contract AggregatorVerifier {
         uint256[] calldata aux,
         uint256[][] calldata target_instance
     ) public view {
-        // step 0: verify target_instance commitment with target_instance
-        for (uint256 i = 0; i < target_instance.length; i++) {
-            uint256[] memory target_instance_buf = AggregatorConfig
-                .calc_target_circuit_lagrange(target_instance[i]);
-            uint256 x;
-            uint256 y;
+        uint256[] memory buf = new uint256[](43);
 
-            (x, y) = encoding_scalars_to_point(
-                verify_instance[i * 3],
-                verify_instance[i * 3 + 1],
-                verify_instance[i * 3 + 2]
-            );
-            require(x == target_instance_buf[0], "invalid instance x");
-            require(y == target_instance_buf[1], "invalid instance y");
+        // step 0: calc real verify instance with keccak
+        uint256 len = 0;
+        for (uint256 i = 0; i < target_instance.length; i++) {
+            for (uint256 j = 0; j < target_instance[i].length; j++) {
+                buf[len++] = target_instance[i][j];
+            }
         }
+
+        for (uint256 i = 0; i < verify_instance.length; i++) {
+                buf[len++] = verify_instance[i];
+        }
+
+        buf[2] = AggregatorLib.hash_instances(buf, len);
 
         uint256[] memory verify_circuit_pairing_buf = new uint256[](12);
 
         {
             // step 1: calculate verify circuit instance commitment
-            uint256[] memory buf = new uint256[](180);
-            AggregatorConfig.calc_verify_circuit_lagrange(buf, verify_instance);
+            AggregatorConfig.calc_verify_circuit_lagrange(buf);
 
             // step 2: calculate challenge
             AggregatorConfig.get_challenges(proof, buf);

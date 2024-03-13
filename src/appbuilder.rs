@@ -178,15 +178,12 @@ pub trait AppBuilder: CommandBuilder {
                 sol_path_contracts.push("contracts");
                 let proofloadinfo = ProofLoadInfo::load(&config_file[0]);
 
-                let commits_equiv_file = Self::parse_commits_equiv_info_arg(sub_matches);
-                let commits_equiv_info = CommitmentCheck::load(&commits_equiv_file);
-
                 match hasher {
                     TranscriptHash::Keccak => {
-                        exec_solidity_gen::<sha3::Keccak256>(param_dir, output_dir, k, n_proofs, &sol_path_templates, &sol_path_contracts, &proofloadinfo, &commits_equiv_info, K_PARAMS_CACHE.lock().as_mut().unwrap(), hasher);
+                        exec_solidity_gen::<sha3::Keccak256>(param_dir, output_dir, k, n_proofs, &sol_path_templates, &sol_path_contracts, &proofloadinfo, K_PARAMS_CACHE.lock().as_mut().unwrap(), hasher);
                     },
                     TranscriptHash::Sha => {
-                        exec_solidity_gen::<sha2::Sha256>(param_dir, output_dir, k, n_proofs, &sol_path_templates, &sol_path_contracts, &proofloadinfo, &commits_equiv_info, K_PARAMS_CACHE.lock().as_mut().unwrap(), hasher);
+                        exec_solidity_gen::<sha2::Sha256>(param_dir, output_dir, k, n_proofs, &sol_path_templates, &sol_path_contracts, &proofloadinfo, K_PARAMS_CACHE.lock().as_mut().unwrap(), hasher);
                     },
                     _ => {
                         panic!("Solidity generation only supports Keccak and Sha hash functions");

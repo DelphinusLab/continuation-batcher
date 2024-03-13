@@ -5,11 +5,11 @@ use halo2_proofs::dev::MockProver;
 use halo2_proofs::plonk::CircuitData;
 use halo2_proofs::helpers::Serializable;
 use halo2_proofs::pairing::bn256::Bn256;
-use halo2_proofs::plonk::create_proof;
+use halo2_proofs::plonk::create_proof_with_shplonk as create_proof;
 use halo2_proofs::plonk::create_proof_from_witness;
 use halo2_proofs::plonk::create_witness;
 use halo2_proofs::plonk::keygen_pk;
-use halo2_proofs::plonk::verify_proof;
+use halo2_proofs::plonk::verify_proof_with_shplonk;
 use halo2_proofs::plonk::Circuit;
 use halo2_proofs::plonk::ProvingKey;
 use halo2_proofs::plonk::SingleVerifier;
@@ -186,6 +186,7 @@ impl ProofGenerationInfo {
                         OsRng,
                         &mut transcript,
                         &mut witnessreader,
+                        false,
                     )
                     .expect("proof generation should not fail");
                     log::info!(
@@ -194,7 +195,7 @@ impl ProofGenerationInfo {
                     );
 
                     let r = transcript.finalize();
-                    verify_proof(
+                    verify_proof_with_shplonk(
                         &params_verifier,
                         &pkey.get_vk(),
                         strategy,
@@ -215,6 +216,7 @@ impl ProofGenerationInfo {
                         OsRng,
                         &mut transcript,
                         &mut witnessreader,
+                        false,
                     )
                     .expect("proof generation should not fail");
 
@@ -223,7 +225,7 @@ impl ProofGenerationInfo {
                         "proof created with instance ... {:?}",
                         &single_proof.instance
                     );
-                    verify_proof(
+                    verify_proof_with_shplonk(
                         &params_verifier,
                         &pkey.get_vk(),
                         strategy,
@@ -243,12 +245,13 @@ impl ProofGenerationInfo {
                         OsRng,
                         &mut transcript,
                         &mut witnessreader,
+                        false
                     )
                     .expect("proof generation should not fail");
 
                     let r = transcript.finalize();
                     log::info!("proof created with instance ... {:?}", instances);
-                    verify_proof(
+                    verify_proof_with_shplonk(
                         &params_verifier,
                         &pkey.get_vk(),
                         strategy,
@@ -492,7 +495,7 @@ impl Prover for ProofPieceInfo {
 
                 let r = transcript.finalize();
                 log::info!("proof created with instance: {:?}", instances);
-                verify_proof(
+                verify_proof_with_shplonk(
                     &params_verifier,
                     &pkey.get_vk(),
                     strategy,
@@ -517,7 +520,7 @@ impl Prover for ProofPieceInfo {
 
                 let r = transcript.finalize();
                 log::info!("proof created with instance ... {:?}", instances);
-                verify_proof(
+                verify_proof_with_shplonk(
                     &params_verifier,
                     &pkey.get_vk(),
                     strategy,
@@ -542,7 +545,7 @@ impl Prover for ProofPieceInfo {
 
                 let r = transcript.finalize();
                 log::info!("proof created with instance ... {:?}", instances);
-                verify_proof(
+                verify_proof_with_shplonk(
                     &params_verifier,
                     &pkey.get_vk(),
                     strategy,
@@ -693,7 +696,6 @@ pub(crate) fn read_pk_full<E: MultiMillerLoop>(
     let timer = start_timer!(|| "fetch vkey full ...");
     log::info!("read vkey full from {:?}", cache_file);
     let mut fd = std::fs::File::open(&cache_file).unwrap();
-    let vk = VerifyingKey::<E::G1Affine>::fetch(&mut fd).unwrap();
     end_timer!(timer);
     let timer = start_timer!(|| "fetch pk full ...");
     let circuit_data = CircuitData::read(&mut fd).unwrap();
@@ -786,19 +788,4 @@ fn batch_single_circuit() {
     }
 
     proof_load_info.save(cache_folder);
-
-    /*
-    let batchinfo = BatchInfo::<Bn256> {
-        proofs: ProofInfo::load_proof(cache_folder, params_folder, &proof_load_info),
-        target_k: K as usize,
-        batch_k: K as usize,
-        equivalents: vec![],
-        expose: vec![],
-        absorb: vec![],
-    };
-
-    let agg_circuit = batchinfo.build_aggregate_circuit(&Path::new("output"), "aggregator".to_string(), HashType::Sha);
-    agg_circuit.create_witness(&Path::new("output"), 0);
-    agg_circuit.create_proof(&Path::new("output"), 0);
-    */
 }

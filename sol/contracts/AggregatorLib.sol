@@ -3,15 +3,29 @@
 pragma solidity ^0.8.13;
 
 library AggregatorLib {
-    uint256 constant q_mod = 21888242871839275222246405745257275088696311157297823662689037894645226208583;
-    uint256 constant p_mod = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
+    uint256 constant p_mod = 21888242871839275222246405745257275088696311157297823662689037894645226208583;
+    uint256 constant q_mod = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
+
+    function hash_instances(uint256[] memory absorbing, uint256 length)
+        internal
+        pure
+        returns (uint256)
+    {
+        bytes memory tmp = new bytes(32 * length);
+        for (uint256 i = 0; i < length; i++) {
+            uint256 offset = 32 + (i * 32);
+            uint256 data = absorbing[i];
+            assembly { mstore(add(tmp, offset), data) }
+        }
+        return uint256(keccak256(tmp)) % q_mod;
+    }
 
     function check_on_curve(uint256 x, uint256 y) internal pure {
         if (x != 0 && y != 0) {
-            uint256 l = mulmod(y, y, q_mod);
-            uint256 r = mulmod(x, x, q_mod);
-            r = mulmod(r, x, q_mod);
-            r = addmod(r, 3, q_mod);
+            uint256 l = mulmod(y, y, p_mod);
+            uint256 r = mulmod(x, x, p_mod);
+            r = mulmod(r, x, p_mod);
+            r = addmod(r, 3, p_mod);
 
             assert(l == r);
         }
@@ -90,6 +104,10 @@ library AggregatorLib {
         uint256[] memory input,
         uint256 offset
     ) internal view {
+        if (input[offset + 2] == 1) {
+            return;
+        }
+
         return msm(input, offset, 1);
     }
 
@@ -136,7 +154,7 @@ library AggregatorLib {
         input[2] = 32;
         input[3] = a;
         input[4] = power;
-        input[5] = p_mod;
+        input[5] = q_mod;
 
         assembly {
             ret := staticcall(gas(), 0x05, input, 0xc0, result, 0x20)
@@ -147,21 +165,21 @@ library AggregatorLib {
     }
 
     function fr_mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        return mulmod(a, b, p_mod);
+        return mulmod(a, b, q_mod);
     }
 
     function fr_add(uint256 a, uint256 b) internal pure returns (uint256) {
-        return addmod(a, b, p_mod);
+        return addmod(a, b, q_mod);
     }
 
     function fr_sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        return addmod(a, p_mod - b, p_mod);
+        return addmod(a, q_mod - b, q_mod);
     }
 
     function fr_div(uint256 a, uint256 b, uint256 aux) internal pure returns (uint256) {
-        uint256 r = mulmod(b, aux, p_mod);
+        uint256 r = mulmod(b, aux, q_mod);
         require(a == r, "div fail");
         require(b != 0, "div zero");
-        return aux % p_mod;
+        return aux % q_mod;
     }
 }
