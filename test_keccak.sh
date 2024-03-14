@@ -21,4 +21,4 @@ cargo run --release --features cuda -- --param ./params --output ./output batch 
 cargo run --release --features cuda -- --param ./params --output ./output verify --challenge keccak --info output/batchsample.loadinfo.json
 
 # generate solidity
-cargo run --release -- --param ./params --output ./output solidity -k 22 --challenge keccak --info output/batchsample.loadinfo.json output/test2.loadinfo.json output/test1.loadinfo.json --commits sample/batchinfo1.json
+cargo run --release -- --param ./params --output ./output solidity -k 22 --challenge keccak --info output/batchsample.loadinfo.json --commits sample/batchinfo1.json
