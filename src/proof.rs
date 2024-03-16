@@ -101,7 +101,7 @@ impl ProofPieceInfo {
         ProofPieceInfo {
             witness: format!("{}.{}.witness.data", name, i),
             instance: format!("{}.{}.instance.data", name, i),
-            transcript: format!("{}.{}.transcripts.data", name, i),
+            transcript: format!("{}.{}.transcript.data", name, i),
             circuit: format!("{}.circuit.data", name),
             instance_size,
         }
