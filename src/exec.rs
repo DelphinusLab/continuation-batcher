@@ -111,7 +111,7 @@ pub fn exec_batch_proofs(
 
     let is_final = hash == HashType::Sha || hash == HashType::Keccak;
 
-    let param_file = format!("K{}.params", batchinfo.target_k);
+    let param_file = format!("K{}.params", batchinfo.batch_k);
 
     // setup target params
     let params = load_or_build_unsafe_params::<Bn256>(
