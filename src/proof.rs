@@ -352,10 +352,10 @@ pub fn load_or_build_unsafe_params<'a, E: MultiMillerLoop>(
     use ark_std::{end_timer, start_timer};
     let key = cache_file.to_str().unwrap().to_string();
     if params_cache.contains(&key) {
-        log::info!("pkey find in cache.");
+        log::info!("K param find in cache. Key: {:?}", key);
         params_cache.cache.get(&key).as_ref().unwrap()
     } else {
-        log::info!("K param not found in cache.");
+        log::info!("K param not found in cache. Key: {:?}", key);
         let params = if Path::exists(&cache_file) {
             let timer = start_timer!(|| "read K param ...");
             log::info!("read params K={} from {:?}", k, cache_file);
@@ -639,10 +639,10 @@ pub fn load_or_build_pkey<'a, E: MultiMillerLoop, C: Circuit<E::Scalar>>(
     use ark_std::{end_timer, start_timer};
     let key = cache_file.to_str().unwrap().to_string();
     if pkey_cache.contains(&key) {
-        log::info!("pkey find in cache.");
+        log::info!("pkey find in cache. Key: {:?}", &key);
         pkey_cache.cache.get(&key).as_ref().unwrap()
     } else {
-        log::info!("pkey not found in cache.");
+        log::info!("pkey not found in cache. Key: {:?}", &key);
         let pkey = if Path::exists(&cache_file) {
             let timer = start_timer!(|| "test read info full ...");
             let pkey = read_pk_full::<E>(&params, &cache_file);
