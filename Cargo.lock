@@ -734,7 +734,7 @@ dependencies = [
 [[package]]
 name = "halo2_proofs"
 version = "0.1.0-beta.1"
-source = "git+https://github.com/DelphinusLab/halo2-gpu-specific.git#6e6aa43d74db4adfedba9daddb0a5151abddc124"
+source = "git+https://github.com/DelphinusLab/halo2-gpu-specific.git#9a81f601607bdc3ff3360a9ad66885c9796f487b"
 dependencies = [
  "ark-std 0.4.0",
  "blake2b_simd",
@@ -763,7 +763,7 @@ dependencies = [
 [[package]]
 name = "halo2aggregator-s"
 version = "0.1.0"
-source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git#6885f844c6dfee44191bacfeb240289e03bfcd70"
+source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git#747788c3331014d8854ed4746c51a1582e5271c1"
 dependencies = [
  "ark-std 0.4.0",
  "blake2b_simd",
@@ -781,7 +781,7 @@ dependencies = [
 [[package]]
 name = "halo2ecc-s"
 version = "0.3.2"
-source = "git+https://github.com/lanbones/halo2ecc-s.git?tag=bisect-lookup-0.4.0#a651956da4d478f09161d7e02b970f0638e053ae"
+source = "git+https://github.com/lanbones/halo2ecc-s.git?tag=bisect-lookup-0.4.0#eef56995f5729083d54b89faa30d5f90277acc22"
 dependencies = [
  "halo2_proofs",
  "num-bigint",
@@ -1330,7 +1330,7 @@ dependencies = [
 [[package]]
 name = "poseidon"
 version = "0.2.0"
-source = "git+https://github.com/lanbones/poseidon#58835e054512ad7833df6d20479e9e0e034a073b"
+source = "git+https://github.com/DelphinusLab/poseidon.git#58835e054512ad7833df6d20479e9e0e034a073b"
 dependencies = [
  "halo2_proofs",
  "subtle",
