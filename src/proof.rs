@@ -519,10 +519,16 @@ impl Prover for ProofPieceInfo {
 
                 #[cfg(feature = "perf")]
                 {
-                    use zkwasm_prover::create_proof_from_advices;
+                    use zkwasm_prover::create_proof_from_advices_with_shplonk;
 
-                    create_proof_from_advices(&params, pkey, &instances, advices, &mut transcript)
-                        .expect("proof generation should not fail");
+                    create_proof_from_advices_with_shplonk(
+                        &params,
+                        pkey,
+                        &instances,
+                        advices,
+                        &mut transcript,
+                    )
+                    .expect("proof generation should not fail");
                 }
 
                 let r = transcript.finalize();
@@ -554,10 +560,16 @@ impl Prover for ProofPieceInfo {
 
                 #[cfg(feature = "perf")]
                 {
-                    use zkwasm_prover::create_proof_from_advices;
+                    use zkwasm_prover::create_proof_from_advices_with_shplonk;
 
-                    create_proof_from_advices(&params, pkey, &instances, advices, &mut transcript)
-                        .expect("proof generation should not fail");
+                    create_proof_from_advices_with_shplonk(
+                        &params,
+                        pkey,
+                        &instances,
+                        advices,
+                        &mut transcript,
+                    )
+                    .expect("proof generation should not fail");
                 }
 
                 let r = transcript.finalize();
