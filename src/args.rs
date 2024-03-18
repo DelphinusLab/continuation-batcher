@@ -11,8 +11,8 @@ use serde::{Deserialize, Serialize};
 pub enum HashType {
     Poseidon,
     Sha,
+    Keccak,
 }
-
 
 pub trait ArgBuilder {
     fn hashtype<'a>() -> Arg<'a> {
@@ -54,6 +54,17 @@ pub trait ArgBuilder {
             .collect::<Vec<_>>()
     }
 
+    fn cont_arg<'a>() -> Arg<'a> {
+        arg!(
+            --cont "Is continuation's loadinfo."
+        )
+        .action(ArgAction::SetTrue)
+    }
+
+    fn parse_cont_arg(matches: &ArgMatches) -> bool {
+        matches.get_one::<bool>("cont").map_or(false, |&x| x)
+    }
+
     fn commits_info_arg<'a>() -> Arg<'a> {
         Arg::new("commits")
             .long("commits")
@@ -74,22 +85,23 @@ pub trait ArgBuilder {
     fn output_path_arg<'a>() -> Arg<'a> {
         arg!(
             -o --output [OUTPUT_PATH] "Path of the output files."
-        ).value_parser(value_parser!(PathBuf))
+        )
+        .value_parser(value_parser!(PathBuf))
     }
 
     fn param_path_arg<'a>() -> Arg<'a> {
         arg!(
             -p --param [PARAM_PATH] "Path of the param files."
-        ).value_parser(value_parser!(PathBuf))
+        )
+        .value_parser(value_parser!(PathBuf))
     }
-
 
     fn proof_name_arg<'a>() -> Arg<'a> {
         arg!(
             -n --name [PROOF_NAME] "name of this task."
-        ).value_parser(value_parser!(String))
+        )
+        .value_parser(value_parser!(String))
     }
-
 
     fn sol_dir_arg<'a>() -> Arg<'a> {
         arg!(

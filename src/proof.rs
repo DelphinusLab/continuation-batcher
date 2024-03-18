@@ -2,16 +2,15 @@ use crate::args::HashType;
 use ark_std::rand::rngs::OsRng;
 use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::dev::MockProver;
-use halo2_proofs::helpers::fetch_pk_info;
-use halo2_proofs::helpers::store_pk_info;
 use halo2_proofs::helpers::Serializable;
 use halo2_proofs::pairing::bn256::Bn256;
-use halo2_proofs::plonk::create_proof;
 use halo2_proofs::plonk::create_proof_from_witness;
+use halo2_proofs::plonk::create_proof_with_shplonk as create_proof;
 use halo2_proofs::plonk::create_witness;
 use halo2_proofs::plonk::keygen_pk;
-use halo2_proofs::plonk::verify_proof;
+use halo2_proofs::plonk::verify_proof_with_shplonk;
 use halo2_proofs::plonk::Circuit;
+use halo2_proofs::plonk::CircuitData;
 use halo2_proofs::plonk::ProvingKey;
 use halo2_proofs::plonk::SingleVerifier;
 use halo2_proofs::plonk::VerifyingKey;
@@ -70,19 +69,14 @@ pub struct ParamsCache<E: MultiMillerLoop> {
 
 impl<E: MultiMillerLoop> ParamsCache<E> {
     pub fn new(cache_size: usize) -> Self {
-        let lrucache = LruCache::<String, Params<E::G1Affine>>::new(
-            NonZeroUsize::new(cache_size).unwrap(),
-        );
+        let lrucache =
+            LruCache::<String, Params<E::G1Affine>>::new(NonZeroUsize::new(cache_size).unwrap());
         ParamsCache { cache: lrucache }
     }
     pub fn contains(&mut self, key: &String) -> bool {
         self.cache.get(key).is_some()
     }
-    pub fn push<'a>(
-        &'a mut self,
-        key: String,
-        v: Params<E::G1Affine>,
-    ) -> &'a Params<E::G1Affine> {
+    pub fn push<'a>(&'a mut self, key: String, v: Params<E::G1Affine>) -> &'a Params<E::G1Affine> {
         self.cache.push(key.clone(), v);
         self.cache.get(&key).unwrap()
     }
@@ -94,45 +88,47 @@ lazy_static::lazy_static! {
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct ProofGenerationInfo {
+pub struct ProofPieceInfo {
     pub circuit: String,
+    pub instance_size: u32,
+    pub witness: String,
+    pub instance: String,
+    pub transcript: String,
+}
+
+impl ProofPieceInfo {
+    pub fn new(name: String, i: usize, instance_size: u32) -> Self {
+        ProofPieceInfo {
+            witness: format!("{}.{}.witness.data", name, i),
+            instance: format!("{}.{}.instance.data", name, i),
+            transcript: format!("{}.{}.transcript.data", name, i),
+            circuit: format!("{}.circuit.data", name),
+            instance_size,
+        }
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ProofGenerationInfo {
+    pub proofs: Vec<ProofPieceInfo>,
     pub k: usize,
-    pub instance_size: Vec<u32>,
-    pub witnesses: Vec<String>,
-    pub instances: Vec<String>,
-    pub transcripts: Vec<String>,
     pub param: String,
     pub name: String,
     pub hashtype: HashType,
 }
 
 impl ProofGenerationInfo {
-    pub fn new(
-        name: &str,
-        nb: usize,
-        k: usize,
-        instance_size: Vec<u32>,
-        hashtype: HashType,
-    ) -> Self {
-        let mut witnesses = vec![];
-        let mut instances = vec![];
-        let mut transcripts = vec![];
-        for i in 0..nb {
-            witnesses.push(format!("{}.{}.witness.data", name, i));
-            instances.push(format!("{}.{}.instance.data", name, i));
-            transcripts.push(format!("{}.{}.transcripts.data", name, i));
-        }
+    pub fn new(name: &str, k: usize, hashtype: HashType) -> Self {
         ProofGenerationInfo {
             name: name.to_string(),
-            circuit: format!("{}.circuit.data", name),
             k,
-            witnesses,
-            instances,
-            transcripts,
-            instance_size,
+            proofs: vec![],
             param: format!("K{}.params", k),
             hashtype,
         }
+    }
+    pub fn append_single_proof(&mut self, pi: ProofPieceInfo) {
+        self.proofs.push(pi)
     }
     pub fn save(&self, cache_folder: &Path) {
         let cache_file = cache_folder.join(format!("{}.loadinfo.json", &self.name));
@@ -150,31 +146,34 @@ impl ProofGenerationInfo {
 }
 
 impl ProofGenerationInfo {
-    pub fn create_proofs<E: MultiMillerLoop>(&self, cache_folder: &Path, param_folder: &Path, params_cache: &mut ParamsCache<E>,) {
-        let params =
-            load_or_build_unsafe_params::<E>(self.k, &param_folder.join(self.param.clone()), params_cache);
+    pub fn create_proofs<E: MultiMillerLoop>(
+        &self,
+        cache_folder: &Path,
+        param_folder: &Path,
+        params_cache: &mut ParamsCache<E>,
+    ) {
+        let params = load_or_build_unsafe_params::<E>(
+            self.k,
+            &param_folder.join(self.param.clone()),
+            params_cache,
+        );
 
-        let pkey = read_pk_full::<E>(&params, &param_folder.join(self.circuit.clone()));
+        for single_proof in self.proofs.iter() {
+            // here we only supports single instance column
+            let instances = load_instance::<E>(
+                &[single_proof.instance_size],
+                &cache_folder.join(&single_proof.instance),
+            );
 
-        for ((ins, wit), trans) in self
-            .instances
-            .iter()
-            .zip(self.witnesses.clone())
-            .zip(self.transcripts.clone())
-        {
-            let instances = load_instance::<E>(&self.instance_size, &cache_folder.join(ins));
+            let pkey = read_pk_full::<E>(&params, &param_folder.join(single_proof.circuit.clone()));
 
-            let witnessfile = cache_folder.join(wit);
+            let witnessfile = cache_folder.join(&single_proof.witness);
             let mut witnessreader = OpenOptions::new().read(true).open(witnessfile).unwrap();
 
-            let inputs_size = self
-                .instances
-                .iter()
-                .fold(0, |acc, x| usize::max(acc, x.len()));
-
+            let inputs_size = single_proof.instance_size;
             let instances: Vec<&[E::Scalar]> = instances.iter().map(|x| &x[..]).collect::<Vec<_>>();
 
-            let params_verifier: ParamsVerifier<E> = params.verifier(inputs_size).unwrap();
+            let params_verifier: ParamsVerifier<E> = params.verifier(inputs_size as usize).unwrap();
             let strategy = SingleVerifier::new(&params_verifier);
 
             let r = match self.hashtype {
@@ -183,16 +182,20 @@ impl ProofGenerationInfo {
                     create_proof_from_witness(
                         &params,
                         &pkey,
-                        &[instances.as_slice()],
+                        [instances.as_slice()].as_slice(),
                         OsRng,
                         &mut transcript,
                         &mut witnessreader,
+                        false,
                     )
                     .expect("proof generation should not fail");
-                    log::info!("proof created with instance ... {:?}", self.instances);
+                    log::info!(
+                        "proof created with instance ... {:?}",
+                        &single_proof.instance
+                    );
 
                     let r = transcript.finalize();
-                    verify_proof(
+                    verify_proof_with_shplonk(
                         &params_verifier,
                         &pkey.get_vk(),
                         strategy,
@@ -209,16 +212,20 @@ impl ProofGenerationInfo {
                     create_proof_from_witness(
                         &params,
                         &pkey,
-                        &[instances.as_slice()],
+                        [instances.as_slice()].as_slice(),
                         OsRng,
                         &mut transcript,
                         &mut witnessreader,
+                        false,
                     )
                     .expect("proof generation should not fail");
 
                     let r = transcript.finalize();
-                    log::info!("proof created with instance ... {:?}", self.instances);
-                    verify_proof(
+                    log::info!(
+                        "proof created with instance ... {:?}",
+                        &single_proof.instance
+                    );
+                    verify_proof_with_shplonk(
                         &params_verifier,
                         &pkey.get_vk(),
                         strategy,
@@ -229,9 +236,35 @@ impl ProofGenerationInfo {
                     log::info!("verify halo2 proof succeed");
                     r
                 }
+                HashType::Keccak => {
+                    let mut transcript = ShaWrite::<_, _, _, sha3::Keccak256>::init(vec![]);
+                    create_proof_from_witness(
+                        &params,
+                        &pkey,
+                        [instances.as_slice()].as_slice(),
+                        OsRng,
+                        &mut transcript,
+                        &mut witnessreader,
+                        false,
+                    )
+                    .expect("proof generation should not fail");
+
+                    let r = transcript.finalize();
+                    log::info!("proof created with instance ... {:?}", instances);
+                    verify_proof_with_shplonk(
+                        &params_verifier,
+                        &pkey.get_vk(),
+                        strategy,
+                        &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
+                        &mut ShaRead::<_, _, _, sha3::Keccak256>::init(&r[..]),
+                    )
+                    .unwrap();
+                    log::info!("verify halo2 proof succeed");
+                    r
+                }
             };
 
-            let cache_file = &cache_folder.join(trans.clone());
+            let cache_file = &cache_folder.join(single_proof.instance.clone());
             log::info!("create transcripts file {:?}", cache_file);
             let mut fd = std::fs::File::create(&cache_file).unwrap();
             fd.write_all(&r).unwrap();
@@ -241,41 +274,28 @@ impl ProofGenerationInfo {
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ProofLoadInfo {
-    pub circuit: String,
     pub k: usize,
-    pub instance_size: Vec<u32>,
-    pub transcripts: Vec<String>,
-    pub instances: Vec<String>,
+    pub proofs: Vec<ProofPieceInfo>,
     pub param: String,
     pub name: String,
     pub hashtype: HashType,
 }
 
 impl ProofLoadInfo {
-    pub fn new(
-        name: &str,
-        nb: usize,
-        k: usize,
-        instance_size: Vec<u32>,
-        hashtype: HashType,
-    ) -> Self {
-        let mut transcripts = vec![];
-        let mut instances = vec![];
-        for i in 0..nb {
-            transcripts.push(format!("{}.{}.transcript.data", name, i));
-            instances.push(format!("{}.{}.instance.data", name, i));
-        }
+    pub fn new(name: &str, k: usize, hashtype: HashType) -> Self {
         ProofLoadInfo {
             name: name.to_string(),
-            circuit: format!("{}.circuit.data", name),
             k,
-            transcripts,
-            instances,
-            instance_size,
+            proofs: Vec::new(),
             param: format!("K{}.params", k),
             hashtype,
         }
     }
+
+    pub fn append_single_proof(&mut self, pi: ProofPieceInfo) {
+        self.proofs.push(pi)
+    }
+
     pub fn save(&self, cache_folder: &Path) {
         let cache_file = cache_folder.join(format!("{}.loadinfo.json", &self.name));
         log::info!("write proof load info {:?}", cache_file);
@@ -286,7 +306,8 @@ impl ProofLoadInfo {
 
     pub fn load(configfile: &Path) -> Self {
         log::info!("read proof load info {:?}", configfile);
-        let fd = std::fs::File::open(configfile).unwrap();
+        let fd = std::fs::File::open(configfile)
+            .expect(&format!("load info file {:?} not found", configfile));
         serde_json::from_reader(fd).unwrap()
     }
 }
@@ -305,10 +326,13 @@ impl<E: MultiMillerLoop> ProofInfo<E> {
         loadinfo: &ProofLoadInfo,
     ) -> Vec<Self> {
         let mut proofs = vec![];
-        for (ins, trans) in loadinfo.instances.iter().zip(loadinfo.transcripts.clone()) {
-            let vkey = read_vkey_full::<E>(&param_folder.join(loadinfo.circuit.clone()));
-            let instances = load_instance::<E>(&loadinfo.instance_size, &cache_folder.join(ins));
-            let transcripts = load_proof(&cache_folder.join(trans));
+        for proof_info in loadinfo.proofs.iter() {
+            let vkey = read_vkey_full::<E>(&param_folder.join(proof_info.circuit.clone()));
+            let instances = load_instance::<E>(
+                &[proof_info.instance_size],
+                &cache_folder.join(&proof_info.instance),
+            );
+            let transcripts = load_proof(&cache_folder.join(&proof_info.transcript));
             proofs.push(ProofInfo {
                 vkey,
                 instances,
@@ -328,10 +352,10 @@ pub fn load_or_build_unsafe_params<'a, E: MultiMillerLoop>(
     use ark_std::{end_timer, start_timer};
     let key = cache_file.to_str().unwrap().to_string();
     if params_cache.contains(&key) {
-        log::info!("pkey find in cache.");
+        log::info!("K param find in cache. Key: {:?}", key);
         params_cache.cache.get(&key).as_ref().unwrap()
     } else {
-        log::info!("K param not found in cache.");
+        log::info!("K param not found in cache. Key: {:?}", key);
         let params = if Path::exists(&cache_file) {
             let timer = start_timer!(|| "read K param ...");
             log::info!("read params K={} from {:?}", k, cache_file);
@@ -353,153 +377,157 @@ pub fn load_or_build_unsafe_params<'a, E: MultiMillerLoop>(
     }
 }
 
-impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> CircuitInfo<E, C> {
-    pub fn new(
-        c: C,
-        name: String,
-        instances: Vec<Vec<E::Scalar>>,
-        k: usize,
-        hash: HashType,
-    ) -> Self {
-        CircuitInfo {
-            circuits: vec![c],
-            k,
-            name: name.clone(),
-            proofloadinfo: ProofLoadInfo::new(
-                name.as_str(),
-                1,
-                k,
-                instances.iter().map(|x| x.len() as u32).collect::<Vec<_>>(),
-                hash,
-            ),
-            instances,
-        }
-    }
-}
-
-pub trait Prover<E: MultiMillerLoop> {
-    fn create_proof(&self, params: &Params<E::G1Affine>, pkey: &ProvingKey<E::G1Affine>)
-        -> Vec<u8>;
-    fn create_witness(
+pub trait Prover {
+    fn create_proof<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
         &self,
+        c: &C,
+        instances: &Vec<Vec<E::Scalar>>,
+        params: &Params<E::G1Affine>,
+        pkey: &ProvingKey<E::G1Affine>,
+        hashtype: HashType,
+    ) -> Vec<u8>;
+
+    fn create_witness<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
+        &self,
+        c: &C,
+        instances: &Vec<Vec<E::Scalar>>,
+        param_file: String,
+        k: usize,
         cache_folder: &Path,
         param_folder: &Path,
         pkey_cache: &mut ProvingKeyCache<E>,
-        index: usize,
         params_cache: &mut ParamsCache<E>,
     );
-    fn mock_proof(&self, k: u32);
-}
-
-pub struct CircuitInfo<E: MultiMillerLoop, C: Circuit<E::Scalar>> {
-    pub circuits: Vec<C>,
-    pub name: String,
-    pub k: usize,
-    pub proofloadinfo: ProofLoadInfo,
-    pub instances: Vec<Vec<E::Scalar>>,
-}
-
-impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> CircuitInfo<E, C> {
-    pub fn get_param<'a, 'b:'a>(
-        &'a self,
-        param_folder: &Path,
-        param_cache: &'b mut ParamsCache<E>,
-    ) -> &'a Params<E::G1Affine> {
-       load_or_build_unsafe_params::<E>(self.k, &param_folder.join(&self.proofloadinfo.param), param_cache)
-    }
-    pub fn get_pkey<'a, 'b:'a>(
-        &'a self,
-        params: &'a Params<E::G1Affine>,
-        param_folder: &Path,
-        pkey_cache: &'b mut ProvingKeyCache<E>,
-    ) -> &'a ProvingKey<E::G1Affine> {
-        load_or_build_pkey::<E, C>(
-            &params,
-            self.circuits.first().unwrap(),
-            &param_folder.join(self.proofloadinfo.circuit.clone()),
-            &param_folder.join(format!("{}.vkey.data", self.name)),
-            pkey_cache,
-        )
-    }
-
-    pub fn exec_create_proof_with_params(
+    fn mock_proof<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
         &self,
+        k: u32,
+        c: &C,
+        instances: &Vec<Vec<E::Scalar>>,
+    );
+}
+
+impl ProofPieceInfo {
+    pub fn exec_create_proof_with_params<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
+        &self,
+        c: &C,
+        instances: &Vec<Vec<E::Scalar>>,
         params: &Params<E::G1Affine>,
         pkey: &ProvingKey<E::G1Affine>,
         cache_folder: &Path,
-        index: usize,
+        hashtype: HashType,
     ) -> Vec<u8> {
-        store_instance(
-            &self.instances,
-            &cache_folder.join(self.proofloadinfo.instances[index].as_str()),
-        );
+        // store instance in instance file
+        store_instance(instances, &cache_folder.join(self.instance.as_str()));
 
-        let r = self.create_proof(params, pkey);
+        let r = self.create_proof::<E, C>(c, instances, params, pkey, hashtype);
 
-        let cache_file = &cache_folder.join(&self.proofloadinfo.transcripts[index]);
+        let cache_file = &cache_folder.join(&self.transcript);
         log::debug!("create transcripts file {:?}", cache_file);
         let mut fd = std::fs::File::create(&cache_file).unwrap();
         fd.write_all(&r).unwrap();
         r
     }
 
-    pub fn exec_create_proof(
+    pub fn exec_create_proof<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
         &self,
+        c: &C,
+        instances: &Vec<Vec<E::Scalar>>,
         cache_folder: &Path,
         param_folder: &Path,
+        param_file: String,
+        k: usize,
         pkey_cache: &mut ProvingKeyCache<E>,
-        index: usize,
         param_cache: &mut ParamsCache<E>,
+        hashtype: HashType,
     ) -> Vec<u8> {
         let params =
-            load_or_build_unsafe_params::<E>(self.k, &param_folder.join(&self.proofloadinfo.param), param_cache);
+            load_or_build_unsafe_params::<E>(k, &param_folder.join(&param_file), param_cache);
         let pkey = load_or_build_pkey::<E, C>(
             &params,
-            self.circuits.first().unwrap(),
-            &param_folder.join(self.proofloadinfo.circuit.clone()),
-            &param_folder.join(format!("{}.vkey.data", self.name)),
+            c,
+            &param_folder.join(self.circuit.clone()),
+            &param_folder.join(format!("{}.vkey.data", self.circuit)),
             pkey_cache,
         );
-        self.exec_create_proof_with_params(params, pkey, cache_folder, index)
+
+        self.exec_create_proof_with_params::<E, C>(
+            c,
+            instances,
+            params,
+            pkey,
+            cache_folder,
+            hashtype,
+        )
     }
 }
 
-impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> {
-    fn create_proof(
+impl Prover for ProofPieceInfo {
+    fn create_proof<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
         &self,
+        c: &C,
+        instances: &Vec<Vec<E::Scalar>>,
         params: &Params<E::G1Affine>,
         pkey: &ProvingKey<E::G1Affine>,
+        hashtype: HashType,
     ) -> Vec<u8> {
         use ark_std::{end_timer, start_timer};
 
-        let inputs_size = self
-            .instances
-            .iter()
-            .fold(0, |acc, x| usize::max(acc, x.len()));
+        let inputs_size = instances.iter().fold(0, |acc, x| usize::max(acc, x.len()));
 
-        let instances: Vec<&[E::Scalar]> =
-            self.instances.iter().map(|x| &x[..]).collect::<Vec<_>>();
+        let instances: Vec<&[E::Scalar]> = instances.iter().map(|x| &x[..]).collect::<Vec<_>>();
 
         let params_verifier: ParamsVerifier<E> = params.verifier(inputs_size).unwrap();
         let strategy = SingleVerifier::new(&params_verifier);
 
+        #[cfg(feature = "perf")]
+        let advices = {
+            use halo2_proofs::plonk::generate_advice_from_synthesize;
+            use std::sync::Arc;
+            use zkwasm_prover::prepare_advice_buffer;
+
+            let mut advices = Arc::new(prepare_advice_buffer(pkey));
+
+            generate_advice_from_synthesize(
+                &params,
+                pkey,
+                c,
+                &instances,
+                &unsafe { Arc::get_mut_unchecked(&mut advices) }
+                    .iter_mut()
+                    .map(|x| (&mut x[..]) as *mut [_])
+                    .collect()[..],
+            );
+
+            advices
+        };
+
         let timer = start_timer!(|| "creating proof ...");
-        let r = match self.proofloadinfo.hashtype {
+        let r = match hashtype {
             HashType::Poseidon => {
                 let mut transcript = PoseidonWrite::init(vec![]);
+
+                #[cfg(not(feature = "perf"))]
                 create_proof(
                     &params,
                     &pkey,
-                    &self.circuits,
-                    &[instances.as_slice()],
+                    std::slice::from_ref(c),
+                    [instances.as_slice()].as_slice(),
                     OsRng,
                     &mut transcript,
                 )
                 .expect("proof generation should not fail");
 
+                #[cfg(feature = "perf")]
+                {
+                    use zkwasm_prover::create_proof_from_advices;
+
+                    create_proof_from_advices(&params, pkey, &instances, advices, &mut transcript)
+                        .expect("proof generation should not fail");
+                }
+
                 let r = transcript.finalize();
-                log::info!("proof created with instance: {:?}", self.instances);
-                verify_proof(
+                log::info!("proof created with instance: {:?}", instances);
+                verify_proof_with_shplonk(
                     &params_verifier,
                     &pkey.get_vk(),
                     strategy,
@@ -512,24 +540,59 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
             }
             HashType::Sha => {
                 let mut transcript = ShaWrite::<_, _, _, sha2::Sha256>::init(vec![]);
+
+                #[cfg(not(feature = "perf"))]
                 create_proof(
                     &params,
                     &pkey,
-                    &self.circuits,
-                    &[instances.as_slice()],
+                    std::slice::from_ref(c),
+                    [instances.as_slice()].as_slice(),
+                    OsRng,
+                    &mut transcript,
+                )
+                .expect("proof generation should not fail");
+
+                #[cfg(feature = "perf")]
+                {
+                    use zkwasm_prover::create_proof_from_advices;
+
+                    create_proof_from_advices(&params, pkey, &instances, advices, &mut transcript)
+                        .expect("proof generation should not fail");
+                }
+
+                let r = transcript.finalize();
+                log::info!("proof created with instance ... {:?}", instances);
+                verify_proof_with_shplonk(
+                    &params_verifier,
+                    &pkey.get_vk(),
+                    strategy,
+                    &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
+                    &mut ShaRead::<_, _, _, sha2::Sha256>::init(&r[..]),
+                )
+                .unwrap();
+                log::info!("verify halo2 proof succeed");
+                r
+            }
+            HashType::Keccak => {
+                let mut transcript = ShaWrite::<_, _, _, sha3::Keccak256>::init(vec![]);
+                create_proof(
+                    &params,
+                    &pkey,
+                    std::slice::from_ref(c),
+                    [instances.as_slice()].as_slice(),
                     OsRng,
                     &mut transcript,
                 )
                 .expect("proof generation should not fail");
 
                 let r = transcript.finalize();
-                log::info!("proof created with instance ... {:?}", self.instances);
-                verify_proof(
+                log::info!("proof created with instance ... {:?}", instances);
+                verify_proof_with_shplonk(
                     &params_verifier,
                     &pkey.get_vk(),
                     strategy,
                     &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
-                    &mut ShaRead::<_, _, _, sha2::Sha256>::init(&r[..]),
+                    &mut ShaRead::<_, _, _, sha3::Keccak256>::init(&r[..]),
                 )
                 .unwrap();
                 log::info!("verify halo2 proof succeed");
@@ -541,44 +604,44 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
         r
     }
 
-    fn create_witness(
+    fn create_witness<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
         &self,
+        c: &C,
+        instances: &Vec<Vec<E::Scalar>>,
+        param_file: String,
+        k: usize,
         cache_folder: &Path,
         param_folder: &Path,
         pkey_cache: &mut ProvingKeyCache<E>,
-        index: usize,
         param_cache: &mut ParamsCache<E>,
     ) {
-        let params = load_or_build_unsafe_params::<E>(
-            self.k,
-            &param_folder.join(self.proofloadinfo.param.clone()),
-            param_cache
-        );
+        let params =
+            load_or_build_unsafe_params::<E>(k, &param_folder.join(&param_file), param_cache);
         let pkey = load_or_build_pkey::<E, C>(
             &params,
-            self.circuits.first().unwrap(),
-            &param_folder.join(self.proofloadinfo.circuit.clone()),
-            &param_folder.join(format!("{}.vkey.data", self.name)),
+            c,
+            &param_folder.join(self.circuit.clone()),
+            &param_folder.join(format!("{}.vkey.data", self.circuit)),
             pkey_cache,
         );
 
-        let cache_file = &cache_folder.join(format!("{}.{}.witness.data", self.name, index));
+        let witness_file = &cache_folder.join(self.witness.clone());
 
-        log::info!("create witness file {:?}", cache_file);
+        log::info!("create witness file {:?}", witness_file);
 
         let mut fd = OpenOptions::new()
             .read(true)
             .write(true)
             .create(true)
             .truncate(true)
-            .open(&cache_file)
+            .open(witness_file)
             .unwrap();
+
         create_witness(
             &params,
             pkey,
-            self.circuits.first().unwrap(),
-            &self
-                .instances
+            c,
+            instances
                 .iter()
                 .map(|x| &x[..])
                 .collect::<Vec<_>>()
@@ -588,9 +651,13 @@ impl<E: MultiMillerLoop, C: Circuit<E::Scalar>> Prover<E> for CircuitInfo<E, C> 
         .unwrap()
     }
 
-    fn mock_proof(&self, k: u32) {
-        let prover =
-            MockProver::run(k, self.circuits.first().unwrap(), self.instances.clone()).unwrap();
+    fn mock_proof<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
+        &self,
+        k: u32,
+        c: &C,
+        instances: &Vec<Vec<E::Scalar>>,
+    ) {
+        let prover = MockProver::run(k, c, instances.clone()).unwrap();
         assert_eq!(prover.verify(), Ok(()));
     }
 }
@@ -614,10 +681,10 @@ pub fn load_or_build_pkey<'a, E: MultiMillerLoop, C: Circuit<E::Scalar>>(
     use ark_std::{end_timer, start_timer};
     let key = cache_file.to_str().unwrap().to_string();
     if pkey_cache.contains(&key) {
-        log::info!("pkey find in cache.");
+        log::info!("pkey find in cache. Key: {:?}", &key);
         pkey_cache.cache.get(&key).as_ref().unwrap()
     } else {
-        log::info!("pkey not found in cache.");
+        log::info!("pkey not found in cache. Key: {:?}", &key);
         let pkey = if Path::exists(&cache_file) {
             let timer = start_timer!(|| "test read info full ...");
             let pkey = read_pk_full::<E>(&params, &cache_file);
@@ -630,7 +697,7 @@ pub fn load_or_build_pkey<'a, E: MultiMillerLoop, C: Circuit<E::Scalar>>(
             let pkey =
                 keygen_pk(&params, vkey.clone(), circuit).expect("keygen_pk should not fail");
             let timer = start_timer!(|| "test storing info full ...");
-            store_info_full::<E, C>(&params, &vkey, circuit, cache_file);
+            store_info_full::<E, C>(&params, vkey, circuit, cache_file);
             end_timer!(timer);
             pkey
         };
@@ -640,7 +707,7 @@ pub fn load_or_build_pkey<'a, E: MultiMillerLoop, C: Circuit<E::Scalar>>(
 
 fn store_info_full<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
     params: &Params<E::G1Affine>,
-    vkey: &VerifyingKey<E::G1Affine>,
+    vkey: VerifyingKey<E::G1Affine>,
     circuit: &C,
     cache_file: &Path,
 ) {
@@ -652,8 +719,8 @@ fn store_info_full<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
         .truncate(true)
         .open(&cache_file)
         .unwrap();
-    vkey.store(&mut fd).unwrap();
-    store_pk_info(params, vkey, circuit, &mut fd).unwrap();
+    let data = CircuitData::new(params, vkey, circuit).unwrap();
+    data.write(&mut fd).unwrap();
 }
 
 pub(crate) fn read_vkey_full<E: MultiMillerLoop>(cache_file: &Path) -> VerifyingKey<E::G1Affine> {
@@ -670,10 +737,10 @@ pub(crate) fn read_pk_full<E: MultiMillerLoop>(
     let timer = start_timer!(|| "fetch vkey full ...");
     log::info!("read vkey full from {:?}", cache_file);
     let mut fd = std::fs::File::open(&cache_file).unwrap();
-    let vk = VerifyingKey::<E::G1Affine>::fetch(&mut fd).unwrap();
     end_timer!(timer);
     let timer = start_timer!(|| "fetch pk full ...");
-    let pk = fetch_pk_info(params, &vk, &mut fd).unwrap();
+    let circuit_data = CircuitData::read(&mut fd).unwrap();
+    let pk = circuit_data.into_proving_key(params);
     end_timer!(timer);
     pk
 }
@@ -682,7 +749,6 @@ pub(crate) fn read_pk_full<E: MultiMillerLoop>(
 fn batch_single_circuit() {
     //use crate::batch::BatchInfo;
     //use crate::proof::ProofInfo;
-    use crate::proof::CircuitInfo;
     use crate::proof::Prover;
     use crate::samples::simple::SimpleCircuit;
     use halo2_proofs::pairing::bn256::Bn256;
@@ -692,39 +758,11 @@ fn batch_single_circuit() {
     env_logger::init();
 
     const K: u32 = 22;
-    {
-        let circuit = SimpleCircuit::<Fr> {
-            a: Fr::from(100u64),
-            b: Fr::from(200u64),
-        };
 
-        let circuit_info = CircuitInfo::<Bn256, SimpleCircuit<Fr>>::new(
-            circuit,
-            "test1".to_string(),
-            vec![vec![Fr::from(300u64)]],
-            K as usize,
-            HashType::Poseidon,
-        );
+    let cache_folder = Path::new("output");
+    let params_folder = Path::new("params");
 
-        circuit_info.mock_proof(K);
-        let proofloadinfo = circuit_info.proofloadinfo.clone();
-        circuit_info.create_witness(
-            &Path::new("output"),
-            &Path::new("params"),
-            PKEY_CACHE.lock().as_mut().unwrap(),
-            0,
-            K_PARAMS_CACHE.lock().as_mut().unwrap(),
-        );
-        circuit_info.exec_create_proof(
-            &Path::new("output"),
-            &Path::new("params"),
-            PKEY_CACHE.lock().as_mut().unwrap(),
-            0,
-            K_PARAMS_CACHE.lock().as_mut().unwrap(),
-        );
-
-        proofloadinfo.save(&Path::new("output"));
-    }
+    let mut proof_load_info = ProofLoadInfo::new("test_circuit", K as usize, HashType::Poseidon);
 
     {
         let circuit = SimpleCircuit::<Fr> {
@@ -732,124 +770,63 @@ fn batch_single_circuit() {
             b: Fr::from(200u64),
         };
 
-        let circuit_info = CircuitInfo::<Bn256, SimpleCircuit<Fr>>::new(
-            circuit,
-            "test2".to_string(),
-            vec![vec![Fr::from(300u64)]],
+        let instances = vec![vec![Fr::from(300u64)]];
+        let param_file = format!("K{}.params", K);
+        let circuit_info = ProofPieceInfo::new("test_circuit".to_string(), 0, 1);
+
+        // testing proof
+        circuit_info.mock_proof::<Bn256, _>(K, &circuit, &instances);
+
+        circuit_info.create_witness(
+            &circuit,
+            &instances,
+            param_file.clone(),
             K as usize,
+            &cache_folder,
+            params_folder,
+            PKEY_CACHE.lock().as_mut().unwrap(),
+            K_PARAMS_CACHE.lock().as_mut().unwrap(),
+        );
+
+        circuit_info.exec_create_proof(
+            &circuit,
+            &instances,
+            &cache_folder,
+            &params_folder,
+            param_file,
+            K as usize,
+            PKEY_CACHE.lock().as_mut().unwrap(),
+            K_PARAMS_CACHE.lock().as_mut().unwrap(),
             HashType::Poseidon,
         );
 
-        circuit_info.mock_proof(K);
-        let proofloadinfo = circuit_info.proofloadinfo.clone();
-        circuit_info.create_witness(
-            &Path::new("output"),
-            &Path::new("params"),
-            PKEY_CACHE.lock().as_mut().unwrap(),
-            0,
-            K_PARAMS_CACHE.lock().as_mut().unwrap(),
-        );
-        circuit_info.exec_create_proof(
-            &Path::new("output"),
-            &Path::new("params"),
-            PKEY_CACHE.lock().as_mut().unwrap(),
-            0,
-            K_PARAMS_CACHE.lock().as_mut().unwrap(),
-        );
-
-        proofloadinfo.save(&Path::new("output"));
+        proof_load_info.append_single_proof(circuit_info);
     }
 
-    /*
-    let batchinfo = BatchInfo::<Bn256> {
-        proofs: ProofInfo::load_proof(&Path::new("output"), &proofloadinfo),
-        target_k: K as usize,
-        batch_k: BATCH_K as usize,
-        commitment_check: vec![],
-    };
-
-    let agg_circuit = batchinfo.build_aggregate_circuit(&Path::new("output"), "aggregator".to_string(), HashType::Sha);
-    agg_circuit.create_witness(&Path::new("output"), 0);
-    agg_circuit.create_proof(&Path::new("output"), 0);
-    */
-}
-
-#[test]
-fn lru_drop() {
-    // test should drop circuit "test2" after adding "test6".
-    use crate::proof::CircuitInfo;
-    use crate::proof::Prover;
-    use crate::samples::simple::SimpleCircuit;
-    use ark_std::{end_timer, start_timer};
-    use halo2_proofs::pairing::bn256::Bn256;
-    use halo2_proofs::pairing::bn256::Fr;
-    use std::path::Path;
-
-    const K: u32 = 22;
     {
-        let mut cproofloadinfo: Vec<ProofLoadInfo> = Vec::new();
-        let mut cinfo: Vec<CircuitInfo<Bn256, SimpleCircuit<Fr>>> = Vec::new();
-        for i in 1..=(DEFAULT_CACHE_SIZE + 1) {
-            let circuit = || SimpleCircuit::<Fr> {
-                a: Fr::from(100u64),
-                b: Fr::from(200u64),
-            };
-            let testname = "test".to_owned() + &i.to_string();
-            let circuitx_info = CircuitInfo::<Bn256, SimpleCircuit<Fr>>::new(
-                circuit(),
-                testname,
-                vec![vec![Fr::from(300u64)]],
-                K as usize,
-                HashType::Poseidon,
-            );
-            circuitx_info.mock_proof(K);
-            let proofloadinfox = circuitx_info.proofloadinfo.clone();
-            cinfo.push(circuitx_info);
-            cproofloadinfo.push(proofloadinfox);
-        }
+        let circuit = SimpleCircuit::<Fr> {
+            a: Fr::from(100u64),
+            b: Fr::from(200u64),
+        };
 
-        for i in 0..=DEFAULT_CACHE_SIZE {
-            let timer = start_timer!(|| "add circuit testx");
-            cinfo.get(i).unwrap().create_witness(
-                &Path::new("output"),
-                &Path::new("params"),
-                PKEY_CACHE.lock().as_mut().unwrap(),
-                0,
-                K_PARAMS_CACHE.lock().as_mut().unwrap(),
-            );
-            cproofloadinfo.get(i).unwrap().save(&Path::new("output"));
-            end_timer!(timer);
-        }
+        let instances = vec![vec![Fr::from(300u64)]];
+        let param_file = format!("K{}.params", K);
+        let circuit_info = ProofPieceInfo::new("test_circuit".to_string(), 1, 1);
 
-        let timer = start_timer!(|| "run circuit test1 again - should cache hit.");
-        cinfo.get(0).unwrap().create_witness(
-            &Path::new("output"),
-            &Path::new("params"),
+        circuit_info.exec_create_proof(
+            &circuit,
+            &instances,
+            &cache_folder,
+            &params_folder,
+            param_file,
+            K as usize,
             PKEY_CACHE.lock().as_mut().unwrap(),
-            0,
             K_PARAMS_CACHE.lock().as_mut().unwrap(),
+            HashType::Poseidon,
         );
-        cproofloadinfo.get(0).unwrap().save(&Path::new("output"));
-        end_timer!(timer);
 
-        let timer = start_timer!(|| "add circuit test6");
-        cinfo.get(5).unwrap().create_witness(
-            &Path::new("output"),
-            &Path::new("params"),
-            PKEY_CACHE.lock().as_mut().unwrap(),
-            0,
-            K_PARAMS_CACHE.lock().as_mut().unwrap(),
-        );
-        cproofloadinfo.get(5).unwrap().save(&Path::new("output"));
-        end_timer!(timer);
-
-        let key = "params/test2.circuit.data".to_string();
-        if PKEY_CACHE.lock().as_mut().unwrap().contains(&key) {
-            // CACHE HIT is a bad test result.
-            assert!(false)
-        } else {
-            // CACHE MISS is agood test.
-            assert!(true)
-        }
+        proof_load_info.append_single_proof(circuit_info);
     }
+
+    proof_load_info.save(cache_folder);
 }

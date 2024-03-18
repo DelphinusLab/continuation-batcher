@@ -4,17 +4,15 @@ use clap::Command;
 use super::args::ArgBuilder;
 
 pub trait CommandBuilder: ArgBuilder {
-
     fn append_params_subcommand(app: App) -> App {
-        let command = Command::new("params")
-            .arg(Self::zkwasm_k_arg().required(true));
+        let command = Command::new("params").arg(Self::zkwasm_k_arg().required(true));
         app.subcommand(command)
     }
 
     fn append_setup_subcommand(app: App) -> App {
         let command = Command::new("setup")
-        .arg(Self::output_path_arg())
-        .arg(Self::zkwasm_k_arg());
+            .arg(Self::output_path_arg())
+            .arg(Self::zkwasm_k_arg());
         app.subcommand(command)
     }
 
@@ -24,13 +22,13 @@ pub trait CommandBuilder: ArgBuilder {
             .arg(Self::hashtype())
             .arg(Self::proof_name_arg())
             .arg(Self::commits_info_arg())
-            .arg(Self::proof_load_info_arg());
+            .arg(Self::proof_load_info_arg())
+            .arg(Self::cont_arg());
         app.subcommand(command)
     }
 
     fn append_prove_subcommand(app: App) -> App {
-        let command = Command::new("prove")
-            .arg(Self::proof_load_info_arg());
+        let command = Command::new("prove").arg(Self::proof_load_info_arg());
         app.subcommand(command)
     }
 
@@ -45,6 +43,7 @@ pub trait CommandBuilder: ArgBuilder {
     fn append_generate_solidity_verifier(app: App) -> App {
         let command = Command::new("solidity")
             .arg(Self::zkwasm_k_arg())
+            .arg(Self::hashtype())
             .arg(Self::commits_info_arg())
             .arg(Self::sol_dir_arg())
             .arg(Self::proof_load_info_arg());

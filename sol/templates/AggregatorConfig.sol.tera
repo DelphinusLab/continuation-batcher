@@ -5,18 +5,6 @@ pragma solidity ^0.8.13;
 import "./AggregatorLib.sol";
 
 library AggregatorConfig {
-    function fill_target_circuits_g2(uint256[] memory s) internal pure {
-        s[2] = {{target_circuit_s_g2_x0}};
-        s[3] = {{target_circuit_s_g2_x1}};
-        s[4] = {{target_circuit_s_g2_y0}};
-        s[5] = {{target_circuit_s_g2_y1}};
-
-        s[8] = {{target_circuit_n_g2_x0}};
-        s[9] = {{target_circuit_n_g2_x1}};
-        s[10] = {{target_circuit_n_g2_y0}};
-        s[11] = {{target_circuit_n_g2_y1}};
-    }
-
     function fill_verify_circuits_g2(uint256[] memory s) internal pure {
         s[2] = {{verify_circuit_s_g2_x0}};
         s[3] = {{verify_circuit_s_g2_x1}};
@@ -29,40 +17,11 @@ library AggregatorConfig {
         s[11] = {{verify_circuit_n_g2_y1}};
     }
 
-    function calc_verify_circuit_lagrange(uint256[] memory buf, uint256[] calldata instances) internal view {
-        require(instances.length == {{ verify_circuit_lagrange_commitments | length() }}, "invalid verify instances");
-
-        {% set_global i = 0 %}
-        {% for commitment in verify_circuit_lagrange_commitments -%}
-        buf[{{ i }}] = {{ commitment[0] }};
-        buf[{{ i + 1 }}] = {{ commitment[1] }};
-        {% set_global i = i + 3 %}
-        {% endfor %}
+    function calc_verify_circuit_lagrange(uint256[] memory buf) internal view {
+        buf[0] = {{ verify_circuit_lagrange_commitments[0][0] }};
+        buf[1] = {{ verify_circuit_lagrange_commitments[0][1] }};
         
-        for (uint256 i = 0; i < instances.length; i++) {
-            buf[i * 3 + 2] = instances[i];
-        }
-
-        AggregatorLib.msm(buf, 0, instances.length);
-    }
-
-    function calc_target_circuit_lagrange(uint256[] calldata instances) internal view 
-    returns (uint256[] memory buf) {
-        buf = new uint256[]({{ target_circuit_lagrange_commitments | length() * 3 }});
-        require(instances.length * 3 <= buf.length, "too many target instances");
-
-        {% set_global i = 0 %}
-        {% for commitment in target_circuit_lagrange_commitments -%}
-        buf[{{ i }}] = {{ commitment[0] }};
-        buf[{{ i + 1 }}] = {{ commitment[1] }};
-        {% set_global i = i + 3 %}
-        {% endfor %}
-        
-        for (uint256 i = 0; i < instances.length; i++) {
-            buf[i * 3 + 2] = instances[i];
-        }
-
-        AggregatorLib.msm(buf, 0, instances.length);
+        AggregatorLib.msm(buf, 0, 1);
     }
 
     function hash(uint256[] memory absorbing, uint256 length)
@@ -70,13 +29,15 @@ library AggregatorConfig {
         view
         returns (bytes32[1] memory v)
     {
+        {% if hasher == "sha256" %}
         bool success;
+        uint256 len = length * 32 + 1;
         assembly {
             success := staticcall(
                 sub(gas(), 2000),
                 2,
                 add(absorbing, 0x20),
-                length,
+                len,
                 v,
                 32
             )
@@ -86,16 +47,35 @@ library AggregatorConfig {
             }
         }
         assert(success);
+        {% elif hasher == "keccak" %}
+        bytes memory tmp = new bytes(32 * length + 1);
+        tmp[length * 32] = 0;
+        for (uint256 i = 0; i < length; i++) {
+            uint256 offset = 32 + (i * 32);
+            uint256 data = absorbing[i];
+            assembly { mstore(add(tmp, offset), data) }
+        }
+        v[0] = keccak256(tmp);
+        {% else %}
+        require(false);
+        {% endif %}
     }
 
     function squeeze_challenge(uint256[] memory absorbing, uint256 length) internal view returns (uint256 v) {
         absorbing[length] = 0;
-        bytes32 res = hash(absorbing, length * 32 + 1)[0];
+        bytes32 res = hash(absorbing, length)[0];
         absorbing[0] = uint256(res);
-        v = absorbing[0] % AggregatorLib.p_mod;
+        v = absorbing[0] % AggregatorLib.q_mod;
     }
 
     function get_challenges(
+        uint256[] calldata transcript,
+        uint256[] memory buf // buf[0..1] is instance_commitment
+    ) internal view {
+        return get_challenges_shplonk(transcript, buf);
+    }
+
+    function get_challenges_shplonk(
         uint256[] calldata transcript,
         uint256[] memory buf // buf[0..1] is instance_commitment
     ) internal view {
@@ -166,13 +146,24 @@ library AggregatorConfig {
         for (uint i = 0; i < {{ evals }}; i ++) {
             absorbing[pos++] = transcript[transcript_pos++];
         }
-        //v
+        //y
         buf[{{ i + buf_start }}] = squeeze_challenge(absorbing, pos);
         {% if challenges %}
         require(buf[{{ i + buf_start }}] == {{ challenges | nth(n = i) }}, "challenge {{ i }}");
         {% endif %}
         {% set i = i + 1 %}
         pos = 1;
+        //v
+        buf[{{ i + buf_start }}] = squeeze_challenge(absorbing, pos);
+        {% if challenges %}
+        require(buf[{{ i + buf_start }}] == {{ challenges | nth(n = i) }}, "challenge {{ i }}");
+        {% endif %}
+        {% set i = i + 1 %}
+
+        AggregatorLib.check_on_curve(transcript[transcript_pos], transcript[transcript_pos + 1]);
+        absorbing[pos++] = transcript[transcript_pos++];
+        absorbing[pos++] = transcript[transcript_pos++];
+        
         //u
         buf[{{ i + buf_start }}] = squeeze_challenge(absorbing, pos);
         {% if challenges %}
@@ -180,8 +171,6 @@ library AggregatorConfig {
         {% endif %}
         {% set i = i + 1 %}
 
-        for (; transcript_pos < transcript.length; transcript_pos += 2) {
-            AggregatorLib.check_on_curve(transcript[transcript_pos], transcript[transcript_pos + 1]);
-        }
+        AggregatorLib.check_on_curve(transcript[transcript_pos], transcript[transcript_pos + 1]);
     }
 }

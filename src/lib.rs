@@ -1,3 +1,5 @@
+#![feature(get_mut_unchecked)]
+
 pub mod appbuilder;
 pub mod args;
 pub mod batch;

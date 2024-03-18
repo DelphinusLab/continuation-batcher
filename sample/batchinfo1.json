@@ -1,12 +1,12 @@
 {
     "equivalents": [
         {
-            "source": {"name": "test1", "proof_idx": 0, "column_name": "A"},
-            "target": {"name": "test1", "proof_idx": 0, "column_name": "A"}
+            "source": {"name": "test_circuit", "proof_idx": 0, "column_name": "A"},
+            "target": {"name": "test_circuit", "proof_idx": 0, "column_name": "A"}
         }
     ],
     "expose": [
-        {"name": "test1", "proof_idx": 0, "column_name": "A"}
+        {"name": "test_circuit", "proof_idx": 0, "column_name": "A"}
     ],
     "absorb": []
 }

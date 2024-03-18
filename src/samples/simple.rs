@@ -34,7 +34,10 @@ impl<F: FieldExt> Circuit<F> for SimpleCircuit<F> {
     }
 
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-        let advices = [meta.named_advice_column("A".to_string()), meta.advice_column()];
+        let advices = [
+            meta.named_advice_column("A".to_string()),
+            meta.advice_column(),
+        ];
         let instance = meta.instance_column();
         let sel = meta.fixed_column();
 
@@ -64,14 +67,10 @@ impl<F: FieldExt> Circuit<F> for SimpleCircuit<F> {
         SimpleConfig { advices, sel }
     }
 
-    fn synthesize(
-        &self,
-        config: Self::Config,
-        mut layouter: impl Layouter<F>,
-    ) -> Result<(), Error> {
+    fn synthesize(&self, config: Self::Config, layouter: impl Layouter<F>) -> Result<(), Error> {
         layouter.assign_region(
             || "main",
-            |mut region| {
+            |region| {
                 region.assign_advice(|| "a", config.advices[0], 0, || Ok(self.a))?;
                 region.assign_advice(|| "b", config.advices[1], 0, || Ok(self.b))?;
                 region.assign_fixed(|| "sel", config.sel, 0, || Ok(F::one()))?;
