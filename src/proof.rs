@@ -2,15 +2,15 @@ use crate::args::HashType;
 use ark_std::rand::rngs::OsRng;
 use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::dev::MockProver;
-use halo2_proofs::plonk::CircuitData;
 use halo2_proofs::helpers::Serializable;
 use halo2_proofs::pairing::bn256::Bn256;
-use halo2_proofs::plonk::create_proof_with_shplonk as create_proof;
 use halo2_proofs::plonk::create_proof_from_witness;
+use halo2_proofs::plonk::create_proof_with_shplonk as create_proof;
 use halo2_proofs::plonk::create_witness;
 use halo2_proofs::plonk::keygen_pk;
 use halo2_proofs::plonk::verify_proof_with_shplonk;
 use halo2_proofs::plonk::Circuit;
+use halo2_proofs::plonk::CircuitData;
 use halo2_proofs::plonk::ProvingKey;
 use halo2_proofs::plonk::SingleVerifier;
 use halo2_proofs::plonk::VerifyingKey;
@@ -235,7 +235,7 @@ impl ProofGenerationInfo {
                     .unwrap();
                     log::info!("verify halo2 proof succeed");
                     r
-                },
+                }
                 HashType::Keccak => {
                     let mut transcript = ShaWrite::<_, _, _, sha3::Keccak256>::init(vec![]);
                     create_proof_from_witness(
@@ -245,7 +245,7 @@ impl ProofGenerationInfo {
                         OsRng,
                         &mut transcript,
                         &mut witnessreader,
-                        false
+                        false,
                     )
                     .expect("proof generation should not fail");
 
@@ -479,10 +479,34 @@ impl Prover for ProofPieceInfo {
         let params_verifier: ParamsVerifier<E> = params.verifier(inputs_size).unwrap();
         let strategy = SingleVerifier::new(&params_verifier);
 
+        #[cfg(feature = "perf")]
+        let advices = {
+            use halo2_proofs::plonk::generate_advice_from_synthesize;
+            use std::sync::Arc;
+            use zkwasm_prover::prepare_advice_buffer;
+
+            let mut advices = Arc::new(prepare_advice_buffer(pkey));
+
+            generate_advice_from_synthesize(
+                &params,
+                pkey,
+                c,
+                &instances,
+                &unsafe { Arc::get_mut_unchecked(&mut advices) }
+                    .iter_mut()
+                    .map(|x| (&mut x[..]) as *mut [_])
+                    .collect()[..],
+            );
+
+            advices
+        };
+
         let timer = start_timer!(|| "creating proof ...");
         let r = match hashtype {
             HashType::Poseidon => {
                 let mut transcript = PoseidonWrite::init(vec![]);
+
+                #[cfg(not(feature = "perf"))]
                 create_proof(
                     &params,
                     &pkey,
@@ -492,6 +516,14 @@ impl Prover for ProofPieceInfo {
                     &mut transcript,
                 )
                 .expect("proof generation should not fail");
+
+                #[cfg(feature = "perf")]
+                {
+                    use zkwasm_prover::create_proof_from_advices;
+
+                    create_proof_from_advices(&params, pkey, &instances, advices, &mut transcript)
+                        .expect("proof generation should not fail");
+                }
 
                 let r = transcript.finalize();
                 log::info!("proof created with instance: {:?}", instances);
@@ -508,6 +540,8 @@ impl Prover for ProofPieceInfo {
             }
             HashType::Sha => {
                 let mut transcript = ShaWrite::<_, _, _, sha2::Sha256>::init(vec![]);
+
+                #[cfg(not(feature = "perf"))]
                 create_proof(
                     &params,
                     &pkey,
@@ -517,6 +551,14 @@ impl Prover for ProofPieceInfo {
                     &mut transcript,
                 )
                 .expect("proof generation should not fail");
+
+                #[cfg(feature = "perf")]
+                {
+                    use zkwasm_prover::create_proof_from_advices;
+
+                    create_proof_from_advices(&params, pkey, &instances, advices, &mut transcript)
+                        .expect("proof generation should not fail");
+                }
 
                 let r = transcript.finalize();
                 log::info!("proof created with instance ... {:?}", instances);
@@ -530,7 +572,7 @@ impl Prover for ProofPieceInfo {
                 .unwrap();
                 log::info!("verify halo2 proof succeed");
                 r
-            },
+            }
             HashType::Keccak => {
                 let mut transcript = ShaWrite::<_, _, _, sha3::Keccak256>::init(vec![]);
                 create_proof(
@@ -679,7 +721,6 @@ fn store_info_full<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
         .unwrap();
     let data = CircuitData::new(params, vkey, circuit).unwrap();
     data.write(&mut fd).unwrap();
-
 }
 
 pub(crate) fn read_vkey_full<E: MultiMillerLoop>(cache_file: &Path) -> VerifyingKey<E::G1Affine> {

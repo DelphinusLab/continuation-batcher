@@ -9,12 +9,11 @@ use halo2aggregator_s::circuit_verifier::build_aggregate_verify_circuit;
 use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuit;
 use halo2aggregator_s::circuit_verifier::G2AffineBaseHelper;
 use halo2aggregator_s::circuits::utils::{
-    load_or_build_vkey, load_or_create_proof, TranscriptHash,
-    AggregatorConfig,
+    load_or_build_vkey, load_or_create_proof, AggregatorConfig, TranscriptHash,
 };
 use halo2aggregator_s::native_verifier;
-use halo2aggregator_s::PairingChipOps;
 use halo2aggregator_s::NativeScalarEccContext;
+use halo2aggregator_s::PairingChipOps;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::path::PathBuf;
@@ -233,11 +232,10 @@ where
             usize::max(acc, x.iter().fold(0, |acc, x| usize::max(acc, x.len())))
         });
 
-        let target_proof_max_instance = instances.iter().map(|x| {
-            x.iter().map(|x| x.len()).collect::<Vec<_>>()
-        }).collect::<Vec<_>>();
-
-        
+        let target_proof_max_instance = instances
+            .iter()
+            .map(|x| x.iter().map(|x| x.len()).collect::<Vec<_>>())
+            .collect::<Vec<_>>();
 
         println!("public input size {}", public_inputs_size);
 
@@ -256,7 +254,7 @@ where
                     proof.transcripts.clone(),
                     TranscriptHash::Poseidon,
                     true,
-                    &vec![]
+                    &vec![],
                 );
             }
             end_timer!(timer);
@@ -276,7 +274,8 @@ where
             commitment_check: self.equivalents.clone(),
             expose: self.expose.clone(),
             absorb: self.absorb.clone(),
-            target_aggregator_constant_hash_instance_offset: target_aggregator_constant_hash_instance_offset.clone(), // hash instance of the proof index
+            target_aggregator_constant_hash_instance_offset:
+                target_aggregator_constant_hash_instance_offset.clone(), // hash instance of the proof index
             target_proof_with_shplonk: vec![],
             target_proof_with_shplonk_as_default: true,
             target_proof_max_instance,
@@ -284,8 +283,8 @@ where
             //is_final_aggregator: true,
             prev_aggregator_skip_instance: vec![], // hash get absorbed automatically
             absorb_instance: vec![],
+            use_select_chip: true,
         };
-
 
         // circuit multi check
         let timer = start_timer!(|| "build aggregate verify circuit");
@@ -298,6 +297,11 @@ where
         );
 
         end_timer!(timer);
-        (circuit, instances, shadow_instance, hash)
+        (
+            circuit.circuit_with_select_chip.unwrap(),
+            instances,
+            shadow_instance,
+            hash,
+        )
     }
 }
