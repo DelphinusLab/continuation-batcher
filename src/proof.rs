@@ -485,7 +485,7 @@ impl Prover for ProofPieceInfo {
             use std::sync::Arc;
             use zkwasm_prover::prepare_advice_buffer;
 
-            let mut advices = Arc::new(prepare_advice_buffer(pkey));
+            let mut advices = Arc::new(prepare_advice_buffer(pkey, false));
 
             generate_advice_from_synthesize(
                 &params,
@@ -495,7 +495,7 @@ impl Prover for ProofPieceInfo {
                 &unsafe { Arc::get_mut_unchecked(&mut advices) }
                     .iter_mut()
                     .map(|x| (&mut x[..]) as *mut [_])
-                    .collect()[..],
+                    .collect::<Vec<_>>()[..],
             );
 
             advices
