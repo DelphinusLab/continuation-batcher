@@ -1,13 +1,15 @@
 use crate::args::HashType;
+use crate::args::OpenSchema;
 use ark_std::rand::rngs::OsRng;
 use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::dev::MockProver;
 use halo2_proofs::helpers::Serializable;
 use halo2_proofs::pairing::bn256::Bn256;
-use halo2_proofs::plonk::create_proof_from_witness;
-use halo2_proofs::plonk::create_proof_with_shplonk as create_proof;
+use halo2_proofs::plonk::create_proof as create_proof_with_gwc;
+use halo2_proofs::plonk::create_proof_with_shplonk;
 use halo2_proofs::plonk::create_witness;
 use halo2_proofs::plonk::keygen_pk;
+use halo2_proofs::plonk::verify_proof;
 use halo2_proofs::plonk::verify_proof_with_shplonk;
 use halo2_proofs::plonk::Circuit;
 use halo2_proofs::plonk::CircuitData;
@@ -145,133 +147,6 @@ impl ProofGenerationInfo {
     }
 }
 
-impl ProofGenerationInfo {
-    pub fn create_proofs<E: MultiMillerLoop>(
-        &self,
-        cache_folder: &Path,
-        param_folder: &Path,
-        params_cache: &mut ParamsCache<E>,
-    ) {
-        let params = load_or_build_unsafe_params::<E>(
-            self.k,
-            &param_folder.join(self.param.clone()),
-            params_cache,
-        );
-
-        for single_proof in self.proofs.iter() {
-            // here we only supports single instance column
-            let instances = load_instance::<E>(
-                &[single_proof.instance_size],
-                &cache_folder.join(&single_proof.instance),
-            );
-
-            let pkey = read_pk_full::<E>(&params, &param_folder.join(single_proof.circuit.clone()));
-
-            let witnessfile = cache_folder.join(&single_proof.witness);
-            let mut witnessreader = OpenOptions::new().read(true).open(witnessfile).unwrap();
-
-            let inputs_size = single_proof.instance_size;
-            let instances: Vec<&[E::Scalar]> = instances.iter().map(|x| &x[..]).collect::<Vec<_>>();
-
-            let params_verifier: ParamsVerifier<E> = params.verifier(inputs_size as usize).unwrap();
-            let strategy = SingleVerifier::new(&params_verifier);
-
-            let r = match self.hashtype {
-                HashType::Poseidon => {
-                    let mut transcript = PoseidonWrite::init(vec![]);
-                    create_proof_from_witness(
-                        &params,
-                        &pkey,
-                        [instances.as_slice()].as_slice(),
-                        OsRng,
-                        &mut transcript,
-                        &mut witnessreader,
-                        false,
-                    )
-                    .expect("proof generation should not fail");
-                    log::info!(
-                        "proof created with instance ... {:?}",
-                        &single_proof.instance
-                    );
-
-                    let r = transcript.finalize();
-                    verify_proof_with_shplonk(
-                        &params_verifier,
-                        &pkey.get_vk(),
-                        strategy,
-                        &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
-                        &mut PoseidonRead::init(&r[..]),
-                    )
-                    .unwrap();
-                    log::info!("verify halo2 proof succeed");
-                    r
-                }
-
-                HashType::Sha => {
-                    let mut transcript = ShaWrite::<_, _, _, sha2::Sha256>::init(vec![]);
-                    create_proof_from_witness(
-                        &params,
-                        &pkey,
-                        [instances.as_slice()].as_slice(),
-                        OsRng,
-                        &mut transcript,
-                        &mut witnessreader,
-                        false,
-                    )
-                    .expect("proof generation should not fail");
-
-                    let r = transcript.finalize();
-                    log::info!(
-                        "proof created with instance ... {:?}",
-                        &single_proof.instance
-                    );
-                    verify_proof_with_shplonk(
-                        &params_verifier,
-                        &pkey.get_vk(),
-                        strategy,
-                        &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
-                        &mut ShaRead::<_, _, _, sha2::Sha256>::init(&r[..]),
-                    )
-                    .unwrap();
-                    log::info!("verify halo2 proof succeed");
-                    r
-                }
-                HashType::Keccak => {
-                    let mut transcript = ShaWrite::<_, _, _, sha3::Keccak256>::init(vec![]);
-                    create_proof_from_witness(
-                        &params,
-                        &pkey,
-                        [instances.as_slice()].as_slice(),
-                        OsRng,
-                        &mut transcript,
-                        &mut witnessreader,
-                        false,
-                    )
-                    .expect("proof generation should not fail");
-
-                    let r = transcript.finalize();
-                    log::info!("proof created with instance ... {:?}", instances);
-                    verify_proof_with_shplonk(
-                        &params_verifier,
-                        &pkey.get_vk(),
-                        strategy,
-                        &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
-                        &mut ShaRead::<_, _, _, sha3::Keccak256>::init(&r[..]),
-                    )
-                    .unwrap();
-                    log::info!("verify halo2 proof succeed");
-                    r
-                }
-            };
-
-            let cache_file = &cache_folder.join(single_proof.instance.clone());
-            log::info!("create transcripts file {:?}", cache_file);
-            let mut fd = std::fs::File::create(&cache_file).unwrap();
-            fd.write_all(&r).unwrap();
-        }
-    }
-}
-
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ProofLoadInfo {
     pub k: usize,
@@ -385,6 +260,7 @@ pub trait Prover {
         params: &Params<E::G1Affine>,
         pkey: &ProvingKey<E::G1Affine>,
         hashtype: HashType,
+        schema: OpenSchema,
     ) -> Vec<u8>;
 
     fn create_witness<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
@@ -415,11 +291,12 @@ impl ProofPieceInfo {
         pkey: &ProvingKey<E::G1Affine>,
         cache_folder: &Path,
         hashtype: HashType,
+        schema: OpenSchema,
     ) -> Vec<u8> {
         // store instance in instance file
         store_instance(instances, &cache_folder.join(self.instance.as_str()));
 
-        let r = self.create_proof::<E, C>(c, instances, params, pkey, hashtype);
+        let r = self.create_proof::<E, C>(c, instances, params, pkey, hashtype, schema);
 
         let cache_file = &cache_folder.join(&self.transcript);
         log::debug!("create transcripts file {:?}", cache_file);
@@ -439,6 +316,7 @@ impl ProofPieceInfo {
         pkey_cache: &mut ProvingKeyCache<E>,
         param_cache: &mut ParamsCache<E>,
         hashtype: HashType,
+        schema: OpenSchema,
     ) -> Vec<u8> {
         let params =
             load_or_build_unsafe_params::<E>(k, &param_folder.join(&param_file), param_cache);
@@ -457,6 +335,7 @@ impl ProofPieceInfo {
             pkey,
             cache_folder,
             hashtype,
+            schema,
         )
     }
 }
@@ -469,6 +348,7 @@ impl Prover for ProofPieceInfo {
         params: &Params<E::G1Affine>,
         pkey: &ProvingKey<E::G1Affine>,
         hashtype: HashType,
+        schema: OpenSchema,
     ) -> Vec<u8> {
         use ark_std::{end_timer, start_timer};
 
@@ -501,118 +381,119 @@ impl Prover for ProofPieceInfo {
             advices
         };
 
+        #[cfg(feature = "perf")]
+        macro_rules! perf_gen_proof {
+            ($transcript: expr, $schema: expr) => {{
+                use zkwasm_prover::create_proof_from_advices_with_shplonk;
+
+                match $schema {
+                    GWC => create_proof_from_advices_with_gwc(
+                        &params,
+                        pkey,
+                        &instances,
+                        advices,
+                        &mut transcript,
+                    )
+                    .expect("proof generation should not fail"),
+                    Shplonk => create_proof_from_advices_with_shplonk(
+                        &params,
+                        pkey,
+                        &instances,
+                        advices,
+                        &mut transcript,
+                    )
+                    .expect("proof generation should not fail"),
+                }
+            }};
+        }
+
+        #[cfg(not(feature = "perf"))]
+        macro_rules! halo2_gen_proof {
+            ($transcript: expr, $schema: expr) => {
+                match $schema {
+                    OpenSchema::GWC => create_proof_with_gwc(
+                        &params,
+                        &pkey,
+                        std::slice::from_ref(c),
+                        [instances.as_slice()].as_slice(),
+                        OsRng,
+                        &mut $transcript,
+                    )
+                    .expect("proof generation should not fail"),
+                    OpenSchema::Shplonk => create_proof_with_shplonk(
+                        &params,
+                        &pkey,
+                        std::slice::from_ref(c),
+                        [instances.as_slice()].as_slice(),
+                        OsRng,
+                        &mut $transcript,
+                    )
+                    .expect("proof generation should not fail"),
+                }
+            };
+        }
+
+        macro_rules! verify_proof {
+            ($reader: expr, $schema: expr, $r: expr) => {
+                match $schema {
+                    OpenSchema::GWC => verify_proof(
+                        &params_verifier,
+                        &pkey.get_vk(),
+                        strategy,
+                        &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
+                        &mut $reader,
+                    )
+                    .unwrap(),
+                    OpenSchema::Shplonk => verify_proof_with_shplonk(
+                        &params_verifier,
+                        &pkey.get_vk(),
+                        strategy,
+                        &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
+                        &mut $reader,
+                    )
+                    .unwrap(),
+                }
+                log::info!("verify halo2 proof succeed");
+            };
+        }
+
         let timer = start_timer!(|| "creating proof ...");
         let r = match hashtype {
             HashType::Poseidon => {
                 let mut transcript = PoseidonWrite::init(vec![]);
-
-                #[cfg(not(feature = "perf"))]
-                create_proof(
-                    &params,
-                    &pkey,
-                    std::slice::from_ref(c),
-                    [instances.as_slice()].as_slice(),
-                    OsRng,
-                    &mut transcript,
-                )
-                .expect("proof generation should not fail");
-
                 #[cfg(feature = "perf")]
-                {
-                    use zkwasm_prover::create_proof_from_advices_with_shplonk;
-
-                    create_proof_from_advices_with_shplonk(
-                        &params,
-                        pkey,
-                        &instances,
-                        advices,
-                        &mut transcript,
-                    )
-                    .expect("proof generation should not fail");
-                }
-
+                perf_gen_proof!(transcript, schema);
+                #[cfg(not(feature = "perf"))]
+                halo2_gen_proof!(transcript, schema);
                 let r = transcript.finalize();
-                log::info!("proof created with instance: {:?}", instances);
-                verify_proof_with_shplonk(
-                    &params_verifier,
-                    &pkey.get_vk(),
-                    strategy,
-                    &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
-                    &mut PoseidonRead::init(&r[..]),
-                )
-                .unwrap();
-                log::info!("verify halo2 proof succeed");
+                let mut reader = PoseidonRead::init(&r[..]);
+                verify_proof!(reader, schema, r);
                 r
             }
             HashType::Sha => {
                 let mut transcript = ShaWrite::<_, _, _, sha2::Sha256>::init(vec![]);
-
-                #[cfg(not(feature = "perf"))]
-                create_proof(
-                    &params,
-                    &pkey,
-                    std::slice::from_ref(c),
-                    [instances.as_slice()].as_slice(),
-                    OsRng,
-                    &mut transcript,
-                )
-                .expect("proof generation should not fail");
-
                 #[cfg(feature = "perf")]
-                {
-                    use zkwasm_prover::create_proof_from_advices_with_shplonk;
-
-                    create_proof_from_advices_with_shplonk(
-                        &params,
-                        pkey,
-                        &instances,
-                        advices,
-                        &mut transcript,
-                    )
-                    .expect("proof generation should not fail");
-                }
-
+                perf_gen_proof!(transcript, schema);
+                #[cfg(not(feature = "perf"))]
+                halo2_gen_proof!(transcript, schema);
                 let r = transcript.finalize();
-                log::info!("proof created with instance ... {:?}", instances);
-                verify_proof_with_shplonk(
-                    &params_verifier,
-                    &pkey.get_vk(),
-                    strategy,
-                    &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
-                    &mut ShaRead::<_, _, _, sha2::Sha256>::init(&r[..]),
-                )
-                .unwrap();
-                log::info!("verify halo2 proof succeed");
+                let mut reader = ShaRead::<_, _, _, sha2::Sha256>::init(&r[..]);
+                verify_proof!(reader, schema, r);
                 r
             }
             HashType::Keccak => {
                 let mut transcript = ShaWrite::<_, _, _, sha3::Keccak256>::init(vec![]);
-                create_proof(
-                    &params,
-                    &pkey,
-                    std::slice::from_ref(c),
-                    [instances.as_slice()].as_slice(),
-                    OsRng,
-                    &mut transcript,
-                )
-                .expect("proof generation should not fail");
-
+                #[cfg(feature = "perf")]
+                perf_gen_proof!(transcript, schema);
+                #[cfg(not(feature = "perf"))]
+                halo2_gen_proof!(transcript, schema);
                 let r = transcript.finalize();
-                log::info!("proof created with instance ... {:?}", instances);
-                verify_proof_with_shplonk(
-                    &params_verifier,
-                    &pkey.get_vk(),
-                    strategy,
-                    &[&instances.iter().map(|x| &x[..]).collect::<Vec<_>>()[..]],
-                    &mut ShaRead::<_, _, _, sha3::Keccak256>::init(&r[..]),
-                )
-                .unwrap();
-                log::info!("verify halo2 proof succeed");
+                let mut reader = ShaRead::<_, _, _, sha3::Keccak256>::init(&r[..]);
+                verify_proof!(reader, schema, r);
                 r
             }
         };
         end_timer!(timer);
-
         r
     }
 
@@ -810,6 +691,7 @@ fn batch_single_circuit() {
             PKEY_CACHE.lock().as_mut().unwrap(),
             K_PARAMS_CACHE.lock().as_mut().unwrap(),
             HashType::Poseidon,
+            OpenSchema::Shplonk,
         );
 
         proof_load_info.append_single_proof(circuit_info);
@@ -835,6 +717,7 @@ fn batch_single_circuit() {
             PKEY_CACHE.lock().as_mut().unwrap(),
             K_PARAMS_CACHE.lock().as_mut().unwrap(),
             HashType::Poseidon,
+            OpenSchema::Shplonk,
         );
 
         proof_load_info.append_single_proof(circuit_info);

@@ -1,4 +1,5 @@
 use crate::args::HashType;
+use crate::args::OpenSchema;
 use crate::batch::BatchInfo;
 use crate::batch::CommitmentCheck;
 use crate::batch::LastAggInfo;
@@ -9,10 +10,10 @@ use crate::proof::ProofLoadInfo;
 use crate::proof::ProofPieceInfo;
 use crate::proof::ProvingKeyCache;
 use halo2_proofs::poly::commitment::ParamsVerifier;
+use halo2aggregator_s::circuits::utils::store_instance;
 use halo2aggregator_s::circuits::utils::TranscriptHash;
 use halo2aggregator_s::solidity_verifier::codegen::solidity_aux_gen;
 use halo2aggregator_s::solidity_verifier::solidity_render;
-use halo2aggregator_s::circuits::utils::store_instance;
 
 /*
 use crate::profile::Profiler;
@@ -24,28 +25,6 @@ use halo2_proofs::arithmetic::BaseExt;
 use halo2_proofs::dev::MockProver;
 */
 use halo2_proofs::pairing::bn256::Bn256;
-/*
-use halo2_proofs::pairing::bn256::Fr;
-use halo2_proofs::pairing::bn256::G1Affine;
-use halo2_proofs::plonk::verify_proof;
-use halo2_proofs::plonk::SingleVerifier;
-use halo2_proofs::poly::commitment::ParamsVerifier;
-use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuit;
-use halo2aggregator_s::circuits::utils::load_instance;
-*/
-/*
-use halo2aggregator_s::circuits::utils::load_or_build_vkey;
-use halo2aggregator_s::circuits::utils::load_or_create_proof;
-use halo2aggregator_s::circuits::utils::load_proof;
-use halo2aggregator_s::circuits::utils::load_vkey;
-use halo2aggregator_s::circuits::utils::run_circuit_unsafe_full_pass;
-use halo2aggregator_s::circuits::utils::store_instance;
-use halo2aggregator_s::circuits::utils::TranscriptHash;
-use halo2aggregator_s::solidity_verifier::codegen::solidity_aux_gen;
-use halo2aggregator_s::solidity_verifier::solidity_render;
-use halo2aggregator_s::transcript::poseidon::PoseidonRead;
-use halo2aggregator_s::transcript::sha256::ShaRead;
-*/
 use log::info;
 use sha2::Digest;
 
@@ -122,19 +101,20 @@ pub fn exec_batch_proofs(
 
     let mut circuit_info_idx = 0;
     let (agg_circuit, agg_instances, shadow_instances, _) = if cont {
-        let (mut last_agg, mut instances, mut shadow_instances, mut last_hash) = batchinfo.build_aggregate_circuit(
-            proof_name.clone(),
-            &params,
-            &param_dir.clone(),
-            &output_dir.clone(),
-            Some(LastAggInfo {
-                circuit: None,
-                instances: None,
-                idx: 0,
-            }),
-            false,
-            &vec![],
-        );
+        let (mut last_agg, mut instances, mut shadow_instances, mut last_hash) = batchinfo
+            .build_aggregate_circuit(
+                proof_name.clone(),
+                &params,
+                &param_dir.clone(),
+                &output_dir.clone(),
+                Some(LastAggInfo {
+                    circuit: None,
+                    instances: None,
+                    idx: 0,
+                }),
+                false,
+                &vec![],
+            );
 
         for i in 1..batchinfo.proofs.len() {
             let last_agginfo = LastAggInfo {
@@ -166,7 +146,11 @@ pub fn exec_batch_proofs(
         )
     };
 
-    let circuit_info = ProofPieceInfo::new(proof_name.clone(), circuit_info_idx, agg_instances.len() as u32);
+    let circuit_info = ProofPieceInfo::new(
+        proof_name.clone(),
+        circuit_info_idx,
+        agg_instances.len() as u32,
+    );
     let mut proof_load_info = ProofLoadInfo::new(proof_name, batchinfo.batch_k as usize, hash);
 
     circuit_info.exec_create_proof(
@@ -179,6 +163,7 @@ pub fn exec_batch_proofs(
         pkey_cache,
         params_cache,
         hash,
+        OpenSchema::Shplonk,
     );
 
     let public_inputs_size = circuit_info.instance_size as usize;
@@ -203,7 +188,6 @@ pub fn exec_batch_proofs(
     // generate solidity aux data
     // it only makes sense if the transcript challenge is poseidon
     match hash {
-
         HashType::Sha => {
             solidity_aux_gen::<_, sha2::Sha256>(
                 &params_verifier,
@@ -212,7 +196,14 @@ pub fn exec_batch_proofs(
                 proof[0].transcripts.clone(),
                 &output_dir.join(format!("{}.{}.aux.data", &proof_load_info.name.clone(), 0)),
             );
-            store_instance(&vec![shadow_instances], &output_dir.join(format!("{}.{}.shadowinstance.data", &proof_load_info.name.clone(), 0)))
+            store_instance(
+                &vec![shadow_instances],
+                &output_dir.join(format!(
+                    "{}.{}.shadowinstance.data",
+                    &proof_load_info.name.clone(),
+                    0
+                )),
+            )
         }
         HashType::Keccak => {
             solidity_aux_gen::<_, sha3::Keccak256>(
@@ -222,11 +213,17 @@ pub fn exec_batch_proofs(
                 proof[0].transcripts.clone(),
                 &output_dir.join(format!("{}.{}.aux.data", &proof_load_info.name.clone(), 0)),
             );
-            store_instance(&vec![shadow_instances], &output_dir.join(format!("{}.{}.shadowinstance.data", &proof_load_info.name.clone(), 0)))
-        },
-        HashType::Poseidon => unreachable!()
+            store_instance(
+                &vec![shadow_instances],
+                &output_dir.join(format!(
+                    "{}.{}.shadowinstance.data",
+                    &proof_load_info.name.clone(),
+                    0
+                )),
+            )
+        }
+        HashType::Poseidon => unreachable!(),
     }
-   
 }
 
 pub fn exec_solidity_gen<D: Digest + Clone>(
@@ -256,7 +253,7 @@ pub fn exec_solidity_gen<D: Digest + Clone>(
     let proof: Vec<ProofInfo<Bn256>> =
         ProofInfo::load_proof(&output_dir, &param_dir, aggregate_proof_info);
 
-    solidity_render::<_,D>(
+    solidity_render::<_, D>(
         &(sol_path_in.to_str().unwrap().to_owned() + "/*"),
         sol_path_out.to_str().unwrap(),
         vec![(

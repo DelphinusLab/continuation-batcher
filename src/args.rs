@@ -14,6 +14,12 @@ pub enum HashType {
     Keccak,
 }
 
+#[derive(clap::ArgEnum, Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
+pub enum OpenSchema {
+    GWC,
+    Shplonk,
+}
+
 pub trait ArgBuilder {
     fn hashtype<'a>() -> Arg<'a> {
         arg!(-c --challenge<CHALLENGE_HASH_TYPE>... "HashType of Challenge")

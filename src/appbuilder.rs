@@ -3,7 +3,6 @@ use crate::batch::CommitmentCheck;
 use crate::exec::exec_batch_proofs;
 use crate::exec::exec_solidity_gen;
 use crate::proof::load_or_build_unsafe_params;
-use crate::proof::ProofGenerationInfo;
 use crate::proof::ProofInfo;
 use crate::proof::ProofLoadInfo;
 use crate::proof::K_PARAMS_CACHE;
@@ -70,23 +69,6 @@ pub trait AppBuilder: CommandBuilder {
             Some(("setup", sub_matches)) => {
                 let k: u32 = Self::parse_zkwasm_k_arg(&sub_matches).unwrap();
                 generate_k_params(k, &output_dir, K_PARAMS_CACHE.lock().as_mut().unwrap());
-            }
-
-            Some(("prove", sub_matches)) => {
-                let config_files = Self::parse_proof_load_info_arg(sub_matches);
-
-                let proofs = config_files
-                    .iter()
-                    .map(|config| ProofGenerationInfo::load(config))
-                    .collect::<Vec<_>>();
-
-                for proof in proofs {
-                    proof.create_proofs::<Bn256>(
-                        output_dir,
-                        param_dir,
-                        K_PARAMS_CACHE.lock().as_mut().unwrap(),
-                    );
-                }
             }
 
             Some(("batch", sub_matches)) => {
@@ -180,11 +162,31 @@ pub trait AppBuilder: CommandBuilder {
 
                 match hasher {
                     TranscriptHash::Keccak => {
-                        exec_solidity_gen::<sha3::Keccak256>(param_dir, output_dir, k, n_proofs, &sol_path_templates, &sol_path_contracts, &proofloadinfo, K_PARAMS_CACHE.lock().as_mut().unwrap(), hasher);
-                    },
+                        exec_solidity_gen::<sha3::Keccak256>(
+                            param_dir,
+                            output_dir,
+                            k,
+                            n_proofs,
+                            &sol_path_templates,
+                            &sol_path_contracts,
+                            &proofloadinfo,
+                            K_PARAMS_CACHE.lock().as_mut().unwrap(),
+                            hasher,
+                        );
+                    }
                     TranscriptHash::Sha => {
-                        exec_solidity_gen::<sha2::Sha256>(param_dir, output_dir, k, n_proofs, &sol_path_templates, &sol_path_contracts, &proofloadinfo, K_PARAMS_CACHE.lock().as_mut().unwrap(), hasher);
-                    },
+                        exec_solidity_gen::<sha2::Sha256>(
+                            param_dir,
+                            output_dir,
+                            k,
+                            n_proofs,
+                            &sol_path_templates,
+                            &sol_path_contracts,
+                            &proofloadinfo,
+                            K_PARAMS_CACHE.lock().as_mut().unwrap(),
+                            hasher,
+                        );
+                    }
                     _ => {
                         panic!("Solidity generation only supports Keccak and Sha hash functions");
                     }
