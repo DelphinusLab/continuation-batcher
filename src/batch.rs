@@ -7,6 +7,7 @@ use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::poly::commitment::{Params, ParamsVerifier};
 use halo2aggregator_s::circuit_verifier::build_aggregate_verify_circuit;
 use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuit;
+use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuitOption;
 use halo2aggregator_s::circuit_verifier::G2AffineBaseHelper;
 use halo2aggregator_s::circuits::utils::{
     load_or_build_vkey, load_or_create_proof, AggregatorConfig, TranscriptHash,
@@ -167,9 +168,10 @@ where
         cache_folder: &PathBuf,
         last_agg: Option<LastAggInfo<E>>,
         is_final: bool,
+        use_select_chip: bool,
         target_aggregator_constant_hash_instance_offset: &Vec<(usize, usize, E::Scalar)>, // (proof_index, instance_col, hash)
     ) -> (
-        AggregatorCircuit<<E as Engine>::G1Affine>,
+        AggregatorCircuitOption<<E as Engine>::G1Affine>,
         Vec<<E as Engine>::Scalar>,
         Vec<<E as Engine>::Scalar>,
         <E as Engine>::Scalar,
@@ -283,7 +285,7 @@ where
             //is_final_aggregator: true,
             prev_aggregator_skip_instance: vec![], // hash get absorbed automatically
             absorb_instance: vec![],
-            use_select_chip: true,
+            use_select_chip,
         };
 
         // circuit multi check
@@ -297,11 +299,6 @@ where
         );
 
         end_timer!(timer);
-        (
-            circuit.circuit_with_select_chip.unwrap(),
-            instances,
-            shadow_instance,
-            hash,
-        )
+        (circuit, instances, shadow_instance, hash)
     }
 }

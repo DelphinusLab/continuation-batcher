@@ -55,6 +55,7 @@ pub fn exec_batch_proofs(
     hash: HashType,
     k: u32,
     cont: bool,
+    use_ecc_select_chip: bool,
 ) {
     let mut target_k = None;
     let mut proofsinfo = vec![];
@@ -113,12 +114,13 @@ pub fn exec_batch_proofs(
                     idx: 0,
                 }),
                 false,
+                true,
                 &vec![],
             );
 
         for i in 1..batchinfo.proofs.len() {
             let last_agginfo = LastAggInfo {
-                circuit: Some(last_agg),
+                circuit: Some(last_agg.circuit_with_select_chip.unwrap()),
                 instances: Some(instances),
                 idx: i,
             };
@@ -129,6 +131,7 @@ pub fn exec_batch_proofs(
                 &output_dir.clone(),
                 Some(last_agginfo),
                 false,
+                true,
                 &vec![(1, 0, last_hash)],
             );
         }
@@ -142,6 +145,7 @@ pub fn exec_batch_proofs(
             &output_dir.clone(),
             None,
             is_final,
+            use_ecc_select_chip,
             &vec![],
         )
     };
@@ -153,18 +157,33 @@ pub fn exec_batch_proofs(
     );
     let mut proof_load_info = ProofLoadInfo::new(proof_name, batchinfo.batch_k as usize, hash);
 
-    circuit_info.exec_create_proof(
-        &agg_circuit,
-        &vec![agg_instances],
-        &output_dir,
-        &param_dir,
-        param_file.clone(),
-        proof_load_info.k as usize,
-        pkey_cache,
-        params_cache,
-        hash,
-        OpenSchema::Shplonk,
-    );
+    if use_ecc_select_chip {
+        circuit_info.exec_create_proof(
+            &agg_circuit.circuit_with_select_chip.unwrap(),
+            &vec![agg_instances],
+            &output_dir,
+            &param_dir,
+            param_file.clone(),
+            proof_load_info.k as usize,
+            pkey_cache,
+            params_cache,
+            hash,
+            OpenSchema::Shplonk,
+        );
+    } else {
+        circuit_info.exec_create_proof(
+            &agg_circuit.circuit_without_select_chip.unwrap(),
+            &vec![agg_instances],
+            &output_dir,
+            &param_dir,
+            param_file.clone(),
+            proof_load_info.k as usize,
+            pkey_cache,
+            params_cache,
+            hash,
+            OpenSchema::Shplonk,
+        );
+    };
 
     let public_inputs_size = circuit_info.instance_size as usize;
 

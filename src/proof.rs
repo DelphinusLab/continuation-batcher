@@ -1,12 +1,9 @@
 use crate::args::HashType;
 use crate::args::OpenSchema;
-use ark_std::rand::rngs::OsRng;
 use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::dev::MockProver;
 use halo2_proofs::helpers::Serializable;
 use halo2_proofs::pairing::bn256::Bn256;
-use halo2_proofs::plonk::create_proof as create_proof_with_gwc;
-use halo2_proofs::plonk::create_proof_with_shplonk;
 use halo2_proofs::plonk::create_witness;
 use halo2_proofs::plonk::keygen_pk;
 use halo2_proofs::plonk::verify_proof;
@@ -384,23 +381,24 @@ impl Prover for ProofPieceInfo {
         #[cfg(feature = "perf")]
         macro_rules! perf_gen_proof {
             ($transcript: expr, $schema: expr) => {{
+                use zkwasm_prover::create_proof_from_advices_with_gwc;
                 use zkwasm_prover::create_proof_from_advices_with_shplonk;
 
                 match $schema {
-                    GWC => create_proof_from_advices_with_gwc(
+                    OpenSchema::GWC => create_proof_from_advices_with_gwc(
                         &params,
                         pkey,
                         &instances,
                         advices,
-                        &mut transcript,
+                        &mut $transcript,
                     )
                     .expect("proof generation should not fail"),
-                    Shplonk => create_proof_from_advices_with_shplonk(
+                    OpenSchema::Shplonk => create_proof_from_advices_with_shplonk(
                         &params,
                         pkey,
                         &instances,
                         advices,
-                        &mut transcript,
+                        &mut $transcript,
                     )
                     .expect("proof generation should not fail"),
                 }
@@ -410,6 +408,9 @@ impl Prover for ProofPieceInfo {
         #[cfg(not(feature = "perf"))]
         macro_rules! halo2_gen_proof {
             ($transcript: expr, $schema: expr) => {
+                use ark_std::rand::rngs::OsRng;
+                use halo2_proofs::plonk::create_proof as create_proof_with_gwc;
+                use halo2_proofs::plonk::create_proof_with_shplonk;
                 match $schema {
                     OpenSchema::GWC => create_proof_with_gwc(
                         &params,

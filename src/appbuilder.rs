@@ -94,6 +94,7 @@ pub trait AppBuilder: CommandBuilder {
                     hash,
                     k,
                     cont,
+                    true,
                 )
             }
 
