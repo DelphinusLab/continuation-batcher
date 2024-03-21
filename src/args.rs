@@ -27,10 +27,23 @@ pub trait ArgBuilder {
             .value_parser(value_parser!(HashType))
     }
 
+    fn openschema<'a>() -> Arg<'a> {
+        arg!(-s --openschema<OPEN_SCHEMA>... "Open Schema")
+            .max_values(1)
+            .value_parser(value_parser!(OpenSchema))
+    }
+
     fn parse_hashtype(matches: &ArgMatches) -> HashType {
         matches
             .get_one::<HashType>("challenge")
             .expect("challenge hashtype is required")
+            .clone()
+    }
+
+    fn parse_openschema(matches: &ArgMatches) -> OpenSchema {
+        matches
+            .get_one::<OpenSchema>("openschema")
+            .map_or(OpenSchema::Shplonk, |x| x.clone())
             .clone()
     }
 

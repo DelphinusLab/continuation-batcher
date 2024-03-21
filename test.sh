@@ -12,7 +12,7 @@ cargo run --release --features cuda -- --param ./params --output ./output verify
 
 # batch test proofs
 #cargo run --release --features cuda -- --param ./params --output ./output batch -k 22 --challenge sha --info output/test_circuit.loadinfo.json --name batchsample --commits sample/batchinfo1.json
-cargo run --features cuda -- --param ./params --output ./output batch -k 22 --challenge keccak --info output/test_circuit.loadinfo.json --name batchsample --commits sample/batchinfo1.json
+cargo run --features cuda -- --param ./params --output ./output batch -k 22 --openschema shplonk --challenge keccak --info output/test_circuit.loadinfo.json --name batchsample --commits sample/batchinfo1.json
 
 
 # verify generated proof for test circuits

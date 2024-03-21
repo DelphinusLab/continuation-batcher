@@ -1,9 +1,11 @@
+use crate::args::HashType;
+use crate::args::OpenSchema;
+use crate::proof::load_or_build_pkey;
+use crate::proof::ParamsCache;
+use crate::proof::ProofGenerationInfo;
 use crate::proof::ProofInfo;
 use crate::proof::ProofPieceInfo;
-use crate::proof::ProofGenerationInfo;
 use crate::proof::ProvingKeyCache;
-use crate::proof::ParamsCache;
-use crate::proof::load_or_build_pkey;
 use ark_std::end_timer;
 use ark_std::start_timer;
 use halo2_proofs::arithmetic::Engine;
@@ -11,11 +13,7 @@ use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::poly::commitment::ParamsVerifier;
 use halo2aggregator_s::circuit_verifier::build_aggregate_verify_circuit;
 use halo2aggregator_s::circuit_verifier::G2AffineBaseHelper;
-use halo2aggregator_s::circuits::utils::{
-    AggregatorConfig, TranscriptHash,
-};
-use crate::args::HashType;
-use crate::args::OpenSchema::Shplonk;
+use halo2aggregator_s::circuits::utils::{AggregatorConfig, TranscriptHash};
 use halo2aggregator_s::NativeScalarEccContext;
 use halo2aggregator_s::PairingChipOps;
 use serde::{Deserialize, Serialize};
@@ -175,6 +173,7 @@ where
         use_select_chip: bool,
         hashtype: HashType,
         last_agg_info: Option<Vec<(usize, usize, E::Scalar)>>, // (proof_index, instance_col, hash)
+        open_schema: OpenSchema,
     ) -> (
         ProofPieceInfo,
         Vec<<E as Engine>::Scalar>,
@@ -198,7 +197,6 @@ where
             .map(|x| x.iter().map(|x| x.len()).collect::<Vec<_>>())
             .collect::<Vec<_>>();
 
-
         for proofinfo in self.proofs.iter() {
             vkeys.push(&proofinfo.vkey);
         }
@@ -211,10 +209,8 @@ where
         println!("commitment expose: {:?}", self.expose);
         println!("commitment absorb: {:?}", self.absorb);
 
-        let target_aggregator_constant_hash_instance_offset = last_agg_info.map_or_else(
-            || vec![],
-            |x| x.clone()
-        );
+        let target_aggregator_constant_hash_instance_offset =
+            last_agg_info.map_or_else(|| vec![], |x| x.clone());
 
         let config = &AggregatorConfig {
             hash: TranscriptHash::Poseidon,
@@ -223,7 +219,7 @@ where
             absorb: self.absorb.clone(),
             target_aggregator_constant_hash_instance_offset,
             target_proof_with_shplonk: vec![],
-            target_proof_with_shplonk_as_default: true,
+            target_proof_with_shplonk_as_default: (open_schema == OpenSchema::Shplonk),
             target_proof_max_instance,
             is_final_aggregator: self.is_final,
             prev_aggregator_skip_instance: vec![], // hash get absorbed automatically
@@ -232,7 +228,8 @@ where
         };
 
         let params = params_cache.generate_k_params(self.batch_k);
-        let params_verifier: ParamsVerifier<E> = params.verifier(self.get_agg_instance_size()).unwrap();
+        let params_verifier: ParamsVerifier<E> =
+            params.verifier(self.get_agg_instance_size()).unwrap();
 
         // circuit multi check
         println!("building aggregate circuit:");
@@ -252,8 +249,8 @@ where
             &agg_circuit,
             &param_folder.join(proof_piece.circuit.clone()),
             &param_folder.join(format!("{}.vkey.data", proof_piece.circuit.clone())),
-            pkey_cache
-            );
+            pkey_cache,
+        );
 
         proof_piece.exec_create_proof_with_params::<E, _>(
             &agg_circuit,
@@ -262,15 +259,10 @@ where
             pkey,
             cache_folder,
             hashtype,
-            Shplonk
-            );
+            open_schema,
+        );
 
         end_timer!(timer);
-        (
-            proof_piece,
-            instances,
-            shadow_instance,
-            hash,
-        )
+        (proof_piece, instances, shadow_instance, hash)
     }
 }

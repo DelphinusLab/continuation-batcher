@@ -29,8 +29,8 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use std::num::NonZeroUsize;
 use std::path::Path;
-use std::sync::Mutex;
 use std::path::PathBuf;
+use std::sync::Mutex;
 
 const DEFAULT_CACHE_SIZE: usize = 5;
 
@@ -84,7 +84,7 @@ impl<E: MultiMillerLoop> ParamsCache<E> {
         self.cache.push(key.clone(), v);
         self.cache.get(&key).unwrap()
     }
-    pub fn generate_k_params(&mut self, k: usize) -> &Params<E::G1Affine>{
+    pub fn generate_k_params(&mut self, k: usize) -> &Params<E::G1Affine> {
         let params_path = &self.cache_dir.join(format!("K{}.params", k));
         load_or_build_unsafe_params::<E>(k, params_path, self)
     }
@@ -142,7 +142,8 @@ impl ProofGenerationInfo {
     }
 
     pub fn load(configfile: &Path) -> Self {
-        let fd = std::fs::File::open(configfile).expect(format!("file {:?} not found", configfile).as_str());
+        let fd = std::fs::File::open(configfile)
+            .expect(format!("file {:?} not found", configfile).as_str());
         log::info!("read proof load info {:?}", configfile);
         serde_json::from_reader(fd).unwrap()
     }
@@ -623,14 +624,13 @@ fn batch_single_circuit() {
         Mutex::new(ParamsCache::new(DEFAULT_CACHE_SIZE, PathBuf::from("./params")));
     }
 
-
-
     const K: u32 = 22;
 
     let cache_folder = Path::new("output");
     let params_folder = Path::new("params");
 
-    let mut proof_load_info = ProofGenerationInfo::new("test_circuit", K as usize, HashType::Poseidon);
+    let mut proof_load_info =
+        ProofGenerationInfo::new("test_circuit", K as usize, HashType::Poseidon);
 
     {
         let circuit = SimpleCircuit::<Fr> {
