@@ -30,6 +30,7 @@ use std::io::Write;
 use std::num::NonZeroUsize;
 use std::path::Path;
 use std::sync::Mutex;
+use std::path::PathBuf;
 
 const DEFAULT_CACHE_SIZE: usize = 5;
 
@@ -64,13 +65,17 @@ lazy_static::lazy_static! {
 
 pub struct ParamsCache<E: MultiMillerLoop> {
     pub cache: LruCache<String, Params<E::G1Affine>>,
+    pub cache_dir: PathBuf,
 }
 
 impl<E: MultiMillerLoop> ParamsCache<E> {
-    pub fn new(cache_size: usize) -> Self {
+    pub fn new(cache_size: usize, cache_dir: PathBuf) -> Self {
         let lrucache =
             LruCache::<String, Params<E::G1Affine>>::new(NonZeroUsize::new(cache_size).unwrap());
-        ParamsCache { cache: lrucache }
+        ParamsCache {
+            cache: lrucache,
+            cache_dir,
+        }
     }
     pub fn contains(&mut self, key: &String) -> bool {
         self.cache.get(key).is_some()
@@ -79,11 +84,10 @@ impl<E: MultiMillerLoop> ParamsCache<E> {
         self.cache.push(key.clone(), v);
         self.cache.get(&key).unwrap()
     }
-}
-
-lazy_static::lazy_static! {
-    pub static ref K_PARAMS_CACHE: Mutex<ParamsCache<Bn256>> =
-        Mutex::new(ParamsCache::new(DEFAULT_CACHE_SIZE));
+    pub fn generate_k_params(&mut self, k: usize) -> &Params<E::G1Affine>{
+        let params_path = &self.cache_dir.join(format!("K{}.params", k));
+        load_or_build_unsafe_params::<E>(k, params_path, self)
+    }
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -144,46 +148,6 @@ impl ProofGenerationInfo {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct ProofLoadInfo {
-    pub k: usize,
-    pub proofs: Vec<ProofPieceInfo>,
-    pub param: String,
-    pub name: String,
-    pub hashtype: HashType,
-}
-
-impl ProofLoadInfo {
-    pub fn new(name: &str, k: usize, hashtype: HashType) -> Self {
-        ProofLoadInfo {
-            name: name.to_string(),
-            k,
-            proofs: Vec::new(),
-            param: format!("K{}.params", k),
-            hashtype,
-        }
-    }
-
-    pub fn append_single_proof(&mut self, pi: ProofPieceInfo) {
-        self.proofs.push(pi)
-    }
-
-    pub fn save(&self, cache_folder: &Path) {
-        let cache_file = cache_folder.join(format!("{}.loadinfo.json", &self.name));
-        log::info!("write proof load info {:?}", cache_file);
-        let json = serde_json::to_string_pretty(self).unwrap();
-        let mut fd = std::fs::File::create(&cache_file).unwrap();
-        fd.write(json.as_bytes()).unwrap();
-    }
-
-    pub fn load(configfile: &Path) -> Self {
-        log::info!("read proof load info {:?}", configfile);
-        let fd = std::fs::File::open(configfile)
-            .expect(&format!("load info file {:?} not found", configfile));
-        serde_json::from_reader(fd).unwrap()
-    }
-}
-
 pub struct ProofInfo<E: MultiMillerLoop> {
     pub vkey: VerifyingKey<E::G1Affine>,
     pub instances: Vec<Vec<E::Scalar>>,
@@ -196,7 +160,7 @@ impl<E: MultiMillerLoop> ProofInfo<E> {
     pub fn load_proof(
         cache_folder: &Path,
         param_folder: &Path,
-        loadinfo: &ProofLoadInfo,
+        loadinfo: &ProofGenerationInfo,
     ) -> Vec<Self> {
         let mut proofs = vec![];
         for proof_info in loadinfo.proofs.iter() {
@@ -695,12 +659,19 @@ fn batch_single_circuit() {
 
     env_logger::init();
 
+    lazy_static::lazy_static! {
+    pub static ref K_PARAMS_CACHE: Mutex<ParamsCache<Bn256>> =
+        Mutex::new(ParamsCache::new(DEFAULT_CACHE_SIZE, PathBuf::from("./params")));
+    }
+
+
+
     const K: u32 = 22;
 
     let cache_folder = Path::new("output");
     let params_folder = Path::new("params");
 
-    let mut proof_load_info = ProofLoadInfo::new("test_circuit", K as usize, HashType::Poseidon);
+    let mut proof_load_info = ProofGenerationInfo::new("test_circuit", K as usize, HashType::Poseidon);
 
     {
         let circuit = SimpleCircuit::<Fr> {
