@@ -4,9 +4,9 @@ use crate::exec::exec_batch_proofs;
 use crate::exec::exec_solidity_gen;
 use crate::proof::load_or_build_unsafe_params;
 use crate::proof::ProofInfo;
-use crate::proof::ProofLoadInfo;
-use crate::proof::K_PARAMS_CACHE;
+use crate::proof::ProofGenerationInfo;
 use crate::proof::PKEY_CACHE;
+use crate::proof::ParamsCache;
 use ark_std::end_timer;
 use ark_std::start_timer;
 use clap::App;
@@ -18,6 +18,7 @@ use halo2aggregator_s::native_verifier;
 use log::debug;
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Mutex;
 /*
 use log::info;
 */
@@ -49,6 +50,7 @@ pub trait AppBuilder: CommandBuilder {
     fn exec(command: App) {
         env_logger::init();
 
+
         let top_matches = command.get_matches();
 
         let output_dir = top_matches
@@ -59,6 +61,8 @@ pub trait AppBuilder: CommandBuilder {
             .get_one::<PathBuf>("param")
             .expect("param dir is not provided");
 
+        let params_cache = Mutex::new(ParamsCache::new(5, param_dir.clone()));
+
         fs::create_dir_all(&output_dir).unwrap();
         println!("output dir: {:?}", output_dir);
 
@@ -68,7 +72,7 @@ pub trait AppBuilder: CommandBuilder {
         match top_matches.subcommand() {
             Some(("setup", sub_matches)) => {
                 let k: u32 = Self::parse_zkwasm_k_arg(&sub_matches).unwrap();
-                generate_k_params(k, &output_dir, K_PARAMS_CACHE.lock().as_mut().unwrap());
+                generate_k_params(k, &output_dir, params_cache.lock().as_mut().unwrap());
             }
 
             Some(("batch", sub_matches)) => {
@@ -84,7 +88,7 @@ pub trait AppBuilder: CommandBuilder {
                 let batch_script_info = CommitmentCheck::load(&batch_script_file);
                 debug!("commits equivalent {:?}", batch_script_info);
                 exec_batch_proofs(
-                    K_PARAMS_CACHE.lock().as_mut().unwrap(),
+                    params_cache.lock().as_mut().unwrap(),
                     PKEY_CACHE.lock().as_mut().unwrap(),
                     proof_name,
                     output_dir,
@@ -102,10 +106,10 @@ pub trait AppBuilder: CommandBuilder {
                 let config_files = Self::parse_proof_load_info_arg(&sub_matches);
                 let hash = Self::parse_hashtype(&sub_matches);
                 for config_file in config_files.iter() {
-                    let proofloadinfo = ProofLoadInfo::load(config_file);
+                    let proofloadinfo = ProofGenerationInfo::load(config_file);
                     let proofs: Vec<ProofInfo<Bn256>> =
                         ProofInfo::load_proof(&output_dir, &param_dir, &proofloadinfo);
-                    let mut param_cache_lock = K_PARAMS_CACHE.lock(); //This is tricky. Cannot put this directly in the load_or_build_unsafe_params. Have to do this.
+                    let mut param_cache_lock = params_cache.lock(); //This is tricky. Cannot put this directly in the load_or_build_unsafe_params. Have to do this.
                     let params = load_or_build_unsafe_params::<Bn256>(
                         proofloadinfo.k,
                         &param_dir.join(format!("K{}.params", proofloadinfo.k)),
@@ -159,7 +163,7 @@ pub trait AppBuilder: CommandBuilder {
                 sol_path_templates.push("templates");
                 let mut sol_path_contracts: PathBuf = sol_path.clone();
                 sol_path_contracts.push("contracts");
-                let proofloadinfo = ProofLoadInfo::load(&config_file[0]);
+                let proofloadinfo = ProofGenerationInfo::load(&config_file[0]);
 
                 match hasher {
                     TranscriptHash::Keccak => {
@@ -171,7 +175,7 @@ pub trait AppBuilder: CommandBuilder {
                             &sol_path_templates,
                             &sol_path_contracts,
                             &proofloadinfo,
-                            K_PARAMS_CACHE.lock().as_mut().unwrap(),
+                            params_cache.lock().as_mut().unwrap(),
                             hasher,
                         );
                     }
@@ -184,7 +188,7 @@ pub trait AppBuilder: CommandBuilder {
                             &sol_path_templates,
                             &sol_path_contracts,
                             &proofloadinfo,
-                            K_PARAMS_CACHE.lock().as_mut().unwrap(),
+                            params_cache.lock().as_mut().unwrap(),
                             hasher,
                         );
                     }
