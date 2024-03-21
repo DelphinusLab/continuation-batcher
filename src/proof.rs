@@ -142,12 +142,13 @@ impl ProofGenerationInfo {
     }
 
     pub fn load(configfile: &Path) -> Self {
-        let fd = std::fs::File::open(configfile).unwrap();
+        let fd = std::fs::File::open(configfile).expect(format!("file {:?} not found", configfile).as_str());
         log::info!("read proof load info {:?}", configfile);
         serde_json::from_reader(fd).unwrap()
     }
 }
 
+#[derive(Clone)]
 pub struct ProofInfo<E: MultiMillerLoop> {
     pub vkey: VerifyingKey<E::G1Affine>,
     pub instances: Vec<Vec<E::Scalar>>,
@@ -165,6 +166,8 @@ impl<E: MultiMillerLoop> ProofInfo<E> {
         let mut proofs = vec![];
         for proof_info in loadinfo.proofs.iter() {
             let vkey = read_vkey_full::<E>(&param_folder.join(proof_info.circuit.clone()));
+            println!("loading instance from: {}", proof_info.instance);
+            println!("loading instance size: {}", proof_info.instance_size);
             let instances = load_instance::<E>(
                 &[proof_info.instance_size],
                 &cache_folder.join(&proof_info.instance),

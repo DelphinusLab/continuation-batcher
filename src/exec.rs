@@ -1,8 +1,6 @@
 use crate::args::HashType;
-use crate::args::OpenSchema;
 use crate::batch::BatchInfo;
 use crate::batch::CommitmentCheck;
-use crate::batch::LastAggInfo;
 use crate::proof::load_or_build_unsafe_params;
 use crate::proof::ParamsCache;
 use crate::proof::ProofInfo;
@@ -78,38 +76,39 @@ pub fn exec_batch_proofs(
         .flatten()
         .collect::<Vec<_>>();
 
-    let mut batchinfo = BatchInfo::<Bn256> {
-        proofs,
-        target_k: target_k.unwrap(),
-        batch_k: k as usize,
-        equivalents: vec![],
-        absorb: vec![],
-        expose: vec![],
-    };
-
-    batchinfo.load_commitments_check(&proofsinfo, commits);
 
     let is_final = hash == HashType::Sha || hash == HashType::Keccak;
 
-    let param_file = format!("K{}.params", batchinfo.batch_k);
+    let param_file = format!("K{}.params", k as usize);
 
-    let (last_proof_gen_info, agg_instances, shadow_instances, _)  = if cont {
-            assert!(batchinfo.proofs.len() >= 3);
+    let (last_proof_gen_info, _agg_instances, shadow_instances, _)  = if cont {
+            assert!(proofs.len() >= 3);
+
+            // first round where there is no previous aggregation proof
+            let mut batchinfo = BatchInfo::<Bn256> {
+                proofs: vec![proofs[0].clone()],
+                target_k: target_k.unwrap(),
+                batch_k: k as usize,
+                equivalents: vec![],
+                absorb: vec![],
+                expose: vec![],
+                is_final: false,
+            };
+
             let proof_piece = ProofPieceInfo::new("aggregate".to_string(), 0, batchinfo.get_agg_instance_size() as u32);
-            // first round
             let mut proof_generation_info = ProofGenerationInfo::new(
                 format!("{}.0", proof_name).as_str(),
                 batchinfo.batch_k as usize,
                 HashType::Poseidon
             );
 
-            let (mut agg_proof_piece, mut instances, mut shadow_instances, mut last_hash) = batchinfo.batch_proof(
+
+            let (mut agg_proof_piece, _, _, mut last_hash) = batchinfo.batch_proof(
                 proof_piece,
                 &param_dir.clone(),
                 &output_dir.clone(),
                 params_cache,
                 pkey_cache,
-                false,
                 true,
                 proof_generation_info.hashtype,
                 None // no previous agg
@@ -118,21 +117,33 @@ pub fn exec_batch_proofs(
             proof_generation_info.append_single_proof(agg_proof_piece);
             proof_generation_info.save(output_dir);
 
+            let mut agg_proof = ProofInfo::load_proof(&output_dir, &param_dir, &proof_generation_info)[0].clone();
+
             proof_generation_info = ProofGenerationInfo::new(
                 format!("{}.1", proof_name).as_str(),
                 batchinfo.batch_k as usize,
                 HashType::Poseidon
             );
 
-            for _ in 1..batchinfo.proofs.len()-1 {
+            for i in 1..batchinfo.proofs.len()-1 {
+                batchinfo = BatchInfo::<Bn256> {
+                    proofs: vec![proofs[i].clone(), agg_proof],
+                    target_k: target_k.unwrap(),
+                    batch_k: k as usize,
+                    equivalents: vec![],
+                    absorb: vec![],
+                    expose: vec![],
+                    is_final: false,
+                };
+
+
                 let proof_piece = ProofPieceInfo::new("aggregate".to_string(), 1, batchinfo.get_agg_instance_size() as u32);
-                (agg_proof_piece, instances, _, last_hash) = batchinfo.batch_proof(
+                (agg_proof_piece, _, _, last_hash) = batchinfo.batch_proof(
                     proof_piece,
                     &param_dir.clone(),
                     &output_dir.clone(),
                     params_cache,
                     pkey_cache,
-                    false,
                     true,
                     proof_generation_info.hashtype,
                     Some(vec![(1, 0, last_hash)]),
@@ -141,22 +152,27 @@ pub fn exec_batch_proofs(
                 proof_generation_info.append_single_proof(agg_proof_piece);
                 proof_generation_info.save(output_dir);
 
-                proof_generation_info = ProofGenerationInfo::new(
-                    format!("{}.1", proof_name).as_str(),
-                    batchinfo.batch_k as usize,
-                    HashType::Poseidon
-                    );
+                agg_proof = ProofInfo::load_proof(&output_dir, &param_dir, &proof_generation_info)[0].clone();
             }
-            
+
+            batchinfo = BatchInfo::<Bn256> {
+                proofs: vec![proofs[proofs.len() - 1].clone(), agg_proof],
+                target_k: target_k.unwrap(),
+                batch_k: k as usize,
+                equivalents: vec![],
+                absorb: vec![],
+                expose: vec![],
+                is_final: true,
+            };
+
             // Last round
             let proof_piece = ProofPieceInfo::new("aggregate".to_string(), 2, batchinfo.get_agg_instance_size() as u32);
-            (agg_proof_piece, instances, shadow_instances, last_hash) = batchinfo.batch_proof(
+            let (agg_proof_piece, instances, shadow_instances, last_hash) = batchinfo.batch_proof(
                 proof_piece,
                 &param_dir.clone(),
                 &output_dir.clone(),
                 params_cache,
                 pkey_cache,
-                false,
                 true,
                 proof_generation_info.hashtype,
                 Some(vec![(1, 0, last_hash)]),
@@ -167,6 +183,17 @@ pub fn exec_batch_proofs(
 
         (proof_generation_info, instances, shadow_instances, last_hash)
     } else {
+        let mut batchinfo = BatchInfo::<Bn256> {
+            proofs,
+            target_k: target_k.unwrap(),
+            batch_k: k as usize,
+            equivalents: vec![],
+            absorb: vec![],
+            expose: vec![],
+            is_final,
+        };
+        batchinfo.load_commitments_check(&proofsinfo, commits);
+
         // Singleton batch
         let mut proof_generation_info = ProofGenerationInfo::new(
             format!("{}", proof_name).as_str(),
@@ -181,8 +208,7 @@ pub fn exec_batch_proofs(
             &output_dir.clone(),
             params_cache,
             pkey_cache,
-            is_final,
-            false,
+            use_ecc_select_chip,
             hash,
             None
         );

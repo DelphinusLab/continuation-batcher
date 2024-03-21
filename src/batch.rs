@@ -10,14 +10,12 @@ use halo2_proofs::arithmetic::Engine;
 use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::poly::commitment::ParamsVerifier;
 use halo2aggregator_s::circuit_verifier::build_aggregate_verify_circuit;
-use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuit;
-use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuitOption;
 use halo2aggregator_s::circuit_verifier::G2AffineBaseHelper;
 use halo2aggregator_s::circuits::utils::{
     AggregatorConfig, TranscriptHash,
 };
 use crate::args::HashType;
-use crate::args::OpenSchema;
+use crate::args::OpenSchema::Shplonk;
 use halo2aggregator_s::NativeScalarEccContext;
 use halo2aggregator_s::PairingChipOps;
 use serde::{Deserialize, Serialize};
@@ -57,12 +55,6 @@ pub struct CommitmentCheck {
     pub absorb: Vec<CommitmentAbsorb>,
 }
 
-pub struct LastAggInfo<E: MultiMillerLoop> {
-    pub circuit: Option<AggregatorCircuit<E::G1Affine>>,
-    pub instances: Option<Vec<E::Scalar>>,
-    pub idx: usize,
-}
-
 impl CommitmentCheck {
     pub fn load(equiv_file: &Path) -> Self {
         let fd = std::fs::File::open(equiv_file)
@@ -84,6 +76,7 @@ pub struct BatchInfo<E: MultiMillerLoop> {
     pub equivalents: Vec<[usize; 4]>,
     pub expose: Vec<[usize; 2]>,
     pub absorb: Vec<([usize; 3], [usize; 2])>,
+    pub is_final: bool,
 }
 
 impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
@@ -92,7 +85,11 @@ where
         PairingChipOps<<E as Engine>::G1Affine, <E as Engine>::Scalar>,
 {
     pub fn get_agg_instance_size(&self) -> usize {
-        self.expose.len() * 3 + 1 + self.proofs.len() * 3
+        if self.is_final {
+            1
+        } else {
+            self.expose.len() * 3 + 1 + self.proofs.len() * 3
+        }
     }
     fn get_commitment_index(
         &self,
@@ -175,7 +172,6 @@ where
         cache_folder: &PathBuf,
         params_cache: &mut ParamsCache<E>,
         pkey_cache: &mut ProvingKeyCache<E>,
-        is_final: bool,
         use_select_chip: bool,
         hashtype: HashType,
         last_agg_info: Option<Vec<(usize, usize, E::Scalar)>>, // (proof_index, instance_col, hash)
@@ -207,7 +203,7 @@ where
             vkeys.push(&proofinfo.vkey);
         }
 
-        println!("preparing batch circuit:");
+        println!("preparing batch circuit (is final {}):", self.is_final);
         for vkey in vkeys.iter() {
             println!("vkey named advices: {:?}", vkey.cs.named_advices);
         }
@@ -229,7 +225,7 @@ where
             target_proof_with_shplonk: vec![],
             target_proof_with_shplonk_as_default: true,
             target_proof_max_instance,
-            is_final_aggregator: is_final,
+            is_final_aggregator: self.is_final,
             prev_aggregator_skip_instance: vec![], // hash get absorbed automatically
             absorb_instance: vec![],
             use_select_chip,
@@ -239,6 +235,8 @@ where
         let params_verifier: ParamsVerifier<E> = params.verifier(self.get_agg_instance_size()).unwrap();
 
         // circuit multi check
+        println!("building aggregate circuit:");
+        println!("instances {:?}", instances);
         let timer = start_timer!(|| "build aggregate verify circuit");
         let (circuit, instances, shadow_instance, hash) = build_aggregate_verify_circuit::<E>(
             &params_verifier,
@@ -264,7 +262,7 @@ where
             pkey,
             cache_folder,
             hashtype,
-            OpenSchema::Shplonk
+            Shplonk
             );
 
         end_timer!(timer);

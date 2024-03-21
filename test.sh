@@ -8,7 +8,7 @@ rm -rf params/*.data
 cargo test --release
 
 # verify generated proof for test circuits
-cargo run --release --features cuda -- --param ./params --output ./output verify --challenge poseidon --info output/test1.loadinfo.json
+cargo run --release --features cuda -- --param ./params --output ./output verify --challenge poseidon --info output/test_circuit.loadinfo.json
 
 # batch test proofs
 #cargo run --release --features cuda -- --param ./params --output ./output batch -k 22 --challenge sha --info output/test_circuit.loadinfo.json --name batchsample --commits sample/batchinfo1.json
