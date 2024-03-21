@@ -20,6 +20,7 @@ pub trait CommandBuilder: ArgBuilder {
         let command = Command::new("batch")
             .arg(Self::zkwasm_k_arg())
             .arg(Self::hashtype())
+            .arg(Self::openschema())
             .arg(Self::proof_name_arg())
             .arg(Self::commits_info_arg())
             .arg(Self::proof_load_info_arg())

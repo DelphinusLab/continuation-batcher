@@ -3,10 +3,10 @@ use crate::batch::CommitmentCheck;
 use crate::exec::exec_batch_proofs;
 use crate::exec::exec_solidity_gen;
 use crate::proof::load_or_build_unsafe_params;
-use crate::proof::ProofInfo;
-use crate::proof::ProofGenerationInfo;
-use crate::proof::PKEY_CACHE;
 use crate::proof::ParamsCache;
+use crate::proof::ProofGenerationInfo;
+use crate::proof::ProofInfo;
+use crate::proof::PKEY_CACHE;
 use ark_std::end_timer;
 use ark_std::start_timer;
 use clap::App;
@@ -50,7 +50,6 @@ pub trait AppBuilder: CommandBuilder {
     fn exec(command: App) {
         env_logger::init();
 
-
         let top_matches = command.get_matches();
 
         let output_dir = top_matches
@@ -78,6 +77,7 @@ pub trait AppBuilder: CommandBuilder {
             Some(("batch", sub_matches)) => {
                 let k: u32 = Self::parse_zkwasm_k_arg(&sub_matches).unwrap();
                 let hash = Self::parse_hashtype(&sub_matches);
+                let open_schema = Self::parse_openschema(&sub_matches);
                 let config_files = Self::parse_proof_load_info_arg(sub_matches);
                 let batch_script_file = Self::parse_commits_equiv_info_arg(sub_matches);
                 let cont = Self::parse_cont_arg(sub_matches);
@@ -99,6 +99,7 @@ pub trait AppBuilder: CommandBuilder {
                     k,
                     cont,
                     true,
+                    open_schema,
                 )
             }
 
