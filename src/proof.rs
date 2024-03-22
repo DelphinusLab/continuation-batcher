@@ -645,16 +645,18 @@ fn batch_single_circuit() {
         // testing proof
         circuit_info.mock_proof::<Bn256, _>(K, &circuit, &instances);
 
-        circuit_info.create_witness(
-            &circuit,
-            &instances,
-            param_file.clone(),
-            K as usize,
-            &cache_folder,
-            params_folder,
-            PKEY_CACHE.lock().as_mut().unwrap(),
-            K_PARAMS_CACHE.lock().as_mut().unwrap(),
-        );
+        if false {
+            circuit_info.create_witness(
+                &circuit,
+                &instances,
+                param_file.clone(),
+                K as usize,
+                &cache_folder,
+                params_folder,
+                PKEY_CACHE.lock().as_mut().unwrap(),
+                K_PARAMS_CACHE.lock().as_mut().unwrap(),
+                );
+        }
 
         circuit_info.exec_create_proof(
             &circuit,

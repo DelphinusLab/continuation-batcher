@@ -83,7 +83,7 @@ pub fn exec_batch_proofs(
     let param_file = format!("K{}.params", k as usize);
 
     let (last_proof_gen_info, _agg_instances, shadow_instances, _) = if cont {
-        assert!(proofs.len() >= 3);
+        assert!(proofs.len() >= 2);
 
         // first round where there is no previous aggregation proof
         let mut batchinfo = BatchInfo::<Bn256> {
@@ -97,7 +97,7 @@ pub fn exec_batch_proofs(
         };
 
         let proof_piece = ProofPieceInfo::new(
-            "aggregate".to_string(),
+            "aggregate.start".to_string(),
             0,
             batchinfo.get_agg_instance_size() as u32,
         );
@@ -107,7 +107,7 @@ pub fn exec_batch_proofs(
             HashType::Poseidon,
         );
 
-        let (mut agg_proof_piece, _, _, mut last_hash) = batchinfo.batch_proof(
+        let (mut agg_proof_piece, mut instances, _, mut last_hash) = batchinfo.batch_proof(
             proof_piece,
             &param_dir.clone(),
             &output_dir.clone(),
@@ -143,8 +143,8 @@ pub fn exec_batch_proofs(
             };
 
             let proof_piece = ProofPieceInfo::new(
-                "aggregate".to_string(),
-                1,
+                "aggregate-rec".to_string(),
+                i,
                 batchinfo.get_agg_instance_size() as u32,
             );
             (agg_proof_piece, _, _, last_hash) = batchinfo.batch_proof(
@@ -166,6 +166,13 @@ pub fn exec_batch_proofs(
                 ProofInfo::load_proof(&output_dir, &param_dir, &proof_generation_info)[0].clone();
         }
 
+        proof_generation_info = ProofGenerationInfo::new(
+            format!("{}.{}", proof_name, proofs.len()).as_str(),
+            batchinfo.batch_k as usize,
+            hash,
+        );
+
+
         batchinfo = BatchInfo::<Bn256> {
             proofs: vec![proofs[proofs.len() - 1].clone(), agg_proof],
             target_k: target_k.unwrap(),
@@ -178,8 +185,8 @@ pub fn exec_batch_proofs(
 
         // Last round
         let proof_piece = ProofPieceInfo::new(
-            "aggregate".to_string(),
-            2,
+            "aggregate-final".to_string(),
+            0,
             batchinfo.get_agg_instance_size() as u32,
         );
         let (agg_proof_piece, instances, shadow_instances, last_hash) = batchinfo.batch_proof(
@@ -190,7 +197,7 @@ pub fn exec_batch_proofs(
             pkey_cache,
             true,
             proof_generation_info.hashtype,
-            Some(vec![(1, 0, last_hash)]),
+            Some(vec![(1, 0, instances[0])]),
             open_schema,
         );
 
@@ -252,7 +259,7 @@ pub fn exec_batch_proofs(
         let proof: Vec<ProofInfo<Bn256>> =
             ProofInfo::load_proof(&output_dir, &param_dir, &last_proof_gen_info);
 
-        info!("generate aux data for proof: {:?}", last_proof_gen_info);
+        println!("generate aux data for proof: {:?}", last_proof_gen_info);
 
         // setup batch params
         let params = load_or_build_unsafe_params::<Bn256>(
