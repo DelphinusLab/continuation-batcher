@@ -14,52 +14,67 @@ The basic idea is to put context in a specific column so that in the proof the c
 4. Define your batching policy via the batch DSL. 
 5. Execute the batching DSL and generate the batching circuit
 6. Generate the final solidity for your batching circuit
-  
 
-## Description of a withness input
+## Proof Description
+To describe a proof, we need to specify (file name)
+1. The circuit this proof related to.
+2. The instance size of the proof.
+3. The witness data if the proof have not been generated yet.
+4. The proof transcript.
+
 ```
-{
-  "circuit": "xxx.circuit.data",
-  "k": 21,
-  "instance_size": [
-    9
-  ],
-  "transcripts": [
-    "xxx.0.transcript.data"
-  ],
-  "instances": [
-    "xxx.0.instance.data"
-  ],
-  "witnesses": [
-    "xxx.0.witness.data"
-  ],
-  "param": "K21.params",
-  "name": "xxx_name",
-  "hashtype": "Poseidon"
+type ProofPieceInfo = {
+  circuit: filename,
+  instance_size: int, 
+  witness: filename,
+  instance: filename,
+  transcript: filename
+}
+```
+## Description of a proof batching group
+To batch a group of proofs together, the proofs themself needs to be generated use same param k (not necessary same circuit). When describe the group we provide the following fields:
+
+```
+type ProofGenerationInfo {
+  proofs: ProofPieceInfo
+  k: int
+  param: filename,
+  name: string,
+  hashtype: Poseidon | Sha256 | Keccak
 }
 ```
 
+## Description the batch schema when connecting proofs
+When connecting proofs (mainly plonkish KZG backend), we need to provide two groups of attributes that decides
+1. How the proof is batched
+2. What are the extra connections between different proofs.
 
-## Description proof for a specific target through ProofLoadInfo
+When batch proofs, we are infact writing the verifying function into circuits. Thus we need to specify the compoments of the circuits we used to construct the final verifying circuit. The main conponents of the verifing cicruit contains the challenge circuit (the hash we use to generate the challenge), the ecc circuit (what is used to generate msm and pairing), the proof relation circuit (what is used to describe the relation between proofs, their instances, commitments, etc)
+
+1. The hash circuit has three different type
+```
+hashtype: Poseidon | Sha256 | Keccak
+```
+
+2. The ecc circuit has two options. One is use the ecc circuit with lookup features. This circuit can do ecc operation with minimized rows thus can be used to batch a relatively big amount of target circuits. The other option is to use a concise ecc circuit. This circuit do not use the lookup feature thus generate a lot rows when doing ecc operation. This ecc circuit is usually used at the last around of batch as the solidity for this circuit is much more gas effective.
+
+3. The proof relation circuit ca be described in a json with commitment arithments. The commitment arithments has four categories: equivalents, expose and absorb.
 
 ```
 {
-  "circuit": "test.circuit.data",
-  "instance_size": [
-    1
-  ],
-  "transcripts": [
-    "test.0.transcript.data"
-  ],
-  "instances": [
-    "test.0.instance.data"
-  ],
-  "hashtype": "Poseidon",
-  "param": "K8.params",
-  "name": "test"
+    "equivalents": [
+        {
+            "source": {"name": "circuit_1", "proof_idx": 0, "column_name": "A"},
+            "target": {"name": "circuit_2", "proof_idx": 0, "column_name": "A"}
+        }
+    ],
+    "expose": [
+        {"name": "test_circuit", "proof_idx": 0, "column_name": "A"}
+    ],
+    "absorb": []
 }
-
 ```
+
 
 ## General Command Usage
 
