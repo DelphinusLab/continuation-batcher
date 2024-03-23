@@ -189,6 +189,7 @@ pub struct ProofInfo<E: MultiMillerLoop> {
     pub instances: Vec<Vec<E::Scalar>>,
     pub transcripts: Vec<u8>,
     pub k: usize,
+    pub hashtype: HashType,
 }
 
 impl<E: MultiMillerLoop> ProofInfo<E> {
@@ -210,9 +211,52 @@ impl<E: MultiMillerLoop> ProofInfo<E> {
                 instances,
                 k: loadinfo.k,
                 transcripts,
+                hashtype: loadinfo.hashtype,
             });
         }
         proofs
+    }
+
+    pub fn verify_proof(&self, params_verifier: &ParamsVerifier<E>) -> anyhow::Result<()> {
+        let strategy = SingleVerifier::new(&params_verifier);
+
+        match self.hashtype {
+            HashType::Poseidon => verify_proof_with_shplonk(
+                params_verifier,
+                &self.vkey,
+                strategy,
+                &[&self
+                    .instances
+                    .iter()
+                    .map(|instances| instances.as_slice())
+                    .collect::<Vec<_>>()[..]],
+                &mut PoseidonRead::init(&self.transcripts[..]),
+            )?,
+            HashType::Sha => verify_proof_with_shplonk(
+                params_verifier,
+                &self.vkey,
+                strategy,
+                &[&self
+                    .instances
+                    .iter()
+                    .map(|instances| instances.as_slice())
+                    .collect::<Vec<_>>()[..]],
+                &mut ShaRead::<_, _, _, sha2::Sha256>::init(&self.transcripts[..]),
+            )?,
+            HashType::Keccak => verify_proof_with_shplonk(
+                params_verifier,
+                &self.vkey,
+                strategy,
+                &[&self
+                    .instances
+                    .iter()
+                    .map(|instances| instances.as_slice())
+                    .collect::<Vec<_>>()[..]],
+                &mut ShaRead::<_, _, _, sha3::Keccak256>::init(&self.transcripts[..]),
+            )?,
+        };
+
+        Ok(())
     }
 }
 
