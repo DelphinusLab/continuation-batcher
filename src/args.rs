@@ -77,11 +77,11 @@ pub trait ArgBuilder {
         arg!(
             --cont "Is continuation's loadinfo."
         )
-        .action(ArgAction::SetTrue)
+        .value_parser(value_parser!(u32))
     }
 
-    fn parse_cont_arg(matches: &ArgMatches) -> bool {
-        matches.get_one::<bool>("cont").map_or(false, |&x| x)
+    fn parse_cont_arg(matches: &ArgMatches) -> Option<u32> {
+        matches.get_one::<u32>("cont").map_or(None, |&x| Some(x))
     }
 
     fn commits_info_arg<'a>() -> Arg<'a> {

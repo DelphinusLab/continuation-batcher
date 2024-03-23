@@ -57,7 +57,7 @@ pub fn exec_batch_proofs(
     commits: CommitmentCheck,
     hash: HashType,
     k: u32,
-    cont: bool,
+    cont: Option<u32>,
     use_ecc_select_chip: bool,
     open_schema: OpenSchema,
 ) {
@@ -86,7 +86,7 @@ pub fn exec_batch_proofs(
 
     let param_file = format!("K{}.params", k as usize);
 
-    let (last_proof_gen_info, _agg_instances, shadow_instances, _) = if cont {
+    let (last_proof_gen_info, _agg_instances, shadow_instances, _) = if cont.is_some() {
         assert!(proofs.len() >= 3);
 
 
@@ -202,6 +202,7 @@ pub fn exec_batch_proofs(
             0,
             batchinfo.get_agg_instance_size() as u32,
         );
+
         let (agg_proof_piece, instances, shadow_instances, last_hash) = batchinfo.batch_proof(
             proof_piece,
             &param_dir.clone(),
@@ -217,10 +218,13 @@ pub fn exec_batch_proofs(
         proof_generation_info.append_single_proof(agg_proof_piece);
         proof_generation_info.save(output_dir);
 
+        let depth = cont.unwrap();
+        let len = 2u32.pow(depth) as usize;
+
         let final_hashes_expected = calc_hash::<G1Affine>(
             hashes[0..3].try_into().unwrap(),
             hashes[0..3].try_into().unwrap(),
-            1024,
+            len,
         );
 
         let mut final_hashes_merkle: Vec<[u8; 32]> = final_hashes_expected.iter().map(|x| {
@@ -228,12 +232,10 @@ pub fn exec_batch_proofs(
         }).collect::<Vec<_>>();
 
 
-        let len = final_hashes_expected.len();
-
         construct_merkle_records(
             &output_dir.join(format!("{}.{}.hashes", &proof_name, len)),
             &mut final_hashes_merkle,
-            10
+            depth as usize
         );
 
         (
