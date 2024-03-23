@@ -13,6 +13,7 @@ use halo2aggregator_s::circuits::utils::store_instance;
 use halo2aggregator_s::circuits::utils::TranscriptHash;
 use halo2aggregator_s::solidity_verifier::codegen::solidity_aux_gen;
 use halo2aggregator_s::solidity_verifier::solidity_render;
+use halo2aggregator_s::circuits::utils::calc_hash;
 
 /*
 use crate::profile::Profiler;
@@ -24,8 +25,11 @@ use halo2_proofs::arithmetic::BaseExt;
 use halo2_proofs::dev::MockProver;
 */
 use halo2_proofs::pairing::bn256::Bn256;
+use halo2_proofs::pairing::bn256::G1Affine;
+use ff::PrimeField;
 use log::info;
 use sha2::Digest;
+use crate::utils::construct_merkle_records;
 
 use std::path::PathBuf;
 
@@ -83,7 +87,8 @@ pub fn exec_batch_proofs(
     let param_file = format!("K{}.params", k as usize);
 
     let (last_proof_gen_info, _agg_instances, shadow_instances, _) = if cont {
-        assert!(proofs.len() >= 2);
+        assert!(proofs.len() >= 3);
+
 
         // first round where there is no previous aggregation proof
         let mut batchinfo = BatchInfo::<Bn256> {
@@ -107,7 +112,7 @@ pub fn exec_batch_proofs(
             HashType::Poseidon,
         );
 
-        let (mut agg_proof_piece, mut instances, _, mut last_hash) = batchinfo.batch_proof(
+        let (agg_proof_piece, instances, _, last_hash) = batchinfo.batch_proof(
             proof_piece,
             &param_dir.clone(),
             &output_dir.clone(),
@@ -119,9 +124,14 @@ pub fn exec_batch_proofs(
             open_schema,
         );
 
+        // start recording the hash of first round
+        let mut hashes = vec![last_hash];
+        let mut final_hashes = vec![instances[0]]; // the first instance is the hash of the vkey of this round
+
         proof_generation_info.append_single_proof(agg_proof_piece);
         proof_generation_info.save(output_dir);
 
+        // second round (1 .. k-2)
         let mut agg_proof =
             ProofInfo::load_proof(&output_dir, &param_dir, &proof_generation_info)[0].clone();
 
@@ -147,7 +157,7 @@ pub fn exec_batch_proofs(
                 i,
                 batchinfo.get_agg_instance_size() as u32,
             );
-            (agg_proof_piece, _, _, last_hash) = batchinfo.batch_proof(
+            let (agg_proof_piece, instances, _, last_hash) = batchinfo.batch_proof(
                 proof_piece,
                 &param_dir.clone(),
                 &output_dir.clone(),
@@ -161,6 +171,9 @@ pub fn exec_batch_proofs(
 
             proof_generation_info.append_single_proof(agg_proof_piece);
             proof_generation_info.save(output_dir);
+
+            hashes.push(last_hash);
+            final_hashes.push(instances[0]);
 
             agg_proof =
                 ProofInfo::load_proof(&output_dir, &param_dir, &proof_generation_info)[0].clone();
@@ -203,6 +216,25 @@ pub fn exec_batch_proofs(
 
         proof_generation_info.append_single_proof(agg_proof_piece);
         proof_generation_info.save(output_dir);
+
+        let final_hashes_expected = calc_hash::<G1Affine>(
+            hashes[0..3].try_into().unwrap(),
+            hashes[0..3].try_into().unwrap(),
+            1024,
+        );
+
+        let mut final_hashes_merkle: Vec<[u8; 32]> = final_hashes_expected.iter().map(|x| {
+            x.to_repr()
+        }).collect::<Vec<_>>();
+
+
+        let len = final_hashes_expected.len();
+
+        construct_merkle_records(
+            &output_dir.join(format!("{}.{}.hashes", &proof_name, len)),
+            &mut final_hashes_merkle,
+            10
+        );
 
         (
             proof_generation_info,
