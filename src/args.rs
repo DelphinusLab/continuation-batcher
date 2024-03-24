@@ -75,7 +75,7 @@ pub trait ArgBuilder {
 
     fn cont_arg<'a>() -> Arg<'a> {
         arg!(
-            --cont "Is continuation's loadinfo."
+            --cont [CONT] "Is continuation's loadinfo."
         )
         .value_parser(value_parser!(u32))
     }

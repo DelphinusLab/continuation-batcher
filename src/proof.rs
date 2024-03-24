@@ -655,7 +655,7 @@ fn batch_single_circuit() {
                 params_folder,
                 PKEY_CACHE.lock().as_mut().unwrap(),
                 K_PARAMS_CACHE.lock().as_mut().unwrap(),
-                );
+            );
         }
 
         circuit_info.exec_create_proof(
