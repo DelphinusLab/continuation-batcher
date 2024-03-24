@@ -192,12 +192,20 @@ where
             all_proofs.push(proofinfo.transcripts.clone());
         }
 
-        let target_proof_max_instance = instances
+        let mut target_proof_max_instance = instances
             .iter()
             .map(|x| x.iter().map(|x| x.len()).collect::<Vec<_>>())
             .collect::<Vec<_>>();
 
-        let max_target_instances = *target_proof_max_instance.iter().flatten().max_by(|x, y| x.cmp(y)).unwrap();
+        let max_target_instances = *target_proof_max_instance
+            .iter()
+            .flatten()
+            .max_by(|x, y| x.cmp(y))
+            .unwrap();
+
+        last_agg_info.clone().map(|x| {
+            target_proof_max_instance[x[0].0] = vec![1];
+        });
 
         for proofinfo in self.proofs.iter() {
             vkeys.push(&proofinfo.vkey);
@@ -210,11 +218,15 @@ where
         println!("commitment equiv: {:?}", self.equivalents);
         println!("commitment expose: {:?}", self.expose);
         println!("commitment absorb: {:?}", self.absorb);
-        println!("target proof instance size: {:?}", target_proof_max_instance);
+        println!(
+            "target proof instance size: {:?}",
+            target_proof_max_instance
+        );
         println!("hash agg info: {:?}", last_agg_info);
+        println!("target proof max instance: {:?}", target_proof_max_instance);
 
         let target_aggregator_constant_hash_instance_offset =
-            last_agg_info.map_or_else(|| vec![], |x| x.clone());
+            last_agg_info.clone().map_or_else(|| vec![], |x| x.clone());
 
         let config = &AggregatorConfig {
             hash: TranscriptHash::Poseidon,
@@ -226,19 +238,19 @@ where
             target_proof_with_shplonk_as_default: (open_schema == OpenSchema::Shplonk),
             target_proof_max_instance,
             is_final_aggregator: self.is_final,
-            prev_aggregator_skip_instance: vec![(1,1)], // hash get absorbed automatically
-            absorb_instance: vec![],
+            prev_aggregator_skip_instance: vec![(1, 1)], // hash get absorbed automatically
+            absorb_instance: last_agg_info.map_or_else(|| vec![], |x| vec![(0, 0, x[0].0, 1)]),
             use_select_chip,
         };
 
         let params = params_cache.generate_k_params(self.batch_k);
-        let params_verifier: ParamsVerifier<E> =
-            params.verifier(max_target_instances).unwrap();
+        let params_verifier: ParamsVerifier<E> = params.verifier(max_target_instances).unwrap();
 
         // circuit multi check
         println!("building aggregate circuit:");
         println!("instances {:?}", instances);
         println!("param verifier size {:?}", self.get_agg_instance_size());
+        println!("agg config is {:?}", config.absorb_instance);
         let timer = start_timer!(|| "build aggregate verify circuit");
         let (circuit, instances, shadow_instance, hash) = build_aggregate_verify_circuit::<E>(
             &params_verifier,

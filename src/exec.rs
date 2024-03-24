@@ -9,11 +9,11 @@ use crate::proof::ProofInfo;
 use crate::proof::ProofPieceInfo;
 use crate::proof::ProvingKeyCache;
 use halo2_proofs::poly::commitment::ParamsVerifier;
+use halo2aggregator_s::circuits::utils::calc_hash;
 use halo2aggregator_s::circuits::utils::store_instance;
 use halo2aggregator_s::circuits::utils::TranscriptHash;
 use halo2aggregator_s::solidity_verifier::codegen::solidity_aux_gen;
 use halo2aggregator_s::solidity_verifier::solidity_render;
-use halo2aggregator_s::circuits::utils::calc_hash;
 
 /*
 use crate::profile::Profiler;
@@ -24,12 +24,12 @@ use anyhow::Result;
 use halo2_proofs::arithmetic::BaseExt;
 use halo2_proofs::dev::MockProver;
 */
+use crate::utils::construct_merkle_records;
+use ff::PrimeField;
 use halo2_proofs::pairing::bn256::Bn256;
 use halo2_proofs::pairing::bn256::G1Affine;
-use ff::PrimeField;
 use log::info;
 use sha2::Digest;
-use crate::utils::construct_merkle_records;
 
 use std::path::PathBuf;
 
@@ -63,7 +63,7 @@ pub fn exec_batch_proofs(
 ) {
     let mut target_k = None;
     let mut proofsinfo = vec![];
-    let proofs = config_files
+    let mut proofs = config_files
         .iter()
         .map(|config| {
             let proofloadinfo = ProofGenerationInfo::load(config);
@@ -82,13 +82,14 @@ pub fn exec_batch_proofs(
         .flatten()
         .collect::<Vec<_>>();
 
+    proofs.reverse();
+
     let is_final = hash == HashType::Sha || hash == HashType::Keccak;
 
     let param_file = format!("K{}.params", k as usize);
 
     let (last_proof_gen_info, _agg_instances, shadow_instances, _) = if cont.is_some() {
         assert!(proofs.len() >= 3);
-
 
         // first round where there is no previous aggregation proof
         let mut batchinfo = BatchInfo::<Bn256> {
@@ -102,12 +103,12 @@ pub fn exec_batch_proofs(
         };
 
         let proof_piece = ProofPieceInfo::new(
-            "aggregate.start".to_string(),
+            format!("{}.start", proof_name),
             0,
             batchinfo.get_agg_instance_size() as u32,
         );
         let mut proof_generation_info = ProofGenerationInfo::new(
-            format!("{}.0", proof_name).as_str(),
+            format!("{}.rec", proof_name).as_str(),
             batchinfo.batch_k as usize,
             HashType::Poseidon,
         );
@@ -135,13 +136,10 @@ pub fn exec_batch_proofs(
         let mut agg_proof =
             ProofInfo::load_proof(&output_dir, &param_dir, &proof_generation_info)[0].clone();
 
-        proof_generation_info = ProofGenerationInfo::new(
-            format!("{}.1", proof_name).as_str(),
-            batchinfo.batch_k as usize,
-            HashType::Poseidon,
-        );
+        let mut instance0 = instances[0];
 
-        for i in 1..batchinfo.proofs.len() - 1 {
+        for i in 1..proofs.len() - 1 {
+            println!("generate rec proofs {}", i);
             batchinfo = BatchInfo::<Bn256> {
                 proofs: vec![proofs[i].clone(), agg_proof],
                 target_k: target_k.unwrap(),
@@ -153,7 +151,7 @@ pub fn exec_batch_proofs(
             };
 
             let proof_piece = ProofPieceInfo::new(
-                "aggregate-rec".to_string(),
+                format!("{}.rec", proof_name),
                 i,
                 batchinfo.get_agg_instance_size() as u32,
             );
@@ -165,9 +163,11 @@ pub fn exec_batch_proofs(
                 pkey_cache,
                 true,
                 proof_generation_info.hashtype,
-                Some(vec![(1, 0, last_hash)]),
+                Some(vec![(1, 0, instance0)]),
                 open_schema,
             );
+
+            instance0 = instances[0];
 
             proof_generation_info.append_single_proof(agg_proof_piece);
             proof_generation_info.save(output_dir);
@@ -176,15 +176,14 @@ pub fn exec_batch_proofs(
             final_hashes.push(instances[0]);
 
             agg_proof =
-                ProofInfo::load_proof(&output_dir, &param_dir, &proof_generation_info)[0].clone();
+                ProofInfo::load_proof(&output_dir, &param_dir, &proof_generation_info)[i].clone();
         }
 
         proof_generation_info = ProofGenerationInfo::new(
-            format!("{}.{}", proof_name, proofs.len()).as_str(),
+            format!("{}.final", proof_name).as_str(),
             batchinfo.batch_k as usize,
             hash,
         );
-
 
         batchinfo = BatchInfo::<Bn256> {
             proofs: vec![proofs[proofs.len() - 1].clone(), agg_proof],
@@ -198,7 +197,7 @@ pub fn exec_batch_proofs(
 
         // Last round
         let proof_piece = ProofPieceInfo::new(
-            "aggregate-final".to_string(),
+            format!("{}.final", proof_name),
             0,
             batchinfo.get_agg_instance_size() as u32,
         );
@@ -211,12 +210,14 @@ pub fn exec_batch_proofs(
             pkey_cache,
             true,
             proof_generation_info.hashtype,
-            Some(vec![(1, 0, instances[0])]),
+            Some(vec![(1, 0, instance0)]),
             open_schema,
         );
 
         proof_generation_info.append_single_proof(agg_proof_piece);
         proof_generation_info.save(output_dir);
+
+        hashes.push(last_hash);
 
         let depth = cont.unwrap();
         let len = 2u32.pow(depth) as usize;
@@ -227,15 +228,15 @@ pub fn exec_batch_proofs(
             len,
         );
 
-        let mut final_hashes_merkle: Vec<[u8; 32]> = final_hashes_expected.iter().map(|x| {
-            x.to_repr()
-        }).collect::<Vec<_>>();
-
+        let mut final_hashes_merkle: Vec<[u8; 32]> = final_hashes_expected
+            .iter()
+            .map(|x| x.to_repr())
+            .collect::<Vec<_>>();
 
         construct_merkle_records(
             &output_dir.join(format!("{}.{}.hashes", &proof_name, len)),
             &mut final_hashes_merkle,
-            depth as usize
+            depth as usize,
         );
 
         (
@@ -264,7 +265,7 @@ pub fn exec_batch_proofs(
         );
 
         let proof_piece = ProofPieceInfo::new(
-            "aggregate".to_string(),
+            format!("{}", proof_name),
             0,
             batchinfo.get_agg_instance_size() as u32,
         );
