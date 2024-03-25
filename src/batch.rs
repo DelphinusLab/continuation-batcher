@@ -139,7 +139,9 @@ where
                 idx += proofinfo.proofs.len()
             }
         }
-        [idx, 0, ci.group_idx * 3] // each commitment as instances are grouped by 3
+        // each commitment as instances are grouped by 3
+        // (proof index, _, first instance of commitment
+        [idx, 0, ci.group_idx * 3 + 1]
     }
 
     pub fn load_commitments_check(
@@ -243,8 +245,12 @@ where
             use_select_chip,
         };
 
+        let target_params = params_cache.generate_k_params(self.target_k).clone();
+        let target_params_verifier: ParamsVerifier<E> =
+            target_params.verifier(max_target_instances).unwrap();
+
         let params = params_cache.generate_k_params(self.batch_k);
-        let params_verifier: ParamsVerifier<E> = params.verifier(max_target_instances).unwrap();
+        //let params_verifier: ParamsVerifier<E> = params.verifier(max_target_instances).unwrap();
 
         // circuit multi check
         println!("building aggregate circuit:");
@@ -253,7 +259,7 @@ where
         println!("agg config is {:?}", config.absorb_instance);
         let timer = start_timer!(|| "build aggregate verify circuit");
         let (circuit, instances, shadow_instance, hash) = build_aggregate_verify_circuit::<E>(
-            &params_verifier,
+            &target_params_verifier,
             &vkeys,
             instances,
             all_proofs,

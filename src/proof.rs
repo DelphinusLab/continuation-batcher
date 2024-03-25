@@ -147,6 +147,12 @@ impl ProofGenerationInfo {
         log::info!("read proof load info {:?}", configfile);
         serde_json::from_reader(fd).unwrap()
     }
+
+    pub fn get_single_info(&self, name: &str, i: usize) -> Self {
+        let mut info = Self::new(name, self.k, self.hashtype);
+        info.append_single_proof(self.proofs[i].clone());
+        info
+    }
 }
 
 #[derive(Clone)]
