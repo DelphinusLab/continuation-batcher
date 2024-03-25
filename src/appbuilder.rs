@@ -79,13 +79,16 @@ pub trait AppBuilder: CommandBuilder {
                 let hash = Self::parse_hashtype(&sub_matches);
                 let open_schema = Self::parse_openschema(&sub_matches);
                 let config_files = Self::parse_proof_load_info_arg(sub_matches);
-                let batch_script_file = Self::parse_commits_equiv_info_arg(sub_matches);
+                let batch_script_files = Self::parse_commits_equiv_info_arg(sub_matches);
                 let cont = Self::parse_cont_arg(sub_matches);
                 let proof_name = sub_matches
                     .get_one::<String>("name")
                     .expect("name of the prove task is not provided");
 
-                let batch_script_info = CommitmentCheck::load(&batch_script_file);
+                let batch_script_info = batch_script_files
+                    .into_iter()
+                    .map(|x| CommitmentCheck::load(x.as_path()))
+                    .collect::<Vec<_>>();
                 debug!("commits equivalent {:?}", batch_script_info);
                 exec_batch_proofs(
                     params_cache.lock().as_mut().unwrap(),

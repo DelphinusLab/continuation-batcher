@@ -54,7 +54,7 @@ pub fn exec_batch_proofs(
     output_dir: &PathBuf,
     param_dir: &PathBuf,
     config_files: Vec<PathBuf>,
-    commits: CommitmentCheck,
+    commits: Vec<CommitmentCheck>,
     hash: HashType,
     k: u32,
     cont: Option<u32>,
@@ -62,20 +62,26 @@ pub fn exec_batch_proofs(
     open_schema: OpenSchema,
 ) {
     let mut target_k = None;
-    let mut proofsinfo = vec![];
-    let mut proofs = config_files
+    let proofsinfo = config_files
         .iter()
         .map(|config| {
             let proofloadinfo = ProofGenerationInfo::load(config);
-            proofsinfo.push(proofloadinfo.clone());
             // target batch proof needs to use poseidon hash
             assert_eq!(proofloadinfo.hashtype, HashType::Poseidon);
-            target_k = target_k.map_or(Some(proofloadinfo.k), |x| {
+            proofloadinfo
+        })
+        .collect::<Vec<_>>();
+
+    let mut proofs = proofsinfo
+        .iter()
+        .map(|info| {
+            println!("batching {} proofs:", proofsinfo.len());
+            target_k = target_k.map_or(Some(info.k), |x| {
                 // proofs in the same batch needs to have same size
-                assert_eq!(x, proofloadinfo.k);
+                assert_eq!(x, info.k);
                 Some(x)
             });
-            ProofInfo::load_proof(&output_dir, &param_dir, &proofloadinfo)
+            ProofInfo::load_proof(&output_dir, &param_dir, &info)
         })
         .collect::<Vec<_>>()
         .into_iter()
@@ -92,25 +98,35 @@ pub fn exec_batch_proofs(
         assert!(proofs.len() >= 3);
 
         // first round where there is no previous aggregation proof
+        // if it is not the last round we used the target k as the batch k
+        // so that the rec agg circuit can then be aggregate again with the next
+        // guest proof
         let mut batchinfo = BatchInfo::<Bn256> {
             proofs: vec![proofs[0].clone()],
             target_k: target_k.unwrap(),
-            batch_k: k as usize,
+            batch_k: target_k.unwrap(),
             equivalents: vec![],
             absorb: vec![],
             expose: vec![],
             is_final: false,
         };
 
-        let proof_piece = ProofPieceInfo::new(
-            format!("{}.start", proof_name),
-            0,
-            batchinfo.get_agg_instance_size() as u32,
-        );
         let mut proof_generation_info = ProofGenerationInfo::new(
             format!("{}.rec", proof_name).as_str(),
             batchinfo.batch_k as usize,
             HashType::Poseidon,
+        );
+
+        {
+            // load commitments check for the first round
+            let round_info = proofsinfo[0].get_single_info("single", 0);
+            batchinfo.load_commitments_check(&vec![round_info], commits[0].clone());
+        }
+
+        let proof_piece = ProofPieceInfo::new(
+            format!("{}.start", proof_name),
+            0,
+            batchinfo.get_agg_instance_size() as u32,
         );
 
         let (agg_proof_piece, instances, _, last_hash) = batchinfo.batch_proof(
@@ -129,8 +145,13 @@ pub fn exec_batch_proofs(
         let mut hashes = vec![last_hash];
         let mut final_hashes = vec![instances[0]]; // the first instance is the hash of the vkey of this round
 
-        proof_generation_info.append_single_proof(agg_proof_piece);
+        proof_generation_info.append_single_proof(agg_proof_piece.clone());
         proof_generation_info.save(output_dir);
+
+        let acc_proof_info =
+            ProofGenerationInfo::new("acc", batchinfo.batch_k as usize, HashType::Poseidon);
+
+        let mut last_agg_piece = agg_proof_piece;
 
         // second round (1 .. k-2)
         let mut agg_proof =
@@ -139,16 +160,26 @@ pub fn exec_batch_proofs(
         let mut instance0 = instances[0];
 
         for i in 1..proofs.len() - 1 {
+            // recursive round where there is a aggregation proof and a guest proof.
+            // If it is not the last round we used the target k as the batch k
+            // so that the rec agg circuit can then be aggregate again with the next
+            // guest proof
             println!("generate rec proofs {}", i);
             batchinfo = BatchInfo::<Bn256> {
                 proofs: vec![proofs[i].clone(), agg_proof],
                 target_k: target_k.unwrap(),
-                batch_k: k as usize,
+                batch_k: target_k.unwrap(),
                 equivalents: vec![],
                 absorb: vec![],
                 expose: vec![],
                 is_final: false,
             };
+
+            let round_info = proofsinfo[0].get_single_info("single", i);
+            let mut acc_proof_info = acc_proof_info.clone();
+            acc_proof_info.append_single_proof(last_agg_piece.clone());
+
+            batchinfo.load_commitments_check(&vec![round_info, acc_proof_info], commits[1].clone());
 
             let proof_piece = ProofPieceInfo::new(
                 format!("{}.rec", proof_name),
@@ -156,7 +187,7 @@ pub fn exec_batch_proofs(
                 batchinfo.get_agg_instance_size() as u32,
             );
             let (agg_proof_piece, instances, _, last_hash) = batchinfo.batch_proof(
-                proof_piece,
+                proof_piece.clone(),
                 &param_dir.clone(),
                 &output_dir.clone(),
                 params_cache,
@@ -177,14 +208,15 @@ pub fn exec_batch_proofs(
 
             agg_proof =
                 ProofInfo::load_proof(&output_dir, &param_dir, &proof_generation_info)[i].clone();
+
+            last_agg_piece = proof_piece;
         }
 
-        proof_generation_info = ProofGenerationInfo::new(
-            format!("{}.final", proof_name).as_str(),
-            batchinfo.batch_k as usize,
-            hash,
-        );
+        proof_generation_info =
+            ProofGenerationInfo::new(format!("{}.final", proof_name).as_str(), k as usize, hash);
 
+        // Now we processing the final round where we provid the batch_k which could be slightly
+        // bigger than the target_k since it will uses a non-select ecc circuit
         batchinfo = BatchInfo::<Bn256> {
             proofs: vec![proofs[proofs.len() - 1].clone(), agg_proof],
             target_k: target_k.unwrap(),
@@ -194,6 +226,14 @@ pub fn exec_batch_proofs(
             expose: vec![],
             is_final: true,
         };
+
+        {
+            // load commits for last round
+            let round_info = proofsinfo[0].get_single_info("single", proofs.len() - 1);
+            let mut acc_proof_info = acc_proof_info.clone();
+            acc_proof_info.append_single_proof(last_agg_piece.clone());
+            batchinfo.load_commitments_check(&vec![round_info, acc_proof_info], commits[2].clone());
+        }
 
         // Last round
         let proof_piece = ProofPieceInfo::new(
@@ -255,7 +295,7 @@ pub fn exec_batch_proofs(
             expose: vec![],
             is_final,
         };
-        batchinfo.load_commitments_check(&proofsinfo, commits);
+        batchinfo.load_commitments_check(&proofsinfo, commits[0].clone());
 
         // Singleton batch
         let mut proof_generation_info = ProofGenerationInfo::new(

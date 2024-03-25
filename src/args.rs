@@ -91,14 +91,14 @@ pub trait ArgBuilder {
             .action(ArgAction::Append)
             .help("Path of the batch config files")
             .min_values(1)
-            .max_values(1)
     }
 
-    fn parse_commits_equiv_info_arg(matches: &ArgMatches) -> PathBuf {
+    fn parse_commits_equiv_info_arg(matches: &ArgMatches) -> Vec<PathBuf> {
         matches
-            .get_one::<PathBuf>("commits")
-            .expect("commit info file is not provided")
-            .clone()
+            .get_many::<PathBuf>("commits")
+            .expect("commit info(s) is not provided.")
+            .cloned()
+            .collect::<Vec<_>>()
     }
 
     fn output_path_arg<'a>() -> Arg<'a> {
