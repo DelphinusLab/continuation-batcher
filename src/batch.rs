@@ -240,7 +240,11 @@ where
             target_proof_with_shplonk_as_default: (open_schema == OpenSchema::Shplonk),
             target_proof_max_instance,
             is_final_aggregator: self.is_final,
-            prev_aggregator_skip_instance: vec![(1, 1)], // hash get absorbed automatically
+            //prev_aggregator_skip_instance: vec![(1, 1)], // hash get absorbed automatically
+            // hash get absorbed automatically and we need to provide last agg index here
+            prev_aggregator_skip_instance: last_agg_info
+                .as_ref()
+                .map_or_else(|| vec![], |x| vec![(x[0].0, 1)]),
             absorb_instance: last_agg_info.map_or_else(|| vec![], |x| vec![(0, 0, x[0].0, 1)]),
             use_select_chip,
         };
