@@ -89,9 +89,46 @@ where `[SUBCOMMAND]` is the command to execute, and `[ARGS]` are the args specif
 The `--output` arg specifies the directory to write all the output files to and is required for all commands.
 
 ## Generate batch proof from ProofLoadInfos
+We support two modes of batching proofs. The rollup continuation mode and the flat mode. In both mode we have two options to handle the public instance of the target proofs when batching.
+1. The commitment encode: The commitment of the target instance becomes the public instance of the batch proof.
+2. The hash encode: The hash of the target instance become the public instance of the batch proof.
+
+Meanwhile, we provide two openschema when batching proofs, the Shplonk and GWC and three different challenge computation methods: sha, keccak and poseidon. (If the batched proofs are suppose to be the target proofs of another round of batching, then the challenge method needs to be poseidon.)
 
 ```
-cargo run --release -- --output ./sample batch --challenge poseidon -k 21 --info sample/test.loadinfo.json --name batchsample --commits output/commits.json
+USAGE:
+    circuit-batcher batch [OPTIONS] --challenge <CHALLENGE_HASH_TYPE>... --openschema <OPEN_SCHEMA>...
+
+OPTIONS:
+    -c, --challenge <CHALLENGE_HASH_TYPE>...
+            HashType of Challenge [possible values: poseidon, sha, keccak]
+
+        --commits <commits>...
+            Path of the batch config files
+
+        --cont [<CONT>...]
+            Is continuation's loadinfo.
+
+    -h, --help
+            Print help information
+
+        --info <info>...
+            Path of the batch config files
+
+    -k [<K>...]
+            Circuit Size K
+
+    -n, --name [<PROOF_NAME>...]
+            name of this task.
+
+    -s, --openschema <OPEN_SCHEMA>...
+            Open Schema [possible values: gwc, shplonk]
+```
+
+Example:
+
+```
+cargo run --release --  --param ./params --output ./output batch -k 23 --openschema shplonk --challenge keccak --info output/batchsample.finals.loadinfo.json --name lastbatch --commits ~/continuation-batcher/sample/batchinfo_empty.json
 ```
 
 ## Verify batch proof from ProofLoadInfos
@@ -99,12 +136,3 @@ cargo run --release -- --output ./sample batch --challenge poseidon -k 21 --info
 ```
 cargo run --release -- --output ./sample verify --challenge poseidon --info sample/batchsample.loadinfo.json
 ```
-
-## Generate proof from witness
-cargo run --release -- --output output prove --info output/aggregator.witnessinfo.json
-
-## integrate with just
-
-1. install just: cargo install just
-2. configure your batch in a just script: see sample/batchscript.just
-3. just -f sample/batchscript.just
