@@ -42,7 +42,6 @@ pub trait AppBuilder: CommandBuilder {
         let app = Self::append_setup_subcommand(app);
         let app = Self::append_batch_subcommand(app);
         let app = Self::append_verify_subcommand(app);
-        let app = Self::append_prove_subcommand(app);
         let app = Self::append_generate_solidity_verifier(app);
         app
     }

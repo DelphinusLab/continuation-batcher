@@ -28,11 +28,6 @@ pub trait CommandBuilder: ArgBuilder {
         app.subcommand(command)
     }
 
-    fn append_prove_subcommand(app: App) -> App {
-        let command = Command::new("prove").arg(Self::proof_load_info_arg());
-        app.subcommand(command)
-    }
-
     fn append_verify_subcommand(app: App) -> App {
         let command = Command::new("verify")
             .arg(Self::hashtype())
