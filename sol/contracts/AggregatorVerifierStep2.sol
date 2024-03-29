@@ -1,0 +1,152 @@
+// SPDX-License-Identifier: MIT
+// Tells the Solidity compiler to compile only from v0.8.13 to v0.9.0
+pragma solidity ^0.8.13;
+
+import "./AggregatorLib.sol";
+
+contract AggregatorVerifierCoreStep2 {
+    function verify_proof(
+        uint256[] calldata transcript,
+        uint256[] calldata aux,
+        uint256[] memory buf
+    ) public view returns (uint256[] memory)  {
+        buf[41] = addmod(transcript[70], buf[4], AggregatorLib.q_mod);
+buf[42] = AggregatorLib.fr_pow(4131629893567559867359510883348571134090853742863529169391034518566172092834, 6);
+buf[42] = mulmod(buf[39], buf[42], AggregatorLib.q_mod);
+buf[40] = addmod(mulmod(addmod(buf[40], mulmod(buf[3], transcript[95], AggregatorLib.q_mod), AggregatorLib.q_mod), mulmod(addmod(buf[41], mulmod(buf[3], transcript[94], AggregatorLib.q_mod), AggregatorLib.q_mod), transcript[107], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod - mulmod(addmod(buf[40], mulmod(4131629893567559867359510883348571134090853742863529169391034518566172092834, buf[42], AggregatorLib.q_mod), AggregatorLib.q_mod), mulmod(addmod(buf[41], buf[42], AggregatorLib.q_mod), transcript[106], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod);
+buf[31] = mulmod(addmod(mulmod(addmod(buf[31], mulmod(buf[34], buf[38], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[5], AggregatorLib.q_mod), mulmod(buf[40], buf[38], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[5], AggregatorLib.q_mod);
+buf[34] = addmod(transcript[56], buf[4], AggregatorLib.q_mod);
+buf[40] = AggregatorLib.fr_pow(4131629893567559867359510883348571134090853742863529169391034518566172092834, 8);
+buf[34] = mulmod(addmod(mulmod(addmod(buf[34], mulmod(buf[3], transcript[96], AggregatorLib.q_mod), AggregatorLib.q_mod), transcript[110], AggregatorLib.q_mod), AggregatorLib.q_mod - mulmod(addmod(buf[34], mulmod(buf[39], buf[40], AggregatorLib.q_mod), AggregatorLib.q_mod), transcript[109], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[38], AggregatorLib.q_mod);
+buf[31] = addmod(mulmod(addmod(mulmod(addmod(buf[31], buf[34], AggregatorLib.q_mod), buf[5], AggregatorLib.q_mod), mulmod(buf[37], addmod(1, AggregatorLib.q_mod - transcript[111], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod), buf[5], AggregatorLib.q_mod), mulmod(buf[33], addmod(mulmod(transcript[111], transcript[111], AggregatorLib.q_mod), AggregatorLib.q_mod - transcript[111], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod);
+buf[34] = addmod(addmod(mulmod(transcript[82], buf[2], AggregatorLib.q_mod), transcript[83], AggregatorLib.q_mod), buf[4], AggregatorLib.q_mod);
+buf[39] = mulmod(mulmod(transcript[111], addmod(addmod(mulmod(transcript[81], buf[2], AggregatorLib.q_mod), transcript[64], AggregatorLib.q_mod), buf[3], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[34], AggregatorLib.q_mod);
+buf[39] = mulmod(addmod(mulmod(mulmod(transcript[112], addmod(transcript[113], buf[3], AggregatorLib.q_mod), AggregatorLib.q_mod), addmod(transcript[115], buf[4], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod - buf[39], AggregatorLib.q_mod), buf[38], AggregatorLib.q_mod);
+buf[40] = addmod(transcript[113], AggregatorLib.q_mod - transcript[115], AggregatorLib.q_mod);
+buf[31] = mulmod(addmod(mulmod(addmod(mulmod(buf[31], buf[5], AggregatorLib.q_mod), buf[39], AggregatorLib.q_mod), buf[5], AggregatorLib.q_mod), mulmod(buf[37], buf[40], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[5], AggregatorLib.q_mod);
+buf[31] = mulmod(addmod(buf[31], mulmod(mulmod(buf[40], addmod(transcript[113], AggregatorLib.q_mod - transcript[114], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[38], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[5], AggregatorLib.q_mod);
+buf[31] = addmod(mulmod(addmod(buf[31], mulmod(buf[37], addmod(1, AggregatorLib.q_mod - transcript[116], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod), buf[5], AggregatorLib.q_mod), mulmod(buf[33], addmod(mulmod(transcript[116], transcript[116], AggregatorLib.q_mod), AggregatorLib.q_mod - transcript[116], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod);
+buf[34] = mulmod(mulmod(transcript[116], addmod(addmod(mulmod(18, buf[2], AggregatorLib.q_mod), transcript[65], AggregatorLib.q_mod), buf[3], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[34], AggregatorLib.q_mod);
+buf[34] = mulmod(addmod(mulmod(mulmod(transcript[117], addmod(transcript[118], buf[3], AggregatorLib.q_mod), AggregatorLib.q_mod), addmod(transcript[120], buf[4], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod - buf[34], AggregatorLib.q_mod), buf[38], AggregatorLib.q_mod);
+buf[39] = addmod(transcript[118], AggregatorLib.q_mod - transcript[120], AggregatorLib.q_mod);
+buf[31] = mulmod(addmod(mulmod(addmod(mulmod(buf[31], buf[5], AggregatorLib.q_mod), buf[34], AggregatorLib.q_mod), buf[5], AggregatorLib.q_mod), mulmod(buf[37], buf[39], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[5], AggregatorLib.q_mod);
+buf[31] = mulmod(addmod(buf[31], mulmod(mulmod(buf[39], addmod(transcript[118], AggregatorLib.q_mod - transcript[119], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[38], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[5], AggregatorLib.q_mod);
+buf[31] = addmod(mulmod(addmod(buf[31], mulmod(buf[37], addmod(1, AggregatorLib.q_mod - transcript[121], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod), buf[5], AggregatorLib.q_mod), mulmod(buf[33], addmod(mulmod(transcript[121], transcript[121], AggregatorLib.q_mod), AggregatorLib.q_mod - transcript[121], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod);
+buf[33] = mulmod(transcript[70], buf[2], AggregatorLib.q_mod);
+buf[34] = addmod(mulmod(addmod(buf[33], addmod(mulmod(340282366920938463463374607431768211456, transcript[71], AggregatorLib.q_mod), transcript[85], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[2], AggregatorLib.q_mod), buf[3], AggregatorLib.q_mod);
+buf[33] = mulmod(mulmod(transcript[121], buf[34], AggregatorLib.q_mod), addmod(addmod(mulmod(addmod(buf[33], transcript[85], AggregatorLib.q_mod), buf[2], AggregatorLib.q_mod), transcript[86], AggregatorLib.q_mod), buf[4], AggregatorLib.q_mod), AggregatorLib.q_mod);
+buf[33] = mulmod(addmod(mulmod(mulmod(transcript[122], addmod(transcript[123], buf[3], AggregatorLib.q_mod), AggregatorLib.q_mod), addmod(transcript[125], buf[4], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod - buf[33], AggregatorLib.q_mod), buf[38], AggregatorLib.q_mod);
+buf[34] = addmod(transcript[123], AggregatorLib.q_mod - transcript[125], AggregatorLib.q_mod);
+buf[31] = mulmod(addmod(mulmod(addmod(mulmod(buf[31], buf[5], AggregatorLib.q_mod), buf[33], AggregatorLib.q_mod), buf[5], AggregatorLib.q_mod), mulmod(buf[37], buf[34], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[5], AggregatorLib.q_mod);
+buf[31] = AggregatorLib.fr_div(addmod(buf[31], mulmod(mulmod(buf[34], addmod(transcript[123], AggregatorLib.q_mod - transcript[124], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[38], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[36], aux[16]);
+buf[29] = addmod(mulmod(buf[7], addmod(mulmod(buf[7], addmod(buf[29], transcript[95], AggregatorLib.q_mod), AggregatorLib.q_mod), transcript[96], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[31], AggregatorLib.q_mod);
+buf[20] = mulmod(buf[17], buf[20], AggregatorLib.q_mod);
+buf[31] = mulmod(mulmod(mulmod(buf[20], buf[22], AggregatorLib.q_mod), buf[25], AggregatorLib.q_mod), buf[27], AggregatorLib.q_mod);
+buf[18] = mulmod(buf[8], addmod(mulmod(buf[8], addmod(mulmod(buf[8], buf[18], AggregatorLib.q_mod), mulmod(buf[21], buf[28], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod), mulmod(addmod(mulmod(buf[7], buf[29], AggregatorLib.q_mod), transcript[87], AggregatorLib.q_mod), buf[31], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod);
+buf[21] = AggregatorLib.q_mod - buf[30];
+buf[29] = AggregatorLib.q_mod - buf[32];
+buf[30] = mulmod(buf[7], addmod(mulmod(addmod(mulmod(buf[23], transcript[61], AggregatorLib.q_mod), mulmod(buf[26], transcript[62], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[9], AggregatorLib.q_mod), addmod(mulmod(buf[21], transcript[61], AggregatorLib.q_mod), mulmod(buf[29], transcript[62], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod);
+buf[30] = addmod(buf[30], addmod(mulmod(addmod(mulmod(buf[23], transcript[109], AggregatorLib.q_mod), mulmod(buf[26], transcript[110], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[9], AggregatorLib.q_mod), addmod(mulmod(buf[21], transcript[109], AggregatorLib.q_mod), mulmod(buf[29], transcript[110], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod);
+buf[30] = addmod(mulmod(buf[7], buf[30], AggregatorLib.q_mod), addmod(mulmod(addmod(mulmod(buf[23], transcript[111], AggregatorLib.q_mod), mulmod(buf[26], transcript[112], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[9], AggregatorLib.q_mod), addmod(mulmod(buf[21], transcript[111], AggregatorLib.q_mod), mulmod(buf[29], transcript[112], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod);
+buf[30] = addmod(mulmod(buf[7], buf[30], AggregatorLib.q_mod), addmod(mulmod(addmod(mulmod(buf[23], transcript[116], AggregatorLib.q_mod), mulmod(buf[26], transcript[117], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[9], AggregatorLib.q_mod), addmod(mulmod(buf[21], transcript[116], AggregatorLib.q_mod), mulmod(buf[29], transcript[117], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod);
+buf[30] = addmod(mulmod(buf[7], buf[30], AggregatorLib.q_mod), addmod(mulmod(addmod(mulmod(buf[23], transcript[121], AggregatorLib.q_mod), mulmod(buf[26], transcript[122], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[9], AggregatorLib.q_mod), addmod(mulmod(buf[21], transcript[121], AggregatorLib.q_mod), mulmod(buf[29], transcript[122], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod);
+buf[25] = mulmod(mulmod(buf[20], buf[25], AggregatorLib.q_mod), buf[27], AggregatorLib.q_mod);
+buf[32] = AggregatorLib.fr_div(1, addmod(buf[6], AggregatorLib.q_mod - buf[24], AggregatorLib.q_mod), aux[17]);
+buf[33] = mulmod(buf[23], buf[32], AggregatorLib.q_mod);
+buf[34] = AggregatorLib.fr_div(1, addmod(buf[19], AggregatorLib.q_mod - buf[24], AggregatorLib.q_mod), aux[18]);
+buf[36] = mulmod(buf[26], buf[34], AggregatorLib.q_mod);
+buf[37] = AggregatorLib.fr_div(1, addmod(buf[24], AggregatorLib.q_mod - buf[6], AggregatorLib.q_mod), aux[19]);
+buf[38] = AggregatorLib.fr_div(1, addmod(buf[24], AggregatorLib.q_mod - buf[19], AggregatorLib.q_mod), aux[20]);
+buf[39] = mulmod(buf[37], buf[38], AggregatorLib.q_mod);
+buf[40] = mulmod(buf[32], buf[24], AggregatorLib.q_mod);
+buf[23] = addmod(mulmod(buf[21], buf[32], AggregatorLib.q_mod), AggregatorLib.q_mod - mulmod(buf[23], buf[40], AggregatorLib.q_mod), AggregatorLib.q_mod);
+buf[24] = mulmod(buf[34], buf[24], AggregatorLib.q_mod);
+buf[26] = addmod(mulmod(buf[29], buf[34], AggregatorLib.q_mod), AggregatorLib.q_mod - mulmod(buf[26], buf[24], AggregatorLib.q_mod), AggregatorLib.q_mod);
+buf[32] = AggregatorLib.q_mod - mulmod(buf[37], buf[6], AggregatorLib.q_mod);
+buf[19] = mulmod(buf[38], buf[19], AggregatorLib.q_mod);
+buf[34] = addmod(mulmod(buf[32], buf[38], AggregatorLib.q_mod), AggregatorLib.q_mod - mulmod(buf[37], buf[19], AggregatorLib.q_mod), AggregatorLib.q_mod);
+buf[37] = addmod(mulmod(addmod(addmod(mulmod(buf[33], transcript[64], AggregatorLib.q_mod), mulmod(buf[36], transcript[67], AggregatorLib.q_mod), AggregatorLib.q_mod), mulmod(buf[39], transcript[69], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[9], AggregatorLib.q_mod), addmod(addmod(mulmod(buf[23], transcript[64], AggregatorLib.q_mod), mulmod(buf[26], transcript[67], AggregatorLib.q_mod), AggregatorLib.q_mod), mulmod(buf[34], transcript[69], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod);
+buf[21] = AggregatorLib.q_mod - mulmod(buf[21], buf[40], AggregatorLib.q_mod);
+buf[24] = AggregatorLib.q_mod - mulmod(buf[29], buf[24], AggregatorLib.q_mod);
+buf[19] = AggregatorLib.q_mod - mulmod(buf[32], buf[19], AggregatorLib.q_mod);
+buf[29] = mulmod(buf[7], addmod(mulmod(buf[37], buf[9], AggregatorLib.q_mod), addmod(addmod(mulmod(buf[21], transcript[64], AggregatorLib.q_mod), mulmod(buf[24], transcript[67], AggregatorLib.q_mod), AggregatorLib.q_mod), mulmod(buf[19], transcript[69], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod);
+buf[23] = addmod(mulmod(addmod(addmod(mulmod(buf[33], transcript[65], AggregatorLib.q_mod), mulmod(buf[36], transcript[66], AggregatorLib.q_mod), AggregatorLib.q_mod), mulmod(buf[39], transcript[68], AggregatorLib.q_mod), AggregatorLib.q_mod), buf[9], AggregatorLib.q_mod), addmod(addmod(mulmod(buf[23], transcript[65], AggregatorLib.q_mod), mulmod(buf[26], transcript[66], AggregatorLib.q_mod), AggregatorLib.q_mod), mulmod(buf[34], transcript[68], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod);
+buf[19] = addmod(buf[29], addmod(mulmod(buf[23], buf[9], AggregatorLib.q_mod), addmod(addmod(mulmod(buf[21], transcript[65], AggregatorLib.q_mod), mulmod(buf[24], transcript[66], AggregatorLib.q_mod), AggregatorLib.q_mod), mulmod(buf[19], transcript[68], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod);
+buf[20] = mulmod(buf[20], buf[27], AggregatorLib.q_mod);
+buf[18] = addmod(mulmod(buf[8], addmod(buf[18], mulmod(buf[30], buf[25], AggregatorLib.q_mod), AggregatorLib.q_mod), AggregatorLib.q_mod), mulmod(buf[19], buf[20], AggregatorLib.q_mod), AggregatorLib.q_mod);
+(buf[12], buf[13]) = (1, 21888242871839275222246405745257275088696311157297823662689037894645226208581);
+buf[14] = buf[18];
+AggregatorLib.ecc_mul(buf, 12);
+buf[19] = mulmod(buf[8], buf[8], AggregatorLib.q_mod);
+buf[21] = mulmod(buf[19], buf[31], AggregatorLib.q_mod);
+buf[23] = mulmod(buf[7], buf[7], AggregatorLib.q_mod);
+buf[24] = mulmod(buf[23], buf[23], AggregatorLib.q_mod);
+buf[26] = mulmod(buf[24], buf[24], AggregatorLib.q_mod);
+buf[27] = mulmod(buf[26], buf[26], AggregatorLib.q_mod);
+buf[29] = mulmod(buf[27], buf[27], AggregatorLib.q_mod);
+buf[30] = mulmod(buf[29], buf[23], AggregatorLib.q_mod);
+(buf[14], buf[15]) = (transcript[0], transcript[1]);
+buf[16] = mulmod(buf[21], mulmod(buf[30], buf[7], AggregatorLib.q_mod), AggregatorLib.q_mod);
+AggregatorLib.ecc_mul_add(buf, 12);
+(buf[14], buf[15]) = (transcript[2], transcript[3]);
+buf[16] = mulmod(buf[21], buf[30], AggregatorLib.q_mod);
+AggregatorLib.ecc_mul_add(buf, 12);
+(buf[14], buf[15]) = (transcript[4], transcript[5]);
+buf[16] = mulmod(buf[21], mulmod(buf[29], buf[7], AggregatorLib.q_mod), AggregatorLib.q_mod);
+AggregatorLib.ecc_mul_add(buf, 12);
+(buf[14], buf[15]) = (transcript[6], transcript[7]);
+buf[16] = mulmod(buf[21], buf[29], AggregatorLib.q_mod);
+AggregatorLib.ecc_mul_add(buf, 12);
+buf[25] = mulmod(buf[8], buf[25], AggregatorLib.q_mod);
+(buf[14], buf[15]) = (transcript[8], transcript[9]);
+buf[16] = mulmod(buf[25], buf[24], AggregatorLib.q_mod);
+AggregatorLib.ecc_mul_add(buf, 12);
+buf[30] = mulmod(buf[27], buf[26], AggregatorLib.q_mod);
+buf[31] = mulmod(buf[30], buf[24], AggregatorLib.q_mod);
+buf[32] = mulmod(buf[31], buf[23], AggregatorLib.q_mod);
+(buf[14], buf[15]) = (transcript[10], transcript[11]);
+buf[16] = mulmod(buf[21], mulmod(buf[32], buf[7], AggregatorLib.q_mod), AggregatorLib.q_mod);
+AggregatorLib.ecc_mul_add(buf, 12);
+(buf[14], buf[15]) = (transcript[12], transcript[13]);
+buf[16] = mulmod(buf[20], buf[7], AggregatorLib.q_mod);
+AggregatorLib.ecc_mul_add(buf, 12);
+(buf[14], buf[15]) = (transcript[14], transcript[15]);
+buf[16] = buf[20];
+AggregatorLib.ecc_mul_add(buf, 12);
+(buf[14], buf[15]) = (transcript[16], transcript[17]);
+buf[16] = mulmod(buf[21], buf[32], AggregatorLib.q_mod);
+AggregatorLib.ecc_mul_add(buf, 12);
+(buf[14], buf[15]) = (transcript[18], transcript[19]);
+buf[16] = mulmod(buf[21], mulmod(buf[31], buf[7], AggregatorLib.q_mod), AggregatorLib.q_mod);
+AggregatorLib.ecc_mul_add(buf, 12);
+buf[20] = mulmod(buf[27], buf[24], AggregatorLib.q_mod);
+buf[32] = mulmod(buf[20], buf[23], AggregatorLib.q_mod);
+(buf[14], buf[15]) = (12283307307125165122138182243019338506415505831611366429874787486517095004579, 250986471275003949694936259270630212149944103539067728380745523488075229365);
+buf[16] = mulmod(buf[21], mulmod(buf[32], buf[7], AggregatorLib.q_mod), AggregatorLib.q_mod);
+AggregatorLib.ecc_mul_add(buf, 12);
+(buf[14], buf[15]) = (17915980307942308570779557493879252531376705342700642023989710335864042304303, 13949841746398824624437789204711698185431145898617970542344929575672881364653);
+buf[16] = mulmod(buf[21], buf[32], AggregatorLib.q_mod);
+AggregatorLib.ecc_mul_add(buf, 12);
+(buf[14], buf[15]) = (15271335794762871722798319266797465550632960948181615508168452301906025645135, 8270017615988314712460325875462226272220197672103415474793991713617619392099);
+buf[16] = mulmod(buf[21], buf[27], AggregatorLib.q_mod);
+AggregatorLib.ecc_mul_add(buf, 12);
+buf[32] = mulmod(buf[26], buf[24], AggregatorLib.q_mod);
+buf[33] = mulmod(buf[32], buf[23], AggregatorLib.q_mod);
+(buf[14], buf[15]) = (6251985016870683017940169327091345585107032859908049701197577587059374676614, 1528979199406494172995934232245345726418988830982162848229098188896692269775);
+buf[16] = mulmod(buf[21], mulmod(buf[33], buf[7], AggregatorLib.q_mod), AggregatorLib.q_mod);
+AggregatorLib.ecc_mul_add(buf, 12);
+(buf[14], buf[15]) = (21283369194952970012266899499022114231756493499545320773666442383799632814403, 15530964964281061560290643642551931150706673418276595260412795592530963385893);
+buf[16] = mulmod(buf[21], buf[33], AggregatorLib.q_mod);
+AggregatorLib.ecc_mul_add(buf, 12);
+(buf[14], buf[15]) = (20779754216524954353929200622512765528698817204969406621812641937119762945577, 2456093483033390467049115716079610271459044943064725710728223732375211512681);
+buf[16] = mulmod(buf[21], buf[32], AggregatorLib.q_mod);
+AggregatorLib.ecc_mul_add(buf, 12);
+buf[33] = mulmod(buf[26], buf[23], AggregatorLib.q_mod);
+(buf[14], buf[15]) = (2017030904692922347533859116582502880634649170932960501566187104600499279753, 17218584312526805534482935687224965497442276794256661277255273639981937753712);
+buf[16] = mulmod(buf[21], mulmod(buf[33], buf[7], AggregatorLib.q_mod), AggregatorLib.q_mod);
+AggregatorLib.ecc_mul_add(buf, 12);
+
+
+        return buf;
+    }
+}

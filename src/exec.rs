@@ -279,6 +279,15 @@ pub fn exec_batch_proofs(
             depth as usize,
         );
 
+        store_instance(
+            &vec![shadow_instances.clone()],
+            &output_dir.join(format!(
+                    "{}.{}.shadowinstance.data",
+                    &proof_generation_info.name.clone(),
+                    0
+            )),
+        );
+
         (
             proof_generation_info,
             instances,
@@ -330,6 +339,16 @@ pub fn exec_batch_proofs(
         )
     };
 
+    store_instance(
+        &vec![shadow_instances],
+        &output_dir.join(format!(
+            "{}.{}.shadowinstance.data",
+            &last_proof_gen_info.name.clone(),
+            0
+        )),
+    );
+
+
     if hash == HashType::Sha || hash == HashType::Keccak {
         let proof: Vec<ProofInfo<Bn256>> =
             ProofInfo::load_proof(&output_dir, &param_dir, &last_proof_gen_info);
@@ -361,14 +380,6 @@ pub fn exec_batch_proofs(
                         0
                     )),
                 );
-                store_instance(
-                    &vec![shadow_instances],
-                    &output_dir.join(format!(
-                        "{}.{}.shadowinstance.data",
-                        &last_proof_gen_info.name.clone(),
-                        0
-                    )),
-                )
             }
             HashType::Keccak => {
                 solidity_aux_gen::<_, sha3::Keccak256>(
@@ -382,14 +393,6 @@ pub fn exec_batch_proofs(
                         0
                     )),
                 );
-                store_instance(
-                    &vec![shadow_instances],
-                    &output_dir.join(format!(
-                        "{}.{}.shadowinstance.data",
-                        &last_proof_gen_info.name.clone(),
-                        0
-                    )),
-                )
             }
             HashType::Poseidon => unreachable!(),
         }

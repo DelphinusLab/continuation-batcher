@@ -1,0 +1,13 @@
+{
+    "equivalents": [
+    ],
+    "expose": [
+	    {"name": "single", "proof_idx": 0, "column_name": "img_col"}
+    ],
+    "absorb": [
+	    {
+		    "instance_idx": {"name": "single", "proof_idx": 1, "group_idx": 2}, 
+		    "target": {"name": "single", "proof_idx": 0, "column_name": "post_img_col"}
+	    }
+    ]
+}
