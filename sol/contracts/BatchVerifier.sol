@@ -81,7 +81,7 @@ contract ProofTracker {
 
             uint256 contains = 0;
 
-            for (uint256 j = 0; j < sibling_instances.length; j++) {
+            for (uint256 j = 0; j < sibling_instances[i].length; j++) {
                 if (target_instance == sibling_instances[i][j]) {
                     contains = 1;
                 }
@@ -91,7 +91,7 @@ contract ProofTracker {
 
 	    /* calculated the target instance for the next round */
             len = 0;
-            for (uint256 j = 0; j < sibling_instances.length; j++) {
+            for (uint256 j = 0; j < sibling_instances[i].length; j++) {
                 buf[len++] = sibling_instances[i][j];
             }
             buf[len++] = _round1_verifier_instances[i];
