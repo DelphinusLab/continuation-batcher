@@ -1,5 +1,6 @@
 use crate::args::HashType;
 use crate::args::OpenSchema;
+use crate::args::Accumulator;
 use crate::batch::BatchInfo;
 use crate::batch::CommitmentCheck;
 use crate::proof::load_or_build_unsafe_params;
@@ -60,6 +61,7 @@ pub fn exec_batch_proofs(
     cont: Option<u32>,
     use_ecc_select_chip: bool,
     open_schema: OpenSchema,
+    accumulator: Accumulator,
 ) {
     let mut target_k = None;
     let proofsinfo = config_files
@@ -89,8 +91,6 @@ pub fn exec_batch_proofs(
         .collect::<Vec<_>>();
 
     proofs.reverse();
-
-    let is_final = hash == HashType::Sha || hash == HashType::Keccak;
 
     let param_file = format!("K{}.params", k as usize);
 
@@ -129,10 +129,8 @@ pub fn exec_batch_proofs(
             batchinfo.get_agg_instance_size() as u32,
         );
 
-        let (agg_proof_piece, instances, _, last_hash) = batchinfo.batch_proof(
+        let (agg_proof_piece, instances, transcripts, _, last_hash) = batchinfo.batch_proof(
             proof_piece,
-            &param_dir.clone(),
-            &output_dir.clone(),
             params_cache,
             pkey_cache,
             true,
@@ -140,6 +138,8 @@ pub fn exec_batch_proofs(
             None, // no previous agg
             open_schema,
         );
+
+        agg_proof_piece.save_proof_data(&vec![instances.clone()], &transcripts, &output_dir);
 
         // start recording the hash of first round
         let mut hashes = vec![last_hash];
@@ -186,10 +186,8 @@ pub fn exec_batch_proofs(
                 i,
                 batchinfo.get_agg_instance_size() as u32,
             );
-            let (agg_proof_piece, instances, _, last_hash) = batchinfo.batch_proof(
+            let (agg_proof_piece, instances, transcripts, _, last_hash) = batchinfo.batch_proof(
                 proof_piece.clone(),
-                &param_dir.clone(),
-                &output_dir.clone(),
                 params_cache,
                 pkey_cache,
                 true,
@@ -197,6 +195,9 @@ pub fn exec_batch_proofs(
                 Some(vec![(1, 0, instance0)]),
                 open_schema,
             );
+
+
+            agg_proof_piece.save_proof_data(&vec![instances.clone()], &transcripts, &output_dir);
 
             instance0 = instances[0];
 
@@ -242,10 +243,8 @@ pub fn exec_batch_proofs(
             batchinfo.get_agg_instance_size() as u32,
         );
 
-        let (agg_proof_piece, instances, shadow_instances, last_hash) = batchinfo.batch_proof(
+        let (agg_proof_piece, instances, transcripts, shadow_instances, last_hash) = batchinfo.batch_proof(
             proof_piece,
-            &param_dir.clone(),
-            &output_dir.clone(),
             params_cache,
             pkey_cache,
             true,
@@ -253,6 +252,9 @@ pub fn exec_batch_proofs(
             Some(vec![(1, 0, instance0)]),
             open_schema,
         );
+
+
+        agg_proof_piece.save_proof_data(&vec![instances.clone()], &transcripts, &output_dir);
 
         proof_generation_info.append_single_proof(agg_proof_piece);
         proof_generation_info.save(output_dir);
@@ -302,7 +304,7 @@ pub fn exec_batch_proofs(
             equivalents: vec![],
             absorb: vec![],
             expose: vec![],
-            is_final,
+            is_final: accumulator == Accumulator::UseHash
         };
         batchinfo.load_commitments_check(&proofsinfo, commits[0].clone());
 
@@ -318,10 +320,8 @@ pub fn exec_batch_proofs(
             0,
             batchinfo.get_agg_instance_size() as u32,
         );
-        let (agg_proof_piece, instances, shadow_instances, last_hash) = batchinfo.batch_proof(
+        let (agg_proof_piece, instances, transcripts, shadow_instances, last_hash) = batchinfo.batch_proof(
             proof_piece,
-            &param_dir.clone(),
-            &output_dir.clone(),
             params_cache,
             pkey_cache,
             use_ecc_select_chip,
@@ -329,6 +329,9 @@ pub fn exec_batch_proofs(
             None,
             open_schema,
         );
+
+        agg_proof_piece.save_proof_data(&vec![instances.clone()], &transcripts, &output_dir);
+
         proof_generation_info.append_single_proof(agg_proof_piece);
         proof_generation_info.save(output_dir);
         (

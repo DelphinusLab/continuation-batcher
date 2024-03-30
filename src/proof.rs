@@ -1,9 +1,9 @@
 use crate::args::HashType;
 use crate::args::OpenSchema;
 use halo2_proofs::arithmetic::MultiMillerLoop;
+use halo2_proofs::arithmetic::FieldExt;
 use halo2_proofs::dev::MockProver;
 use halo2_proofs::helpers::Serializable;
-use halo2_proofs::pairing::bn256::Bn256;
 use halo2_proofs::plonk::create_witness;
 use halo2_proofs::plonk::keygen_pk;
 use halo2_proofs::plonk::verify_proof;
@@ -30,24 +30,27 @@ use std::io::Write;
 use std::num::NonZeroUsize;
 use std::path::Path;
 use std::path::PathBuf;
-use std::sync::Mutex;
-
-const DEFAULT_CACHE_SIZE: usize = 5;
 
 pub struct ProvingKeyCache<E: MultiMillerLoop> {
     pub cache: LruCache<String, ProvingKey<E::G1Affine>>,
+    pub cache_dir: PathBuf,
 }
 
 impl<E: MultiMillerLoop> ProvingKeyCache<E> {
-    pub fn new(cache_size: usize) -> Self {
+    pub fn new(cache_size: usize, cache_dir: PathBuf) -> Self {
         let lrucache = LruCache::<String, ProvingKey<E::G1Affine>>::new(
             NonZeroUsize::new(cache_size).unwrap(),
         );
-        ProvingKeyCache { cache: lrucache }
+        ProvingKeyCache {
+            cache: lrucache,
+            cache_dir,
+        }
     }
+
     pub fn contains(&mut self, key: &String) -> bool {
         self.cache.get(key).is_some()
     }
+
     pub fn push<'a>(
         &'a mut self,
         key: String,
@@ -56,11 +59,21 @@ impl<E: MultiMillerLoop> ProvingKeyCache<E> {
         self.cache.push(key.clone(), v);
         self.cache.get(&key).unwrap()
     }
-}
 
-lazy_static::lazy_static! {
-    pub static ref PKEY_CACHE: Mutex<ProvingKeyCache<Bn256>> =
-        Mutex::new(ProvingKeyCache::new(DEFAULT_CACHE_SIZE));
+    pub fn load_or_build_pkey<'a, C: Circuit<E::Scalar>>(
+        &'a mut self,
+        c: &C,
+        params: &Params<E::G1Affine>,
+        name: String,
+    ) -> &'a ProvingKey<E::G1Affine> {
+        load_or_build_pkey::<E, C>(
+            &params,
+            c,
+            &self.cache_dir.join(name.clone()),
+            &self.cache_dir.join(format!("{}.vkey.data", name.clone())),
+            self,
+        )
+    }
 }
 
 pub struct ParamsCache<E: MultiMillerLoop> {
@@ -254,60 +267,37 @@ pub trait Prover {
 }
 
 impl ProofPieceInfo {
-    pub fn exec_create_proof_with_params<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
+    pub fn save_proof_data<F: FieldExt>(
         &self,
-        c: &C,
-        instances: &Vec<Vec<E::Scalar>>,
-        params: &Params<E::G1Affine>,
-        pkey: &ProvingKey<E::G1Affine>,
+        instances: &Vec<Vec<F>>,
+        transcript: &Vec<u8>,
         cache_folder: &Path,
-        hashtype: HashType,
-        schema: OpenSchema,
-    ) -> Vec<u8> {
+    ) {
         // store instance in instance file
         store_instance(instances, &cache_folder.join(self.instance.as_str()));
-
-        let r = self.create_proof::<E, C>(c, instances, params, pkey, hashtype, schema);
-
         let cache_file = &cache_folder.join(&self.transcript);
         log::debug!("create transcripts file {:?}", cache_file);
         let mut fd = std::fs::File::create(&cache_file).unwrap();
-        fd.write_all(&r).unwrap();
-        r
+        fd.write_all(transcript).unwrap();
     }
 
     pub fn exec_create_proof<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
         &self,
         c: &C,
         instances: &Vec<Vec<E::Scalar>>,
-        cache_folder: &Path,
-        param_folder: &Path,
-        param_file: String,
         k: usize,
         pkey_cache: &mut ProvingKeyCache<E>,
         param_cache: &mut ParamsCache<E>,
         hashtype: HashType,
         schema: OpenSchema,
     ) -> Vec<u8> {
-        let params =
-            load_or_build_unsafe_params::<E>(k, &param_folder.join(&param_file), param_cache);
-        let pkey = load_or_build_pkey::<E, C>(
+        let params = param_cache.generate_k_params(k);
+        let pkey = pkey_cache.load_or_build_pkey::<C>(
+            c,
             &params,
-            c,
-            &param_folder.join(self.circuit.clone()),
-            &param_folder.join(format!("{}.vkey.data", self.circuit)),
-            pkey_cache,
+            self.circuit.clone(),
         );
-
-        self.exec_create_proof_with_params::<E, C>(
-            c,
-            instances,
-            params,
-            pkey,
-            cache_folder,
-            hashtype,
-            schema,
-        )
+        self.create_proof::<E, C>(c, instances, params, pkey, hashtype, schema)
     }
 }
 
@@ -485,12 +475,10 @@ impl Prover for ProofPieceInfo {
     ) {
         let params =
             load_or_build_unsafe_params::<E>(k, &param_folder.join(&param_file), param_cache);
-        let pkey = load_or_build_pkey::<E, C>(
+        let pkey = pkey_cache.load_or_build_pkey::<C>(
+            &c,
             &params,
-            c,
-            &param_folder.join(self.circuit.clone()),
-            &param_folder.join(format!("{}.vkey.data", self.circuit)),
-            pkey_cache,
+            self.circuit.clone()
         );
 
         let witness_file = &cache_folder.join(self.witness.clone());
@@ -622,6 +610,9 @@ fn batch_single_circuit() {
     use halo2_proofs::pairing::bn256::Bn256;
     use halo2_proofs::pairing::bn256::Fr;
     use std::path::Path;
+    use std::sync::Mutex;
+
+    const DEFAULT_CACHE_SIZE:usize = 5;
 
     env_logger::init();
 
@@ -629,6 +620,13 @@ fn batch_single_circuit() {
     pub static ref K_PARAMS_CACHE: Mutex<ParamsCache<Bn256>> =
         Mutex::new(ParamsCache::new(DEFAULT_CACHE_SIZE, PathBuf::from("./params")));
     }
+
+    lazy_static::lazy_static! {
+    pub static ref PKEY_CACHE: Mutex<ProvingKeyCache<Bn256>> =
+        Mutex::new(ProvingKeyCache::new(DEFAULT_CACHE_SIZE, PathBuf::from("./params")));
+    }
+
+
 
     const K: u32 = 22;
 
@@ -664,18 +662,17 @@ fn batch_single_circuit() {
             );
         }
 
-        circuit_info.exec_create_proof(
+        let transcripts = circuit_info.exec_create_proof(
             &circuit,
             &instances,
-            &cache_folder,
-            &params_folder,
-            param_file,
             K as usize,
             PKEY_CACHE.lock().as_mut().unwrap(),
             K_PARAMS_CACHE.lock().as_mut().unwrap(),
             HashType::Poseidon,
             OpenSchema::Shplonk,
         );
+
+        circuit_info.save_proof_data(&instances, &transcripts, cache_folder);
 
         proof_load_info.append_single_proof(circuit_info);
     }
@@ -687,21 +684,19 @@ fn batch_single_circuit() {
         };
 
         let instances = vec![vec![Fr::from(300u64)]];
-        let param_file = format!("K{}.params", K);
         let circuit_info = ProofPieceInfo::new("test_circuit".to_string(), 1, 1);
 
-        circuit_info.exec_create_proof(
+        let transcripts = circuit_info.exec_create_proof(
             &circuit,
             &instances,
-            &cache_folder,
-            &params_folder,
-            param_file,
             K as usize,
             PKEY_CACHE.lock().as_mut().unwrap(),
             K_PARAMS_CACHE.lock().as_mut().unwrap(),
             HashType::Poseidon,
             OpenSchema::Shplonk,
         );
+
+        circuit_info.save_proof_data(&instances, &transcripts, cache_folder);
 
         proof_load_info.append_single_proof(circuit_info);
     }

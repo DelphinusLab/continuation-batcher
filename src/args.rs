@@ -20,6 +20,12 @@ pub enum OpenSchema {
     Shplonk,
 }
 
+#[derive(clap::ArgEnum, Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
+pub enum Accumulator {
+    UseCommitment,
+    UseHash,
+}
+
 pub trait ArgBuilder {
     fn hashtype<'a>() -> Arg<'a> {
         arg!(-c --challenge<CHALLENGE_HASH_TYPE>... "HashType of Challenge")
@@ -32,6 +38,12 @@ pub trait ArgBuilder {
             .max_values(1)
             .value_parser(value_parser!(OpenSchema))
     }
+
+    fn accumulator<'a>() -> Arg<'a> {
+        arg!(-a --accumulator[ACCUMULATOR]... "Accumulator of the public instances (default is using commitment)")
+            .value_parser(value_parser!(Accumulator))
+    }
+
 
     fn parse_hashtype(matches: &ArgMatches) -> HashType {
         matches
@@ -46,6 +58,14 @@ pub trait ArgBuilder {
             .map_or(OpenSchema::Shplonk, |x| x.clone())
             .clone()
     }
+
+    fn parse_accumulator(matches: &ArgMatches) -> Accumulator {
+        matches
+            .get_one::<Accumulator>("accumulator")
+            .map_or(Accumulator::UseCommitment, |x| x.clone())
+            .clone()
+    }
+
 
     fn zkwasm_k_arg<'a>() -> Arg<'a> {
         arg!(

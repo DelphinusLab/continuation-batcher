@@ -1,6 +1,5 @@
 use crate::args::HashType;
 use crate::args::OpenSchema;
-use crate::proof::load_or_build_pkey;
 use crate::proof::ParamsCache;
 use crate::proof::ProofGenerationInfo;
 use crate::proof::ProofInfo;
@@ -18,7 +17,6 @@ use halo2aggregator_s::NativeScalarEccContext;
 use halo2aggregator_s::PairingChipOps;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
-use std::path::PathBuf;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct CommitmentName {
@@ -168,8 +166,6 @@ where
     pub fn batch_proof(
         &self,
         proof_piece: ProofPieceInfo,
-        param_folder: &PathBuf,
-        cache_folder: &PathBuf,
         params_cache: &mut ParamsCache<E>,
         pkey_cache: &mut ProvingKeyCache<E>,
         use_select_chip: bool,
@@ -179,6 +175,7 @@ where
     ) -> (
         ProofPieceInfo,
         Vec<<E as Engine>::Scalar>,
+        Vec<u8>,
         Vec<<E as Engine>::Scalar>,
         <E as Engine>::Scalar,
     ) {
@@ -253,7 +250,6 @@ where
         let target_params_verifier: ParamsVerifier<E> =
             target_params.verifier(max_target_instances).unwrap();
 
-        let params = params_cache.generate_k_params(self.batch_k);
         //let params_verifier: ParamsVerifier<E> = params.verifier(max_target_instances).unwrap();
 
         // circuit multi check
@@ -271,25 +267,20 @@ where
         );
 
         let agg_circuit = circuit.circuit_with_select_chip.unwrap();
-        let pkey = load_or_build_pkey::<E, _>(
-            &params,
-            &agg_circuit,
-            &param_folder.join(proof_piece.circuit.clone()),
-            &param_folder.join(format!("{}.vkey.data", proof_piece.circuit.clone())),
-            pkey_cache,
-        );
+        end_timer!(timer);
 
-        proof_piece.exec_create_proof_with_params::<E, _>(
+        let timer = start_timer!(|| "create aggregate proof");
+        let transcripts = proof_piece.exec_create_proof::<E, _>(
             &agg_circuit,
             &vec![instances.clone()],
-            params,
-            pkey,
-            cache_folder,
+            self.batch_k,
+            pkey_cache,
+            params_cache,
             hashtype,
             open_schema,
         );
-
         end_timer!(timer);
-        (proof_piece, instances, shadow_instance, hash)
+
+        (proof_piece, instances, transcripts, shadow_instance, hash)
     }
 }

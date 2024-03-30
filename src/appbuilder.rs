@@ -4,9 +4,9 @@ use crate::exec::exec_batch_proofs;
 use crate::exec::exec_solidity_gen;
 use crate::proof::load_or_build_unsafe_params;
 use crate::proof::ParamsCache;
+use crate::proof::ProvingKeyCache;
 use crate::proof::ProofGenerationInfo;
 use crate::proof::ProofInfo;
-use crate::proof::PKEY_CACHE;
 use ark_std::end_timer;
 use ark_std::start_timer;
 use clap::App;
@@ -60,6 +60,7 @@ pub trait AppBuilder: CommandBuilder {
             .expect("param dir is not provided");
 
         let params_cache = Mutex::new(ParamsCache::new(5, param_dir.clone()));
+        let pkey_cache = Mutex::<ProvingKeyCache<Bn256>>::new(ProvingKeyCache::new(5, param_dir.clone()));
 
         fs::create_dir_all(&output_dir).unwrap();
         println!("output dir: {:?}", output_dir);
@@ -77,6 +78,7 @@ pub trait AppBuilder: CommandBuilder {
                 let k: u32 = Self::parse_zkwasm_k_arg(&sub_matches).unwrap();
                 let hash = Self::parse_hashtype(&sub_matches);
                 let open_schema = Self::parse_openschema(&sub_matches);
+                let accumulator = Self::parse_accumulator(&sub_matches);
                 let config_files = Self::parse_proof_load_info_arg(sub_matches);
                 let batch_script_files = Self::parse_commits_equiv_info_arg(sub_matches);
                 let cont = Self::parse_cont_arg(sub_matches);
@@ -91,7 +93,7 @@ pub trait AppBuilder: CommandBuilder {
                 debug!("commits equivalent {:?}", batch_script_info);
                 exec_batch_proofs(
                     params_cache.lock().as_mut().unwrap(),
-                    PKEY_CACHE.lock().as_mut().unwrap(),
+                    pkey_cache.lock().as_mut().unwrap(),
                     proof_name,
                     output_dir,
                     param_dir,
@@ -102,6 +104,7 @@ pub trait AppBuilder: CommandBuilder {
                     cont,
                     true,
                     open_schema,
+                    accumulator,
                 )
             }
 
