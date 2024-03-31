@@ -419,12 +419,15 @@ pub fn exec_solidity_gen<D: Digest + Clone>(
         params_cache,
     );
 
-    let proof_params_verifier: ParamsVerifier<Bn256> = proof_params.verifier(1).unwrap();
 
     println!("nproof {}", n_proofs);
 
     let proof: Vec<ProofInfo<Bn256>> =
         ProofInfo::load_proof(&output_dir, &param_dir, aggregate_proof_info);
+
+    let instance_size = proof[0].instances[0].len();
+
+    let proof_params_verifier: ParamsVerifier<Bn256> = proof_params.verifier(instance_size).unwrap();
 
     solidity_render::<_, D>(
         &(sol_path_in.to_str().unwrap().to_owned() + "/*"),

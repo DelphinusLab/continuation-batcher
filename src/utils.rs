@@ -64,7 +64,7 @@ fn merkle_test() {
     for i in 0..1024u32 {
         hashes.push([(i % 256) as u8; 32]);
     }
-    let filepath = PathBuf::from("test_merkle..data");
+    let filepath = PathBuf::from("output/test_merkle.data");
     construct_merkle_records(&filepath, &mut hashes, 10);
     let proofs = construct_merkle_proof(&filepath, 12, 10);
     println!("proofs is {:?}", proofs);
