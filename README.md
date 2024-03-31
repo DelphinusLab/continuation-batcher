@@ -25,7 +25,7 @@ To describe a proof, we need to specify (file name)
 ```
 type ProofPieceInfo = {
   circuit: filename,
-  instance_size: int, 
+  instance_size: int,
   witness: filename,
   instance: filename,
   transcript: filename
@@ -36,13 +36,22 @@ To batch a group of proofs together, the proofs themself needs to be generated u
 
 ```
 type ProofGenerationInfo {
-  proofs: ProofPieceInfo
+  proofs: Vec<ProofPieceInfo>
   k: int
   param: filename,
   name: string,
   hashtype: Poseidon | Sha256 | Keccak
 }
 ```
+
+This tool requires the target proofs (the proofs we want to batch) are all uses the **Poseidon** as hash functions for challenge generation. If the batch circuit is used to generate intermediate proofs for another batching circuit, then we need to specifiy the batch circuit to use the **Poseidon** hash for challenge generation as well. If the batch circuit is used to generate a final proof for verification on chain, then you should specify the challenge hash to be either Keccak or Poseidon.
+
+## Handling the instances of target proofs
+Suppose that we would like to batch our target proofs **T_i**, the batching circuit is **C_b**, the verifier of **C_b** is **V_b** and our batched proof is called proof **B**. If is important to understand the instance structure of **C_b**.
+
+In this tool, we support two accumulator mode to pass the information of the instance of **T_i** to the instance of **C_b**, namely in **HashInstance** mode and **CommitInstance** mode.
+
+![Alt text](./images/prove-agg-instance-mode.png?raw=true "Two modes to carry the instances of target proofs")
 
 ## Description the batch schema when connecting proofs
 When connecting proofs (mainly plonkish KZG backend), we need to provide two groups of attributes that decides
