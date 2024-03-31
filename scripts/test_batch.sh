@@ -25,9 +25,9 @@ cargo build
     batch \
     --challenge sha \
     -k 21 \
-    --info output/test1.loadinfo.json \
+    --info output/test_circuit.loadinfo.json \
     --name singlebatch \
-    --commits sample/batchinfo1.json
+    --commits sample/batchinfo_empty.json
 
 echo ""
 echo "batch test END."

@@ -6,17 +6,114 @@ Delphinus-zkWASM supports a restricted continuation protocol by providing the co
 
 The basic idea is to put context in a specific column so that in the proof the commitment of that column is stored in the proof transcript. When the batcher batchs a continuation flow of proofs, it checks that the input context commitment is equal to the output context commitment of the previous context.
 
-# Pipeline
+# Simple Example
 
-1. Describe circuits:
-2. Generate the witnesses of circuits
-3. Generate the proofs from the witnesses of various circuits
-4. Define your batching policy via the batch DSL. 
-5. Execute the batching DSL and generate the batching circuit
-6. Generate the final solidity for your batching circuit
+## Generate batch proof from ProofLoadInfos
+We support two modes of batching proofs. The rollup continuation mode and the flat mode. In both mode we have two options to handle the public instance of the target proofs when batching.
+1. The commitment encode: The commitment of the target instance becomes the public instance of the batch proof.
+2. The hash encode: The hash of the target instance become the public instance of the batch proof.
+
+Meanwhile, we provide two openschema when batching proofs, the Shplonk and GWC and three different challenge computation methods: sha, keccak and poseidon. (If the batched proofs are suppose to be the target proofs of another round of batching, then the challenge method needs to be poseidon.)
+
+## General Command Usage
+
+The general usage is as follows:
+
+```
+cargo run --release -- --params [PARAMS_DIR] --output [OUTPUT_DIR] [SUBCOMMAND] --[ARGS]
+```
+
+where `[SUBCOMMAND]` is the command to execute, and `[ARGS]` are the args specific to that command.
+
+The `--output` arg specifies the directory to write all the output files to and is required for all commands.
+The `--params` arg specifies the directory to write all the params files to and is required for all commands.
+
+## Batching Sub Command
+
+```
+USAGE:
+    circuit-batcher batch [OPTIONS] --challenge <CHALLENGE_HASH_TYPE>... --openschema <OPEN_SCHEMA>...
+
+OPTIONS:
+    -a, --accumulator [<ACCUMULATOR>...]
+            Accumulator of the public instances (default is using commitment) [possible values:
+            use-commitment, use-hash]
+
+    -c, --challenge <CHALLENGE_HASH_TYPE>...
+            HashType of Challenge [possible values: poseidon, sha, keccak]
+
+        --commits <commits>...
+            Path of the batch config files
+
+        --cont [<CONT>...]
+            Is continuation's loadinfo.
+
+    -h, --help
+            Print help information
+
+        --info <info>...
+            Path of the batch config files
+
+    -k [<K>...]
+            Circuit Size K
+
+    -n, --name [<PROOF_NAME>...]
+            name of this task.
+
+    -s, --openschema <OPEN_SCHEMA>...
+            Open Schema [possible values: gwc, shplonk]
+```
+
+**Example:**
+
+```
+#! /bin/bash
+
+params_dir="./params"
+output_dir="./output"
+
+if [ ! -d "$params_dir" ]; then
+    # If it doesn't exist, create it
+    mkdir -p "$params_dir"
+else
+    echo "./params exists"
+fi
+
+if [ ! -d "$output_dir" ]; then
+    # If it doesn't exist, create it
+    mkdir -p "$output_dir"
+else
+    echo "./output exists"
+fi
+
+# Get the resource ready for tests
+cargo test --release --features cuda
+
+# verify generated proof for test circuits
+cargo run --release --features cuda -- --param ./params --output ./output verify --challenge poseidon --info output/test_circuit.loadinfo.json
+
+# batch test proofs
+cargo run --features cuda -- --param ./params --output ./output batch -k 22 --openschema shplonk --challenge keccak --info output/test_circuit.loadinfo.json --name batchsample --commits sample/batchinfo_empty.json
+
+
+# verify generated proof for test circuits
+cargo run --release --features cuda -- --param ./params --output ./output verify --challenge keccak --info output/batchsample.loadinfo.json
+
+# generate solidity
+cargo run --release -- --param ./params --output ./output solidity -k 22 --challenge keccak --info output/batchsample.loadinfo.json
+```
+
+
+# Tool Details
+
+1. Describe circuits.
+2. Generate the proofs of target circuits.
+3. Define your batching policy via the batch DSL.
+4. Execute the batching DSL and generate the batching circuit.
+5. Generate the final solidity for your batching circuit.
 
 ## Proof Description
-To describe a proof, we need to specify (file name)
+To describe a proof, we need to specify (in file name)
 1. The circuit this proof related to.
 2. The instance size of the proof.
 3. The witness data if the proof have not been generated yet.
@@ -67,7 +164,7 @@ hashtype: Poseidon | Sha256 | Keccak
 
 2. The ecc circuit has two options. One is use the ecc circuit with lookup features. This circuit can do ecc operation with minimized rows thus can be used to batch a relatively big amount of target circuits. The other option is to use a concise ecc circuit. This circuit do not use the lookup feature thus generate a lot rows when doing ecc operation. This ecc circuit is usually used at the last around of batch as the solidity for this circuit is much more gas effective.
 
-3. The proof relation circuit ca be described in a json with commitment arithments. The commitment arithments has four categories: equivalents, expose and absorb.
+3. The proof relation circuit can be described in a json with commitment arithments. The commitment arithments has three categories: equivalents, expose and absorb.
 
 ```
 {
@@ -82,66 +179,4 @@ hashtype: Poseidon | Sha256 | Keccak
     ],
     "absorb": []
 }
-```
-
-
-## General Command Usage
-
-The general usage is as follows:
-
-```
-cargo run --release -- --output [OUTPUT_DIR] [SUBCOMMAND] --[ARGS]
-```
-
-where `[SUBCOMMAND]` is the command to execute, and `[ARGS]` are the args specific to that command.
-
-The `--output` arg specifies the directory to write all the output files to and is required for all commands.
-
-## Generate batch proof from ProofLoadInfos
-We support two modes of batching proofs. The rollup continuation mode and the flat mode. In both mode we have two options to handle the public instance of the target proofs when batching.
-1. The commitment encode: The commitment of the target instance becomes the public instance of the batch proof.
-2. The hash encode: The hash of the target instance become the public instance of the batch proof.
-
-Meanwhile, we provide two openschema when batching proofs, the Shplonk and GWC and three different challenge computation methods: sha, keccak and poseidon. (If the batched proofs are suppose to be the target proofs of another round of batching, then the challenge method needs to be poseidon.)
-
-```
-USAGE:
-    circuit-batcher batch [OPTIONS] --challenge <CHALLENGE_HASH_TYPE>... --openschema <OPEN_SCHEMA>...
-
-OPTIONS:
-    -c, --challenge <CHALLENGE_HASH_TYPE>...
-            HashType of Challenge [possible values: poseidon, sha, keccak]
-
-        --commits <commits>...
-            Path of the batch config files
-
-        --cont [<CONT>...]
-            Is continuation's loadinfo.
-
-    -h, --help
-            Print help information
-
-        --info <info>...
-            Path of the batch config files
-
-    -k [<K>...]
-            Circuit Size K
-
-    -n, --name [<PROOF_NAME>...]
-            name of this task.
-
-    -s, --openschema <OPEN_SCHEMA>...
-            Open Schema [possible values: gwc, shplonk]
-```
-
-Example:
-
-```
-cargo run --release --  --param ./params --output ./output batch -k 23 --openschema shplonk --challenge keccak --info output/batchsample.finals.loadinfo.json --name lastbatch --commits ~/continuation-batcher/sample/batchinfo_empty.json
-```
-
-## Verify batch proof from ProofLoadInfos
-
-```
-cargo run --release -- --output ./sample verify --challenge poseidon --info sample/batchsample.loadinfo.json
 ```
