@@ -1,10 +1,12 @@
-# This is a standalone proof compress & batch tool for zkWASM guest and host circuits.
+# This is a standalone proof compress & batch tool for KZG based ZK proofs.
 
 ## Motivation
 
-Delphinus-zkWASM supports a restricted continuation protocol by providing the context read(write) host APIs so that the execution of a large trace can be splitted into multiple code traces and the following trace can access the previous stack and memory. The whole process works similar to a context store/restore in a standard operation system.
+Delphinus-zkWASM supports a continuation protocol by providing columns of witness that representes the vm state. So that the execution of a large trace can be splitted into multiple code traces and the following trace can access the previous stack and memory. The whole process works similar to a context store/restore in a standard operation system. The basic idea is to track the commitment of the context column stored in the proof transcript and then provide a configurable circuit component int the proof batcher to resoning about different commitments between proofs. In the case of ZKWASM continution implementation, when the batcher batchs a continuation flow of proofs, it checks that the input context commitment is equal to the output context commitment of the previous context.
 
-The basic idea is to put context in a specific column so that in the proof the commitment of that column is stored in the proof transcript. When the batcher batchs a continuation flow of proofs, it checks that the input context commitment is equal to the output context commitment of the previous context.
+Although the tool is initially developped for a specific ZKVM (ZKWASM), it can be used to batch all KZG based proofs and the DSL used to resoning about the commitments and instances still works. Also it can be used to support different continuation schemas (eg. flat continuation, rollup continuation) and rollup schemas (eg. layered batching, accululator batching).
+
+At the end, we provide a solidity generation tool for your fianl round of bathching script so that the proof you generated after execute the batching DSL can be verified on chain and we also provide demo tracking contract with which you can check whether a single proof have been involved in a large batched proof (inclusive proof of the batched proof).
 
 # Simple Example
 
@@ -166,12 +168,13 @@ hashtype: Poseidon | Sha256 | Keccak
 
 3. The proof relation circuit can be described in a json with commitment arithments. The commitment arithments has three categories: equivalents, expose and absorb.
 
+**Example: A simple proof relation sheet with commitment arithments**
 ```
 {
     "equivalents": [
         {
             "source": {"name": "circuit_1", "proof_idx": 0, "column_name": "A"},
-            "target": {"name": "circuit_2", "proof_idx": 0, "column_name": "A"}
+            "target": {"name": "circuit_2", "proof_idx": 0, "column_name": "B"}
         }
     ],
     "expose": [
@@ -180,3 +183,32 @@ hashtype: Poseidon | Sha256 | Keccak
     "absorb": []
 }
 ```
+
+There are a few scenarios we need to specify the arithments between commitments of different proofs.
+
+* Suppose that we have two circuits, **circuit_1** and **circuit_2**, they both have instances and witnesses namely **instances_1**, **instances_2**, **witness_1**, **witness_2**. It follows that, after batching the proofs, we lose the information of **witness_1** and **witness_2**. Thus to extablish the connection between **witness_1** and **witness_2** we provide a configurable components in the batching circuit that allows user to specify equivalents between columns of **witness_1** and **witness_2**. when we put the follwing configuration into the proof relation sheet
+```
+{
+    "equivalents": [
+        {
+            "source": {"name": "circuit_1", "proof_idx": 0, "column_name": "A"},
+            "target": {"name": "circuit_2", "proof_idx": 0, "column_name": "B"}
+        }
+    ],
+}
+```
+the batch will ensure the witness of column **A** of the first proof of **circuit_1** will equal to the witness of column **B** of the first proof of **circuit_2**.
+
+* Suppose that we have two groups of proofs that batched into **batch_proof_1** and **batch_proof_2** where **batch_proof_1** contains **proofA** and **batch_proof_2** contains **proofB**. It follows that we can not establish connections between the witness of **proofA** and **proofB** when batching **batch_proof_1** and **batching_proof_2** because **batch_proof_1** lost the track of witness of **proofA** and  **batch_proof_2** lost the track of witness of **proofB**. Thus to solve this problem, we provide the **expose** semantics when batching **batch_proof_1** and **batch_proof_2**. For example, if we want to constraint that witness column **A** of **proofA* is equal to the witness column **B** of **proofB**, we can first expose **A** of **proofA** in the proof relation sheet of **batch_proof_1** as follows
+```
+{
+    "expose": [
+        {
+            {"name": "circuit_1", "proof_idx": 0, "column_name": "A"},
+        }
+    ],
+}
+```
+and then expose **B** in the proof relation sheet of **batch_proof_2**. The expose of witness will append three new instances to the instances of the batched proof which represents the commitment of the witness.
+
+* Suppose that we have a batched proof **batch_proof_1** which contains **proof_1** and another proof **proof_2**. Then it follows that if we would like to establish a connection betweeen witness **A** of **proof_1** and witness **B** of **proof_2**, we need not only expose **A** in the proof relation sheet of **batch_proof_1** but also provide a semantic for the batcher to ensure that the exposed commitment of **A** is equal to the commitment of **B** in **proof_2**. Since **proof_2** has not been batched yet, neither **equivalents** or **expose** will work. Thus, we need a new semantic called **absorb** here.
