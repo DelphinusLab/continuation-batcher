@@ -265,21 +265,40 @@ where
             all_proofs,
             config,
         );
-
-        let agg_circuit = circuit.circuit_with_select_chip.unwrap();
         end_timer!(timer);
 
-        let timer = start_timer!(|| "create aggregate proof");
-        let transcripts = proof_piece.exec_create_proof::<E, _>(
-            &agg_circuit,
-            &vec![instances.clone()],
-            self.batch_k,
-            pkey_cache,
-            params_cache,
-            hashtype,
-            open_schema,
-        );
-        end_timer!(timer);
+        let transcripts = match use_select_chip {
+            true => {
+                let agg_circuit_with_select_chip = circuit.circuit_with_select_chip.unwrap();
+                let timer = start_timer!(|| "create aggregate proof");
+                let transcripts = proof_piece.exec_create_proof::<E, _>(
+                    &agg_circuit_with_select_chip,
+                    &vec![instances.clone()],
+                    self.batch_k,
+                    pkey_cache,
+                    params_cache,
+                    hashtype,
+                    open_schema,
+                );
+                end_timer!(timer);
+                transcripts
+            },
+            false => {
+                let agg_circuit_without_select_chip = circuit.circuit_without_select_chip.unwrap();
+                let timer = start_timer!(|| "create aggregate proof");
+                let transcripts = proof_piece.exec_create_proof::<E, _>(
+                    &agg_circuit_without_select_chip,
+                    &vec![instances.clone()],
+                    self.batch_k,
+                    pkey_cache,
+                    params_cache,
+                    hashtype,
+                    open_schema,
+                );
+                end_timer!(timer);
+                transcripts
+            }
+        };
 
         (proof_piece, instances, transcripts, shadow_instance, hash)
     }
