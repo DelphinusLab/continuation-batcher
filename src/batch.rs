@@ -9,7 +9,7 @@ use ark_std::end_timer;
 use ark_std::start_timer;
 use halo2_proofs::arithmetic::Engine;
 use halo2_proofs::arithmetic::MultiMillerLoop;
-use halo2_proofs::poly::commitment::ParamsVerifier;
+use halo2_proofs::poly::commitment::{Params, ParamsVerifier};
 use halo2aggregator_s::circuit_verifier::build_aggregate_verify_circuit;
 use halo2aggregator_s::circuit_verifier::G2AffineBaseHelper;
 use halo2aggregator_s::circuits::utils::{AggregatorConfig, TranscriptHash};
@@ -17,6 +17,7 @@ use halo2aggregator_s::NativeScalarEccContext;
 use halo2aggregator_s::PairingChipOps;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
+use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuitOption;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct CommitmentName {
@@ -163,19 +164,15 @@ where
         }
     }
 
-    pub fn batch_proof(
+    pub fn build_aggregate_circuit(
         &self,
-        proof_piece: ProofPieceInfo,
-        params_cache: &mut ParamsCache<E>,
-        pkey_cache: &mut ProvingKeyCache<E>,
-        use_select_chip: bool,
-        hashtype: HashType,
+        params: &Params<E::G1Affine>,
         last_agg_info: Option<Vec<(usize, usize, E::Scalar)>>, // (proof_index, instance_col, hash)
+        use_select_chip: bool,
         open_schema: OpenSchema,
     ) -> (
-        ProofPieceInfo,
+        AggregatorCircuitOption<<E as Engine>::G1Affine>,
         Vec<<E as Engine>::Scalar>,
-        Vec<u8>,
         Vec<<E as Engine>::Scalar>,
         <E as Engine>::Scalar,
     ) {
@@ -183,12 +180,10 @@ where
         let mut vkeys = vec![];
         let mut instances = vec![];
 
-        for proofinfo in self.proofs.iter() {
-            instances.push(&proofinfo.instances);
-        }
-
-        for proofinfo in self.proofs.iter() {
-            all_proofs.push(proofinfo.transcripts.clone());
+        for (_, proof) in self.proofs.iter().enumerate() {
+            all_proofs.push((&proof.transcripts).clone());
+            vkeys.push(&proof.vkey);
+            instances.push(&proof.instances);
         }
 
         let mut target_proof_max_instance = instances
@@ -205,10 +200,6 @@ where
         last_agg_info.clone().map(|x| {
             target_proof_max_instance[x[0].0] = vec![1];
         });
-
-        for proofinfo in self.proofs.iter() {
-            vkeys.push(&proofinfo.vkey);
-        }
 
         println!("preparing batch circuit (is final {}):", self.is_final);
         for vkey in vkeys.iter() {
@@ -246,9 +237,8 @@ where
             use_select_chip,
         };
 
-        let target_params = params_cache.generate_k_params(self.target_k).clone();
         let target_params_verifier: ParamsVerifier<E> =
-            target_params.verifier(max_target_instances).unwrap();
+            params.verifier(max_target_instances).unwrap();
 
         //let params_verifier: ParamsVerifier<E> = params.verifier(max_target_instances).unwrap();
 
@@ -266,6 +256,29 @@ where
             config,
         );
         end_timer!(timer);
+
+        (circuit, instances, shadow_instance, hash)
+    }
+
+    pub fn batch_proof(
+        &self,
+        proof_piece: ProofPieceInfo,
+        params_cache: &mut ParamsCache<E>,
+        pkey_cache: &mut ProvingKeyCache<E>,
+        use_select_chip: bool,
+        hashtype: HashType,
+        last_agg_info: Option<Vec<(usize, usize, E::Scalar)>>, // (proof_index, instance_col, hash)
+        open_schema: OpenSchema,
+    ) -> (
+        ProofPieceInfo,
+        Vec<<E as Engine>::Scalar>,
+        Vec<u8>,
+        Vec<<E as Engine>::Scalar>,
+        <E as Engine>::Scalar,
+    ) {
+        let target_params = params_cache.generate_k_params(self.target_k).clone();
+        let (circuit, instances, shadow_instance, hash) =
+            self.build_aggregate_circuit(target_params, last_agg_info.clone(), use_select_chip, open_schema);
 
         let transcripts = match use_select_chip {
             true => {
