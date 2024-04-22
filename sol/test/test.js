@@ -107,6 +107,7 @@ contract("ProofTracker", () => {
 
     console.log("check r2 proof");
     gas = await tracker.check_verified_proof.estimateGas(
+      [],
       round2_shadow_instance,
       [],
       [round1_instance, round1_instance, round1_instance]
@@ -117,8 +118,9 @@ contract("ProofTracker", () => {
 
     console.log("check single proof");
     gas = await tracker.check_verified_proof.estimateGas(
+      [0],
       zkwasm_shadow_instance,
-      [[round1_instance[0], round1_instance[0], round1_instance[0]]],
+      [[round1_instance[0], round1_instance[0], round1_instance[0], round2_shadow_instance[0]]],
       [single_proof_instance]
     );
 

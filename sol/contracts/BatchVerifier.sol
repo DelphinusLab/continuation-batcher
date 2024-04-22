@@ -59,6 +59,7 @@ contract ProofTracker {
 
     /* first round agg instances = hash (target_proof instances + shadow_instances) */
     function check_verified_proof(
+        uint256[] calldata membership_proof, /* one element index */
         uint256[] calldata verify_instance,
         uint256[][] calldata sibling_instances,
         uint256[][] calldata target_instances
@@ -78,25 +79,13 @@ contract ProofTracker {
         uint256 target_instance = AggregatorLib.hash_instances(buf, len);
 
         for (uint256 i = 0; i < sibling_instances.length; i++) {
-
-            uint256 contains = 0;
-
-            for (uint256 j = 0; j < sibling_instances[i].length; j++) {
-                if (target_instance == sibling_instances[i][j]) {
-                    contains = 1;
-                }
-            }
-
-            require(contains == 1, "sibling instances does not match");
+            /* check that sibling_instances contains our target instance */
+	    require(sibling_instances[i][membership_proof[i]] == target_instance, "membership proof of sibling instances fail");
 
 	    /* calculated the target instance for the next round */
-            len = 0;
-            for (uint256 j = 0; j < sibling_instances[i].length; j++) {
-                buf[len++] = sibling_instances[i][j];
-            }
-            buf[len++] = _round1_verifier_instances[i];
-
-            target_instance = AggregatorLib.hash_instances(buf, len);
+            len = sibling_instances[i].length;
+            require(sibling_instances[i][len-1] == _round1_verifier_instances[i], "round verifier instance does not match");
+            target_instance = AggregatorLib.hash_instances(sibling_instances[i], len);
 
 	}
 
