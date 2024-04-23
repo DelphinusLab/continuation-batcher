@@ -20,19 +20,10 @@ contract ProofTracker {
 
     mapping(uint256 => bool) private _tracked_instances;
 
-    uint256[] private _round1_verifier_instances;
-
     address private _owner;
 
-    constructor(uint256[] memory round1_verifier_instances) {
-        _round1_verifier_instances = round1_verifier_instances;
+    constructor() {
         _owner = msg.sender;
-    }
-
-    function set_round1_verifier_instances(
-        uint256[] calldata verify_instance
-    ) public {
-	_round1_verifier_instances = verify_instance;
     }
 
     function set_verifier(address vaddr) public {
@@ -84,7 +75,6 @@ contract ProofTracker {
 
 	    /* calculated the target instance for the next round */
             len = sibling_instances[i].length;
-            require(sibling_instances[i][len-1] == _round1_verifier_instances[i], "round verifier instance does not match");
             target_instance = AggregatorLib.hash_instances(sibling_instances[i], len);
 
 	}

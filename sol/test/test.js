@@ -73,9 +73,6 @@ contract("ProofTracker", () => {
       __dirname + "/../../sample/result/r1.final.0.shadowinstance.data"
     )
 
-    console.log("set round2 shadow instance", c);
-    c = await tracker.set_round1_verifier_instances(round2_shadow_instance);
-
     let gas = await verifier.verify.estimateGas(
       proof,
       verify_shadow_instance,
@@ -83,9 +80,8 @@ contract("ProofTracker", () => {
       [round2_instance]
     );
 
-    console.log("gas cost", gas);
-
     console.log("register proofs of via final proof");
+    console.log("estimated gas cost", gas);
 
     gas = await tracker.register_proofs.estimateGas(
       proof,
@@ -94,7 +90,7 @@ contract("ProofTracker", () => {
       [round2_instance]
     );
 
-    console.log("gas cost", gas);
+    console.log("final gas cost", gas);
 
     const xy = await tracker.register_proofs(
       proof,
