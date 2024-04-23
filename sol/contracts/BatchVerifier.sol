@@ -50,7 +50,7 @@ contract ProofTracker {
 
     /* first round agg instances = hash (target_proof instances + shadow_instances) */
     function check_verified_proof(
-        uint256[] calldata membership_proof, /* one element index */
+        uint256[] calldata membership_proof_index, /* one element index */
         uint256[] calldata verify_instance,
         uint256[][] calldata sibling_instances,
         uint256[][] calldata target_instances
@@ -71,7 +71,7 @@ contract ProofTracker {
 
         for (uint256 i = 0; i < sibling_instances.length; i++) {
             /* check that sibling_instances contains our target instance */
-	    require(sibling_instances[i][membership_proof[i]] == target_instance, "membership proof of sibling instances fail");
+	    require(sibling_instances[i][membership_proof_index[i]] == target_instance, "membership proof of sibling instances fail");
 
 	    /* calculated the target instance for the next round */
             len = sibling_instances[i].length;
