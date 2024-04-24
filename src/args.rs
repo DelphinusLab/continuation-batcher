@@ -44,7 +44,6 @@ pub trait ArgBuilder {
             .value_parser(value_parser!(Accumulator))
     }
 
-
     fn parse_hashtype(matches: &ArgMatches) -> HashType {
         matches
             .get_one::<HashType>("challenge")
@@ -65,7 +64,6 @@ pub trait ArgBuilder {
             .map_or(Accumulator::UseCommitment, |x| x.clone())
             .clone()
     }
-
 
     fn zkwasm_k_arg<'a>() -> Arg<'a> {
         arg!(

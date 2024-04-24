@@ -4,9 +4,9 @@ use crate::exec::exec_batch_proofs;
 use crate::exec::exec_solidity_gen;
 use crate::proof::load_or_build_unsafe_params;
 use crate::proof::ParamsCache;
-use crate::proof::ProvingKeyCache;
 use crate::proof::ProofGenerationInfo;
 use crate::proof::ProofInfo;
+use crate::proof::ProvingKeyCache;
 use ark_std::end_timer;
 use ark_std::start_timer;
 use clap::App;
@@ -60,7 +60,8 @@ pub trait AppBuilder: CommandBuilder {
             .expect("param dir is not provided");
 
         let params_cache = Mutex::new(ParamsCache::new(5, param_dir.clone()));
-        let pkey_cache = Mutex::<ProvingKeyCache<Bn256>>::new(ProvingKeyCache::new(5, param_dir.clone()));
+        let pkey_cache =
+            Mutex::<ProvingKeyCache<Bn256>>::new(ProvingKeyCache::new(5, param_dir.clone()));
 
         fs::create_dir_all(&output_dir).unwrap();
         println!("output dir: {:?}", output_dir);

@@ -1,7 +1,7 @@
 use crate::args::HashType;
 use crate::args::OpenSchema;
-use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::arithmetic::FieldExt;
+use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::dev::MockProver;
 use halo2_proofs::helpers::Serializable;
 use halo2_proofs::plonk::create_witness;
@@ -336,11 +336,7 @@ impl ProofPieceInfo {
         schema: OpenSchema,
     ) -> Vec<u8> {
         let params = param_cache.generate_k_params(k);
-        let pkey = pkey_cache.load_or_build_pkey::<C>(
-            c,
-            &params,
-            self.circuit.clone(),
-        );
+        let pkey = pkey_cache.load_or_build_pkey::<C>(c, &params, self.circuit.clone());
         self.create_proof::<E, C>(c, instances, params, pkey, hashtype, schema)
     }
 }
@@ -519,11 +515,7 @@ impl Prover for ProofPieceInfo {
     ) {
         let params =
             load_or_build_unsafe_params::<E>(k, &param_folder.join(&param_file), param_cache);
-        let pkey = pkey_cache.load_or_build_pkey::<C>(
-            &c,
-            &params,
-            self.circuit.clone()
-        );
+        let pkey = pkey_cache.load_or_build_pkey::<C>(&c, &params, self.circuit.clone());
 
         let witness_file = &cache_folder.join(self.witness.clone());
 
@@ -656,7 +648,7 @@ fn batch_single_circuit() {
     use std::path::Path;
     use std::sync::Mutex;
 
-    const DEFAULT_CACHE_SIZE:usize = 5;
+    const DEFAULT_CACHE_SIZE: usize = 5;
 
     env_logger::init();
 
@@ -669,8 +661,6 @@ fn batch_single_circuit() {
     pub static ref PKEY_CACHE: Mutex<ProvingKeyCache<Bn256>> =
         Mutex::new(ProvingKeyCache::new(DEFAULT_CACHE_SIZE, PathBuf::from("./params")));
     }
-
-
 
     const K: u32 = 22;
 

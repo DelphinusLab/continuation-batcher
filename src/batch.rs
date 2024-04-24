@@ -11,13 +11,13 @@ use halo2_proofs::arithmetic::Engine;
 use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::poly::commitment::{Params, ParamsVerifier};
 use halo2aggregator_s::circuit_verifier::build_aggregate_verify_circuit;
+use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuitOption;
 use halo2aggregator_s::circuit_verifier::G2AffineBaseHelper;
 use halo2aggregator_s::circuits::utils::{AggregatorConfig, TranscriptHash};
 use halo2aggregator_s::NativeScalarEccContext;
 use halo2aggregator_s::PairingChipOps;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
-use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuitOption;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct CommitmentName {
@@ -88,7 +88,8 @@ where
             self.expose.len() * 3 + 1 + self.proofs.len() * 3
         }
     }
-    fn get_commitment_index(
+
+    pub fn get_commitment_index(
         &self,
         proofsinfo: &Vec<ProofGenerationInfo>,
         cn: &CommitmentName,
@@ -170,6 +171,7 @@ where
         last_agg_info: Option<Vec<(usize, usize, E::Scalar)>>, // (proof_index, instance_col, hash)
         use_select_chip: bool,
         open_schema: OpenSchema,
+        absorb_instance: Vec<(usize, usize, usize, usize)>,
     ) -> (
         AggregatorCircuitOption<<E as Engine>::G1Affine>,
         Vec<<E as Engine>::Scalar>,
@@ -233,7 +235,7 @@ where
             prev_aggregator_skip_instance: last_agg_info
                 .as_ref()
                 .map_or_else(|| vec![], |x| vec![(x[0].0, 1)]),
-            absorb_instance: last_agg_info.map_or_else(|| vec![], |x| vec![(0, 0, x[0].0, 1)]),
+            absorb_instance: last_agg_info.map_or_else(|| vec![], |_| absorb_instance),
             use_select_chip,
         };
 
@@ -269,6 +271,7 @@ where
         hashtype: HashType,
         last_agg_info: Option<Vec<(usize, usize, E::Scalar)>>, // (proof_index, instance_col, hash)
         open_schema: OpenSchema,
+        absorb_instance: Vec<(usize, usize, usize, usize)>,
     ) -> (
         ProofPieceInfo,
         Vec<<E as Engine>::Scalar>,
@@ -277,8 +280,13 @@ where
         <E as Engine>::Scalar,
     ) {
         let target_params = params_cache.generate_k_params(self.target_k).clone();
-        let (circuit, instances, shadow_instance, hash) =
-            self.build_aggregate_circuit(target_params, last_agg_info.clone(), use_select_chip, open_schema);
+        let (circuit, instances, shadow_instance, hash) = self.build_aggregate_circuit(
+            target_params,
+            last_agg_info.clone(),
+            use_select_chip,
+            open_schema,
+            absorb_instance,
+        );
 
         let transcripts = match use_select_chip {
             true => {
@@ -295,7 +303,7 @@ where
                 );
                 end_timer!(timer);
                 transcripts
-            },
+            }
             false => {
                 let agg_circuit_without_select_chip = circuit.circuit_without_select_chip.unwrap();
                 let timer = start_timer!(|| "create aggregate proof");

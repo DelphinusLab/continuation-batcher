@@ -1,6 +1,6 @@
+use crate::args::Accumulator;
 use crate::args::HashType;
 use crate::args::OpenSchema;
-use crate::args::Accumulator;
 use crate::batch::BatchInfo;
 use crate::batch::CommitmentCheck;
 use crate::proof::load_or_build_unsafe_params;
@@ -137,6 +137,7 @@ pub fn exec_batch_proofs(
             proof_generation_info.hashtype,
             None, // no previous agg
             open_schema,
+            vec![],
         );
 
         agg_proof_piece.save_proof_data(&vec![instances.clone()], &transcripts, &output_dir);
@@ -194,8 +195,8 @@ pub fn exec_batch_proofs(
                 proof_generation_info.hashtype,
                 Some(vec![(1, 0, instance0)]),
                 open_schema,
+                vec![(0, 0, 1, 1)], // absorb instance commitment since continuation mod has same instances for all segments
             );
-
 
             agg_proof_piece.save_proof_data(&vec![instances.clone()], &transcripts, &output_dir);
 
@@ -243,16 +244,17 @@ pub fn exec_batch_proofs(
             batchinfo.get_agg_instance_size() as u32,
         );
 
-        let (agg_proof_piece, instances, transcripts, shadow_instances, last_hash) = batchinfo.batch_proof(
-            proof_piece,
-            params_cache,
-            pkey_cache,
-            true,
-            proof_generation_info.hashtype,
-            Some(vec![(1, 0, instance0)]),
-            open_schema,
-        );
-
+        let (agg_proof_piece, instances, transcripts, shadow_instances, last_hash) = batchinfo
+            .batch_proof(
+                proof_piece,
+                params_cache,
+                pkey_cache,
+                true,
+                proof_generation_info.hashtype,
+                Some(vec![(1, 0, instance0)]),
+                open_schema,
+                vec![(0, 0, 1, 1)], // absorb instance commitment since continuation mod has same instances for all segments
+            );
 
         agg_proof_piece.save_proof_data(&vec![instances.clone()], &transcripts, &output_dir);
 
@@ -284,9 +286,9 @@ pub fn exec_batch_proofs(
         store_instance(
             &vec![shadow_instances.clone()],
             &output_dir.join(format!(
-                    "{}.{}.shadowinstance.data",
-                    &proof_generation_info.name.clone(),
-                    0
+                "{}.{}.shadowinstance.data",
+                &proof_generation_info.name.clone(),
+                0
             )),
         );
 
@@ -304,7 +306,7 @@ pub fn exec_batch_proofs(
             equivalents: vec![],
             absorb: vec![],
             expose: vec![],
-            is_final: accumulator == Accumulator::UseHash
+            is_final: accumulator == Accumulator::UseHash,
         };
         batchinfo.load_commitments_check(&proofsinfo, commits[0].clone());
 
@@ -320,15 +322,17 @@ pub fn exec_batch_proofs(
             0,
             batchinfo.get_agg_instance_size() as u32,
         );
-        let (agg_proof_piece, instances, transcripts, shadow_instances, last_hash) = batchinfo.batch_proof(
-            proof_piece,
-            params_cache,
-            pkey_cache,
-            use_ecc_select_chip,
-            hash,
-            None,
-            open_schema,
-        );
+        let (agg_proof_piece, instances, transcripts, shadow_instances, last_hash) = batchinfo
+            .batch_proof(
+                proof_piece,
+                params_cache,
+                pkey_cache,
+                use_ecc_select_chip,
+                hash,
+                None,
+                open_schema,
+                vec![],
+            );
 
         agg_proof_piece.save_proof_data(&vec![instances.clone()], &transcripts, &output_dir);
 
@@ -350,7 +354,6 @@ pub fn exec_batch_proofs(
             0
         )),
     );
-
 
     if hash == HashType::Sha || hash == HashType::Keccak {
         let proof: Vec<ProofInfo<Bn256>> =
@@ -419,7 +422,6 @@ pub fn exec_solidity_gen<D: Digest + Clone>(
         params_cache,
     );
 
-
     println!("nproof {}", n_proofs);
 
     let proof: Vec<ProofInfo<Bn256>> =
@@ -427,7 +429,8 @@ pub fn exec_solidity_gen<D: Digest + Clone>(
 
     let instance_size = proof[0].instances[0].len();
 
-    let proof_params_verifier: ParamsVerifier<Bn256> = proof_params.verifier(instance_size).unwrap();
+    let proof_params_verifier: ParamsVerifier<Bn256> =
+        proof_params.verifier(instance_size).unwrap();
 
     solidity_render::<_, D>(
         &(sol_path_in.to_str().unwrap().to_owned() + "/*"),
