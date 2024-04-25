@@ -7,6 +7,7 @@ use halo2_proofs::helpers::Serializable;
 use halo2_proofs::plonk::create_witness;
 use halo2_proofs::plonk::keygen_pk;
 use halo2_proofs::plonk::verify_proof;
+use halo2_proofs::plonk::verify_proof_ext;
 use halo2_proofs::plonk::verify_proof_with_shplonk;
 use halo2_proofs::plonk::Circuit;
 use halo2_proofs::plonk::CircuitData;
@@ -204,11 +205,15 @@ impl<E: MultiMillerLoop> ProofInfo<E> {
         proofs
     }
 
-    pub fn verify_proof(&self, params_verifier: &ParamsVerifier<E>) -> anyhow::Result<()> {
+    pub fn verify_proof(
+        &self,
+        params_verifier: &ParamsVerifier<E>,
+        open_scheme: OpenSchema,
+    ) -> anyhow::Result<()> {
         let strategy = SingleVerifier::new(&params_verifier);
 
         match self.hashtype {
-            HashType::Poseidon => verify_proof_with_shplonk(
+            HashType::Poseidon => verify_proof_ext(
                 params_verifier,
                 &self.vkey,
                 strategy,
@@ -218,8 +223,9 @@ impl<E: MultiMillerLoop> ProofInfo<E> {
                     .map(|instances| instances.as_slice())
                     .collect::<Vec<_>>()[..]],
                 &mut PoseidonRead::init(&self.transcripts[..]),
+                open_scheme == OpenSchema::GWC,
             )?,
-            HashType::Sha => verify_proof_with_shplonk(
+            HashType::Sha => verify_proof_ext(
                 params_verifier,
                 &self.vkey,
                 strategy,
@@ -229,8 +235,9 @@ impl<E: MultiMillerLoop> ProofInfo<E> {
                     .map(|instances| instances.as_slice())
                     .collect::<Vec<_>>()[..]],
                 &mut ShaRead::<_, _, _, sha2::Sha256>::init(&self.transcripts[..]),
+                open_scheme == OpenSchema::GWC,
             )?,
-            HashType::Keccak => verify_proof_with_shplonk(
+            HashType::Keccak => verify_proof_ext(
                 params_verifier,
                 &self.vkey,
                 strategy,
@@ -240,6 +247,7 @@ impl<E: MultiMillerLoop> ProofInfo<E> {
                     .map(|instances| instances.as_slice())
                     .collect::<Vec<_>>()[..]],
                 &mut ShaRead::<_, _, _, sha3::Keccak256>::init(&self.transcripts[..]),
+                open_scheme == OpenSchema::GWC,
             )?,
         };
 
