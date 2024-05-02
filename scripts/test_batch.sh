@@ -20,7 +20,7 @@ fi
 cargo build
 
 ./target/debug/circuit-batcher \
-    --param ./params \
+    --params ./params \
     --output ./output \
     batch \
     --challenge sha \
