@@ -21,14 +21,14 @@ fi
 cargo test --release --features cuda
 
 # verify generated proof for test circuits
-cargo run --release --features cuda -- --param ./params --output ./output verify --challenge poseidon --info output/test_circuit.loadinfo.json
+cargo run --release --features cuda -- --params ./params --output ./output verify --challenge poseidon --info output/test_circuit.loadinfo.json
 
 # batch test proofs
-cargo run --features cuda -- --param ./params --output ./output batch -k 22 --openschema shplonk --challenge keccak --info output/test_circuit.loadinfo.json --name batchsample --commits sample/batchinfo_empty.json
+cargo run --features cuda -- --params ./params --output ./output batch -k 22 --openschema shplonk --challenge keccak --info output/test_circuit.loadinfo.json --name batchsample --commits sample/batchinfo_empty.json
 
 
 # verify generated proof for test circuits
-cargo run --release --features cuda -- --param ./params --output ./output verify --challenge keccak --info output/batchsample.loadinfo.json
+cargo run --release --features cuda -- --params ./params --output ./output verify --challenge keccak --info output/batchsample.loadinfo.json
 
 # generate solidity
-cargo run --release -- --param ./params --output ./output solidity -k 22 --challenge keccak --info output/batchsample.loadinfo.json
+cargo run --release -- --params ./params --output ./output solidity -k 22 --challenge keccak --info output/batchsample.loadinfo.json

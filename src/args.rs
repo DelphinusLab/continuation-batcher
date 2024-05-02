@@ -128,7 +128,7 @@ pub trait ArgBuilder {
 
     fn param_path_arg<'a>() -> Arg<'a> {
         arg!(
-            -p --param [PARAM_PATH] "Path of the param files."
+            -p --params [PARAM_PATH] "Path of the param files."
         )
         .value_parser(value_parser!(PathBuf))
     }
