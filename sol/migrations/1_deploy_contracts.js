@@ -30,5 +30,5 @@ module.exports = async function (deployer) {
   deployer.link(AggregatorLib, AggregatorVerifier);
   deployer.link(AggregatorConfig, AggregatorVerifier);
   await deployer.deploy(AggregatorVerifier, steps);
-  await deployer.deploy(ProofTracker);
+  await deployer.deploy(ProofTracker, AggregatorVerifier.address);
 };

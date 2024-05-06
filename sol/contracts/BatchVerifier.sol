@@ -22,15 +22,14 @@ contract ProofTracker {
 
     address private _owner;
 
-    constructor() {
+    constructor(address verifier_address) {
+        verifier = SnarkVerifier(verifier_address);
         _owner = msg.sender;
     }
 
-    function set_verifier(address vaddr) public {
+    function set_verifier(address vaddr) public onlyOwner {
         verifier = SnarkVerifier(vaddr);
     }
-
-
 
     /* hash(target_proof instance) ---> first round agg instances */
     function register_proofs(
@@ -43,7 +42,7 @@ contract ProofTracker {
         for (uint i = 0; i<instances.length; i++) {
             for (uint j = 0; j<instances[i].length; j++) {
                 _tracked_instances[instances[i][j]] = true;
-		emit ProofAck(instances[i][j]);
+		        emit ProofAck(instances[i][j]);
             }
         }
     }
@@ -71,14 +70,24 @@ contract ProofTracker {
 
         for (uint256 i = 0; i < sibling_instances.length; i++) {
             /* check that sibling_instances contains our target instance */
-	    require(sibling_instances[i][membership_proof_index[i]] == target_instance, "membership proof of sibling instances fail");
+            require(sibling_instances[i][membership_proof_index[i]] == target_instance, "membership proof of sibling instances fail");
 
-	    /* calculated the target instance for the next round */
+            /* calculated the target instance for the next round */
             len = sibling_instances[i].length;
             target_instance = AggregatorLib.hash_instances(sibling_instances[i], len);
 
-	}
+	    }
 
         require(_tracked_instances[target_instance] == true);
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == _owner, "Only owner can call this function");
+        _;
+    }
+
+    function transferOwnership(address newOwner) public onlyOwner {
+        require(newOwner != address(0), "Owner cannot be zero address");
+        _owner = newOwner;
     }
 }
