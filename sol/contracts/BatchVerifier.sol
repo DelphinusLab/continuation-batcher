@@ -22,8 +22,7 @@ contract ProofTracker {
 
     address private _owner;
 
-    constructor(address verifier_address) {
-        verifier = SnarkVerifier(verifier_address);
+    constructor() {
         _owner = msg.sender;
     }
 
