@@ -36,14 +36,14 @@ use std::path::PathBuf;
 
 pub fn generate_k_params(
     aggregate_k: u32,
-    param_dir: &PathBuf,
+    params_dir: &PathBuf,
     params_cache: &mut ParamsCache<Bn256>,
 ) {
     info!("Generating K Params file");
 
     // Setup Aggregate Circuit Params
     {
-        let params_path = &param_dir.join(format!("K{}.params", aggregate_k));
+        let params_path = &params_dir.join(format!("K{}.params", aggregate_k));
         load_or_build_unsafe_params::<Bn256>(aggregate_k as usize, params_path, params_cache)
     };
 }
@@ -53,7 +53,7 @@ pub fn exec_batch_proofs(
     pkey_cache: &mut ProvingKeyCache<Bn256>,
     proof_name: &String,
     output_dir: &PathBuf,
-    param_dir: &PathBuf,
+    params_dir: &PathBuf,
     config_files: Vec<PathBuf>,
     commits: Vec<CommitmentCheck>,
     hash: HashType,
@@ -83,7 +83,7 @@ pub fn exec_batch_proofs(
                 assert_eq!(x, info.k);
                 Some(x)
             });
-            ProofInfo::load_proof(&output_dir, &param_dir, &info)
+            ProofInfo::load_proof(&output_dir, &params_dir, &info)
         })
         .collect::<Vec<_>>()
         .into_iter()
@@ -156,7 +156,7 @@ pub fn exec_batch_proofs(
 
         // second round (1 .. k-2)
         let mut agg_proof =
-            ProofInfo::load_proof(&output_dir, &param_dir, &proof_generation_info)[0].clone();
+            ProofInfo::load_proof(&output_dir, &params_dir, &proof_generation_info)[0].clone();
 
         let mut instance0 = instances[0];
 
@@ -209,7 +209,7 @@ pub fn exec_batch_proofs(
             final_hashes.push(instances[0]);
 
             agg_proof =
-                ProofInfo::load_proof(&output_dir, &param_dir, &proof_generation_info)[i].clone();
+                ProofInfo::load_proof(&output_dir, &params_dir, &proof_generation_info)[i].clone();
 
             last_agg_piece = proof_piece;
         }
@@ -357,14 +357,14 @@ pub fn exec_batch_proofs(
 
     if hash == HashType::Sha || hash == HashType::Keccak {
         let proof: Vec<ProofInfo<Bn256>> =
-            ProofInfo::load_proof(&output_dir, &param_dir, &last_proof_gen_info);
+            ProofInfo::load_proof(&output_dir, &params_dir, &last_proof_gen_info);
 
         println!("generate aux data for proof: {:?}", last_proof_gen_info);
 
         // setup batch params
         let params = load_or_build_unsafe_params::<Bn256>(
             last_proof_gen_info.k as usize,
-            &param_dir.join(param_file),
+            &params_dir.join(param_file),
             params_cache,
         );
 
@@ -406,7 +406,7 @@ pub fn exec_batch_proofs(
 }
 
 pub fn exec_solidity_gen<D: Digest + Clone>(
-    param_dir: &PathBuf,
+    params_dir: &PathBuf,
     output_dir: &PathBuf,
     k: u32,
     n_proofs: usize,
@@ -418,14 +418,14 @@ pub fn exec_solidity_gen<D: Digest + Clone>(
 ) {
     let proof_params = load_or_build_unsafe_params::<Bn256>(
         k as usize,
-        &param_dir.join(format!("K{}.params", k)),
+        &params_dir.join(format!("K{}.params", k)),
         params_cache,
     );
 
     println!("nproof {}", n_proofs);
 
     let proof: Vec<ProofInfo<Bn256>> =
-        ProofInfo::load_proof(&output_dir, &param_dir, aggregate_proof_info);
+        ProofInfo::load_proof(&output_dir, &params_dir, aggregate_proof_info);
 
     let instance_size = proof[0].instances[0].len();
 

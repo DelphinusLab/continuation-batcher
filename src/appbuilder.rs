@@ -55,19 +55,19 @@ pub trait AppBuilder: CommandBuilder {
             .get_one::<PathBuf>("output")
             .expect("output dir is not provided");
 
-        let param_dir = top_matches
-            .get_one::<PathBuf>("param")
-            .expect("param dir is not provided");
+        let params_dir = top_matches
+            .get_one::<PathBuf>("params")
+            .expect("params dir is not provided");
 
-        let params_cache = Mutex::new(ParamsCache::new(5, param_dir.clone()));
+        let params_cache = Mutex::new(ParamsCache::new(5, params_dir.clone()));
         let pkey_cache =
-            Mutex::<ProvingKeyCache<Bn256>>::new(ProvingKeyCache::new(5, param_dir.clone()));
+            Mutex::<ProvingKeyCache<Bn256>>::new(ProvingKeyCache::new(5, params_dir.clone()));
 
         fs::create_dir_all(&output_dir).unwrap();
         println!("output dir: {:?}", output_dir);
 
-        fs::create_dir_all(&param_dir).unwrap();
-        println!("params dir: {:?}", param_dir);
+        fs::create_dir_all(&params_dir).unwrap();
+        println!("params dir: {:?}", params_dir);
 
         match top_matches.subcommand() {
             Some(("setup", sub_matches)) => {
@@ -97,7 +97,7 @@ pub trait AppBuilder: CommandBuilder {
                     pkey_cache.lock().as_mut().unwrap(),
                     proof_name,
                     output_dir,
-                    param_dir,
+                    params_dir,
                     config_files,
                     batch_script_info,
                     hash,
@@ -115,11 +115,11 @@ pub trait AppBuilder: CommandBuilder {
                 for config_file in config_files.iter() {
                     let proofloadinfo = ProofGenerationInfo::load(config_file);
                     let proofs: Vec<ProofInfo<Bn256>> =
-                        ProofInfo::load_proof(&output_dir, &param_dir, &proofloadinfo);
+                        ProofInfo::load_proof(&output_dir, &params_dir, &proofloadinfo);
                     let mut param_cache_lock = params_cache.lock(); //This is tricky. Cannot put this directly in the load_or_build_unsafe_params. Have to do this.
                     let params = load_or_build_unsafe_params::<Bn256>(
                         proofloadinfo.k,
-                        &param_dir.join(format!("K{}.params", proofloadinfo.k)),
+                        &params_dir.join(format!("K{}.params", proofloadinfo.k)),
                         param_cache_lock.as_mut().unwrap(),
                     );
                     let mut public_inputs_size = 0;
@@ -175,7 +175,7 @@ pub trait AppBuilder: CommandBuilder {
                 match hasher {
                     TranscriptHash::Keccak => {
                         exec_solidity_gen::<sha3::Keccak256>(
-                            param_dir,
+                            params_dir,
                             output_dir,
                             k,
                             n_proofs,
@@ -188,7 +188,7 @@ pub trait AppBuilder: CommandBuilder {
                     }
                     TranscriptHash::Sha => {
                         exec_solidity_gen::<sha2::Sha256>(
-                            param_dir,
+                            params_dir,
                             output_dir,
                             k,
                             n_proofs,
