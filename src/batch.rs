@@ -7,6 +7,7 @@ use crate::proof::ProofPieceInfo;
 use crate::proof::ProvingKeyCache;
 use ark_std::end_timer;
 use ark_std::start_timer;
+use ff::PrimeField;
 use halo2_proofs::arithmetic::Engine;
 use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::poly::commitment::{Params, ParamsVerifier};
@@ -80,6 +81,7 @@ impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
 where
     NativeScalarEccContext<<E as Engine>::G1Affine>:
         PairingChipOps<<E as Engine>::G1Affine, <E as Engine>::Scalar>,
+    <<E as Engine>::Scalar as PrimeField>::Repr: std::hash::Hash + Eq,
 {
     pub fn get_agg_instance_size(&self) -> usize {
         if self.is_final {

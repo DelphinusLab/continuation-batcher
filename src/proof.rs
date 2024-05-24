@@ -1,5 +1,7 @@
 use crate::args::HashType;
 use crate::args::OpenSchema;
+use ff::PrimeField;
+use halo2_proofs::arithmetic::Engine;
 use halo2_proofs::arithmetic::FieldExt;
 use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::dev::MockProver;
@@ -297,7 +299,9 @@ pub trait Prover {
         pkey: &ProvingKey<E::G1Affine>,
         hashtype: HashType,
         schema: OpenSchema,
-    ) -> Vec<u8>;
+    ) -> Vec<u8>
+    where
+        <<E as Engine>::Scalar as PrimeField>::Repr: std::hash::Hash + std::cmp::Eq;
 
     fn create_witness<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
         &self,
@@ -342,7 +346,10 @@ impl ProofPieceInfo {
         param_cache: &mut ParamsCache<E>,
         hashtype: HashType,
         schema: OpenSchema,
-    ) -> Vec<u8> {
+    ) -> Vec<u8>
+    where
+        <<E as Engine>::Scalar as PrimeField>::Repr: std::hash::Hash + std::cmp::Eq,
+    {
         let params = param_cache.generate_k_params(k);
         let pkey = pkey_cache.load_or_build_pkey::<C>(c, &params, self.circuit.clone());
         self.create_proof::<E, C>(c, instances, params, pkey, hashtype, schema)
@@ -358,7 +365,10 @@ impl Prover for ProofPieceInfo {
         pkey: &ProvingKey<E::G1Affine>,
         hashtype: HashType,
         schema: OpenSchema,
-    ) -> Vec<u8> {
+    ) -> Vec<u8>
+    where
+        <<E as Engine>::Scalar as PrimeField>::Repr: std::hash::Hash + std::cmp::Eq,
+    {
         use ark_std::{end_timer, start_timer};
 
         let inputs_size = instances.iter().fold(0, |acc, x| usize::max(acc, x.len()));
