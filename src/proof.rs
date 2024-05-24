@@ -489,6 +489,7 @@ impl Prover for ProofPieceInfo {
                 #[cfg(not(feature = "perf"))]
                 halo2_gen_proof!(transcript, schema);
                 let r = transcript.finalize();
+                end_timer!(timer);
                 let mut reader = PoseidonRead::init(&r[..]);
                 verify_proof!(reader, schema, r);
                 r
@@ -500,6 +501,7 @@ impl Prover for ProofPieceInfo {
                 #[cfg(not(feature = "perf"))]
                 halo2_gen_proof!(transcript, schema);
                 let r = transcript.finalize();
+                end_timer!(timer);
                 let mut reader = ShaRead::<_, _, _, sha2::Sha256>::init(&r[..]);
                 verify_proof!(reader, schema, r);
                 r
@@ -511,12 +513,12 @@ impl Prover for ProofPieceInfo {
                 #[cfg(not(feature = "perf"))]
                 halo2_gen_proof!(transcript, schema);
                 let r = transcript.finalize();
+                end_timer!(timer);
                 let mut reader = ShaRead::<_, _, _, sha3::Keccak256>::init(&r[..]);
                 verify_proof!(reader, schema, r);
                 r
             }
         };
-        end_timer!(timer);
         r
     }
 
