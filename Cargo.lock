@@ -52,17 +52,6 @@ checksum = "0952808a6c2afd1aa8947271f3a60f1a6763c7b912d210184c5149b5cf147247"
 
 [[package]]
 name = "ark-std"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1df2c09229cbc5a028b1d70e00fdb2acee28b1055dfb5ca73eea49c5a25c4e7c"
-dependencies = [
- "colored",
- "num-traits",
- "rand",
-]
-
-[[package]]
-name = "ark-std"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94893f1e0c6eeab764ade8dc4c0db24caf4fe7cbbaafc0eba0a9030f447b5185"
@@ -262,7 +251,7 @@ name = "circuits-batcher"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "ark-std 0.4.0",
+ "ark-std",
  "bitvec",
  "clap",
  "downcast-rs",
@@ -513,14 +502,14 @@ checksum = "9ea835d29036a4087793836fa931b08837ad5e957da9e23886b29586fb9b6650"
 [[package]]
 name = "ec-gpu"
 version = "0.2.0"
-source = "git+https://github.com/lanbones/ec-gpu#165d1dd6215f6fd1dd85c83cf430ff511a03a00a"
+source = "git+https://github.com/lanbones/ec-gpu#36b9abf8611347e2fe44f21a2f3607eba3aed71d"
 
 [[package]]
 name = "ec-gpu-gen"
 version = "0.4.0"
-source = "git+https://github.com/lanbones/ec-gpu?branch=halo2-opt-v2#5481be558da026bb9bddcd5807f973f6b1a8346e"
+source = "git+https://github.com/lanbones/ec-gpu?branch=halo2-opt-v2#e03cdef1dd41bcc251fd46839c41711b0ae2099e"
 dependencies = [
- "ark-std 0.3.0",
+ "ark-std",
  "bitvec",
  "crossbeam-channel",
  "ec-gpu",
@@ -736,7 +725,7 @@ name = "halo2_proofs"
 version = "0.1.0-beta.1"
 source = "git+https://github.com/DelphinusLab/halo2-gpu-specific.git#9a81f601607bdc3ff3360a9ad66885c9796f487b"
 dependencies = [
- "ark-std 0.4.0",
+ "ark-std",
  "blake2b_simd",
  "bumpalo",
  "cfg-if 0.1.10",
@@ -765,7 +754,7 @@ name = "halo2aggregator-s"
 version = "0.1.0"
 source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git?tag=1.0.0#35026092b90743d0e37689bd21444c250e64a9d4"
 dependencies = [
- "ark-std 0.4.0",
+ "ark-std",
  "blake2b_simd",
  "halo2_proofs",
  "halo2ecc-s",
@@ -2277,7 +2266,7 @@ name = "zkwasm-prover"
 version = "0.1.0"
 source = "git+https://github.com/DelphinusLab/zkWasm-prover.git#5f352e1852cc27af47378c4a355d36d000edecb1"
 dependencies = [
- "ark-std 0.4.0",
+ "ark-std",
  "cc",
  "cuda-runtime-sys",
  "halo2_proofs",
