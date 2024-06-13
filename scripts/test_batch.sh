@@ -24,6 +24,8 @@ cargo build
     --output ./output \
     batch \
     --challenge sha \
+    --openschema shplonk \
+    --accumulator use-hash \
     -k 21 \
     --info output/test_circuit.loadinfo.json \
     --name singlebatch \
