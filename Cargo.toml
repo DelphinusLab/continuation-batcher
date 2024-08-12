@@ -12,13 +12,14 @@ anyhow = "1.0.68"
 ark-std = { version = "0.4.0" }
 downcast-rs = "1.2.0"
 env_logger = "0.9.3"
-halo2aggregator-s = { git = "https://github.com/DelphinusLab/halo2aggregator-s.git", tag="1.0.3" }
+#halo2aggregator-s = { git = "https://github.com/DelphinusLab/halo2aggregator-s.git", tag="1.0.3" }
+halo2aggregator-s = { git = "https://github.com/DelphinusLab/halo2aggregator-s.git", branch="moore/pairing_with_c_wi" }
 halo2_proofs = { git = "https://github.com/DelphinusLab/halo2-gpu-specific.git", default-features = true }
 ff = "0.12"
 log = "0.4.17"
 md5 = "0.7.0"
 num-integer = "0.1"
-num-bigint = { version = "0.4", features = ["rand"] }
+num-bigint = { version = "0.4.5", features = ["rand"] }
 num-traits = "0.2.15"
 num-derive = "0.3"
 num = "0.4"
@@ -38,7 +39,7 @@ serde_json = "1.0"
 bitvec = "1.0.1"
 quote = "1.0.25"
 lru = "0.11.0"
-zkwasm-prover = { git = "https://github.com/DelphinusLab/zkWasm-prover.git", optional = true }
+zkwasm-prover = { git = "https://github.com/DelphinusLab/zkWasm-prover.git", branch="moore/update_halo2_pair", optional = true }
 
 [dev-dependencies]
 rusty-fork = "0.3.0"
@@ -48,6 +49,7 @@ default = []
 perf = ["dep:zkwasm-prover"]
 profile = ["ark-std/print-trace"]
 cuda = ["halo2_proofs/cuda"]
+on_prove_pairing = ["halo2aggregator-s/on_prove_pairing_affine"]
 
 [profile.dev]
 opt-level = 3

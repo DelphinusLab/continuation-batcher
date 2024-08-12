@@ -7,15 +7,15 @@ use crate::proof::ProofPieceInfo;
 use crate::proof::ProvingKeyCache;
 use ark_std::end_timer;
 use ark_std::start_timer;
-use halo2_proofs::arithmetic::Engine;
 use halo2_proofs::arithmetic::MultiMillerLoop;
+use halo2_proofs::arithmetic::{Engine, MultiMillerLoopOnProvePairing};
 use halo2_proofs::poly::commitment::{Params, ParamsVerifier};
 use halo2aggregator_s::circuit_verifier::build_aggregate_verify_circuit;
 use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuitOption;
 use halo2aggregator_s::circuit_verifier::G2AffineBaseHelper;
+use halo2aggregator_s::circuit_verifier::GtHelper;
 use halo2aggregator_s::circuits::utils::{AggregatorConfig, TranscriptHash};
-use halo2aggregator_s::NativeScalarEccContext;
-use halo2aggregator_s::PairingChipOps;
+use halo2aggregator_s::{NativeScalarEccContext, PairingChipOnProvePairingOps};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -76,10 +76,11 @@ pub struct BatchInfo<E: MultiMillerLoop> {
     pub is_final: bool,
 }
 
-impl<E: MultiMillerLoop + G2AffineBaseHelper> BatchInfo<E>
+impl<E: MultiMillerLoop + G2AffineBaseHelper + GtHelper + MultiMillerLoopOnProvePairing>
+    BatchInfo<E>
 where
     NativeScalarEccContext<<E as Engine>::G1Affine>:
-        PairingChipOps<<E as Engine>::G1Affine, <E as Engine>::Scalar>,
+        PairingChipOnProvePairingOps<<E as Engine>::G1Affine, <E as Engine>::Scalar>,
 {
     pub fn get_agg_instance_size(&self) -> usize {
         if self.is_final {
@@ -279,7 +280,7 @@ where
         Vec<<E as Engine>::Scalar>,
         <E as Engine>::Scalar,
     ) {
-        let target_params = params_cache.generate_k_params(self.target_k).clone();
+        let target_params = params_cache.generate_k_params(self.target_k);
         let (circuit, instances, shadow_instance, hash) = self.build_aggregate_circuit(
             target_params,
             last_agg_info.clone(),
