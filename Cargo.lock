@@ -817,7 +817,7 @@ dependencies = [
 [[package]]
 name = "halo2aggregator-s"
 version = "1.0.2"
-source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git?branch=moore/pairing_with_c_wi#30f5e1b1ef0b74d8c352cb9eeb9d6c9f6132b073"
+source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git?tag=on-prove-pairing-0.4.0#555bfa360e49a9da5a642426c125180e2d9ca7ed"
 dependencies = [
  "ark-ff",
  "ark-std",
@@ -2376,7 +2376,7 @@ dependencies = [
 [[package]]
 name = "zkwasm-prover"
 version = "0.1.0"
-source = "git+https://github.com/DelphinusLab/zkWasm-prover.git?branch=moore/update_halo2_pair#86bca8aa0462745a97bc893794bfe9c5c6d859e5"
+source = "git+https://github.com/DelphinusLab/zkWasm-prover.git#d3f62bf8e3a56839016a0dc1337fe6cccdfc011f"
 dependencies = [
  "ark-std",
  "cc",

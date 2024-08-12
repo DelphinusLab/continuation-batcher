@@ -12,8 +12,7 @@ anyhow = "1.0.68"
 ark-std = { version = "0.4.0" }
 downcast-rs = "1.2.0"
 env_logger = "0.9.3"
-#halo2aggregator-s = { git = "https://github.com/DelphinusLab/halo2aggregator-s.git", tag="1.0.3" }
-halo2aggregator-s = { git = "https://github.com/DelphinusLab/halo2aggregator-s.git", branch="moore/pairing_with_c_wi" }
+halo2aggregator-s = { git = "https://github.com/DelphinusLab/halo2aggregator-s.git", tag="on-prove-pairing-0.4.0" }
 halo2_proofs = { git = "https://github.com/DelphinusLab/halo2-gpu-specific.git", default-features = true }
 ff = "0.12"
 log = "0.4.17"
