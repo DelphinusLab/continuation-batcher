@@ -816,8 +816,8 @@ dependencies = [
 
 [[package]]
 name = "halo2aggregator-s"
-version = "1.0.2"
-source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git?tag=on-prove-pairing-0.6.1#adb1cf488e6cc62cef816050973345144afc1747"
+version = "1.1.0"
+source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git?tag=on-prove-pairing-0.6.2#f699aac4e726b7c27936741846975a5c199fce5a"
 dependencies = [
  "ark-ff",
  "ark-std",
@@ -831,6 +831,8 @@ dependencies = [
  "num-traits",
  "poseidon",
  "rand_core",
+ "serde",
+ "serde_json",
  "sha2",
  "sha3",
  "tera",
@@ -839,7 +841,7 @@ dependencies = [
 [[package]]
 name = "halo2ecc-s"
 version = "0.3.2"
-source = "git+https://github.com/DelphinusLab/halo2ecc-s.git?tag=on-prove-pairing-0.6.1#2af5b97bbfd28222510412bc2da53a0ce0d729cb"
+source = "git+https://github.com/DelphinusLab/halo2ecc-s.git?tag=on-prove-pairing-0.6.2#15b3baefac2f950e448ff1dca7c8562bf10ba8a0"
 dependencies = [
  "ark-std",
  "halo2_proofs",
