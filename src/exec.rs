@@ -94,6 +94,8 @@ pub fn exec_batch_proofs(
 
     let param_file = format!("K{}.params", k as usize);
 
+    let proof_index = |x:usize| proofs.len() - x - 1;
+
     let (last_proof_gen_info, _agg_instances, shadow_instances, _) = if cont.is_some() {
         assert!(proofs.len() >= 3);
 
@@ -119,7 +121,7 @@ pub fn exec_batch_proofs(
 
         {
             // load commitments check for the first round
-            let round_info = proofsinfo[0].get_single_info("single", 0);
+            let round_info = proofsinfo[0].get_single_info("single", proof_index(0));
             batchinfo.load_commitments_check(&vec![round_info], commits[0].clone());
         }
 
@@ -176,7 +178,7 @@ pub fn exec_batch_proofs(
                 is_final: false,
             };
 
-            let round_info = proofsinfo[0].get_single_info("single", i);
+            let round_info = proofsinfo[0].get_single_info("single", proof_index(i));
             let mut acc_proof_info = acc_proof_info.clone();
             acc_proof_info.append_single_proof(last_agg_piece.clone());
 
@@ -231,7 +233,7 @@ pub fn exec_batch_proofs(
 
         {
             // load commits for last round
-            let round_info = proofsinfo[0].get_single_info("single", proofs.len() - 1);
+            let round_info = proofsinfo[0].get_single_info("single", proof_index(proofs.len() - 1));
             let mut acc_proof_info = acc_proof_info.clone();
             acc_proof_info.append_single_proof(last_agg_piece.clone());
             batchinfo.load_commitments_check(&vec![round_info, acc_proof_info], commits[2].clone());
