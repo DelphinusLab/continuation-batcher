@@ -251,7 +251,7 @@ pub fn exec_batch_proofs(
                 proof_piece,
                 params_cache,
                 pkey_cache,
-                true,
+                use_ecc_select_chip,
                 proof_generation_info.hashtype,
                 Some(vec![(1, 0, instance0)]),
                 open_schema,
