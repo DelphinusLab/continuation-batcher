@@ -54,5 +54,5 @@ on_prove_pairing = ["halo2aggregator-s/on_prove_pairing_affine"]
 opt-level = 3
 
 [patch."https://github.com/DelphinusLab/zkWasm-prover.git"]
-zkwasm-prover = { git = "https://github.com/ZhenXunGe/zkWasm-prover-k23.git", branch = "k23-test" }
+zkwasm-prover = { git = "https://github.com/ZhenXunGe/zkWasm-prover-k23.git", branch = "heng/k22-k23"}
 
