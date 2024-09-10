@@ -1,0 +1,50 @@
+{
+  "proofs": [
+    {
+      "circuit": "aggregate-circuit-auto-submit.22.22.final.circuit.data",
+      "instance_size": 1,
+      "witness": "aggregate-circuit-auto-submit.22.22.final.0.witness.data",
+      "instance": "aggregate-circuit-auto-submit.22.22.final.0.instance.data",
+      "transcript": "aggregate-circuit-auto-submit.22.22.final.0.transcript.data"
+    },
+    {
+      "circuit": "aggregate-circuit-auto-submit.22.22.final.circuit.data",
+      "instance_size": 1,
+      "witness": "aggregate-circuit-auto-submit.22.22.final.0.witness.data",
+      "instance": "aggregate-circuit-auto-submit.22.22.final.0.instance.data",
+      "transcript": "aggregate-circuit-auto-submit.22.22.final.0.transcript.data"
+    },
+    {
+      "circuit": "aggregate-circuit-auto-submit.22.22.final.circuit.data",
+      "instance_size": 1,
+      "witness": "aggregate-circuit-auto-submit.22.22.final.0.witness.data",
+      "instance": "aggregate-circuit-auto-submit.22.22.final.0.instance.data",
+      "transcript": "aggregate-circuit-auto-submit.22.22.final.0.transcript.data"
+    },
+    {
+      "circuit": "aggregate-circuit-auto-submit.22.22.final.circuit.data",
+      "instance_size": 1,
+      "witness": "aggregate-circuit-auto-submit.22.22.final.0.witness.data",
+      "instance": "aggregate-circuit-auto-submit.22.22.final.0.instance.data",
+      "transcript": "aggregate-circuit-auto-submit.22.22.final.0.transcript.data"
+    },
+    {
+      "circuit": "aggregate-circuit-auto-submit.22.22.final.circuit.data",
+      "instance_size": 1,
+      "witness": "aggregate-circuit-auto-submit.22.22.final.0.witness.data",
+      "instance": "aggregate-circuit-auto-submit.22.22.final.0.instance.data",
+      "transcript": "aggregate-circuit-auto-submit.22.22.final.0.transcript.data"
+    },
+    {
+      "circuit": "aggregate-circuit-auto-submit.22.22.final.circuit.data",
+      "instance_size": 1,
+      "witness": "aggregate-circuit-auto-submit.22.22.final.0.witness.data",
+      "instance": "aggregate-circuit-auto-submit.22.22.final.0.instance.data",
+      "transcript": "aggregate-circuit-auto-submit.22.22.final.0.transcript.data"
+    }
+  ],
+  "k": 22,
+  "param": "K22.params",
+  "name": "test-batch",
+  "hashtype": "Poseidon"
+}
