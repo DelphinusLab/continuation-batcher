@@ -92,21 +92,25 @@ pub trait AppBuilder: CommandBuilder {
                     .map(|x| CommitmentCheck::load(x.as_path()))
                     .collect::<Vec<_>>();
                 debug!("commits equivalent {:?}", batch_script_info);
-                exec_batch_proofs(
-                    params_cache.lock().as_mut().unwrap(),
-                    pkey_cache.lock().as_mut().unwrap(),
-                    proof_name,
-                    output_dir,
-                    params_dir,
-                    config_files,
-                    batch_script_info,
-                    hash,
-                    k,
-                    cont,
-                    false,
-                    open_schema,
-                    accumulator,
-                )
+                for i in 0..5 {
+                    println!("Testing batch proof loop {}", i);
+                    exec_batch_proofs(
+                        params_cache.lock().as_mut().unwrap(),
+                        pkey_cache.lock().as_mut().unwrap(),
+                        proof_name,
+                        output_dir,
+                        params_dir,
+                        config_files.clone(),
+                        batch_script_info.clone(),
+                        hash,
+                        k,
+                        cont,
+                        true,
+                        open_schema,
+                        accumulator,
+                    );
+                }
+                
             }
 
             Some(("verify", sub_matches)) => {
