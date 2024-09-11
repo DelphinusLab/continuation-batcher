@@ -105,7 +105,7 @@ pub trait AppBuilder: CommandBuilder {
                         hash,
                         k,
                         cont,
-                        true,
+                        false,
                         open_schema,
                         accumulator,
                     );
