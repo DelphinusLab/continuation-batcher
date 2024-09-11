@@ -1,0 +1,1877 @@
+   Compiling circuits-batcher v0.1.0 (/home/yymone/git/continuation-batcher)
+    Finished release [optimized] target(s) in 12.85s
+     Running `target/release/circuit-batcher --params /home/yymone/git/zkWasm/params --output /home/yymone/git/zkWasm/output batch -k 23 -s shplonk --challenge keccak --accumulator use-hash --info /home/yymone/git/zkWasm/output/fibonacci.loadinfo.json --name fib_agg --commits ./sample/cont-init.json ./sample/cont-rec.json ./sample/cont-final.json --cont 6`
+output dir: "/home/yymone/git/zkWasm/output"
+params dir: "/home/yymone/git/zkWasm/params"
+read commit equivalents "./sample/cont-init.json"
+read commit equivalents "./sample/cont-rec.json"
+read commit equivalents "./sample/cont-final.json"
+=================Testing batch proof loop================= index: 0
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4842717184, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4769316864, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6778388480, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 1
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 2
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 3
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 4
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 5
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 6
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 7
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 8
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 9
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 10
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 11
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 12
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 13
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 14
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 15
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 16
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 17
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 18
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 3939762176, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4752539648, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 19
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 20
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 21
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 3939762176, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 22
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 23
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 24
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 25
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 26
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+loading instance from: fib_agg.final.0.instance.data
+loading instance size: 1
+generate aux data for proof: ProofGenerationInfo { proofs: [ProofPieceInfo { circuit: "fib_agg.final.circuit.data", instance_size: 1, witness: "fib_agg.final.0.witness.data", instance: "fib_agg.final.0.instance.data", transcript: "fib_agg.final.0.transcript.data" }], k: 23, param: "K23.params", name: "fib_agg.final", hashtype: Keccak }
+=================Testing batch proof loop================= index: 27
+batching 1 proofs:
+loading instance from: fibonacci.0.instance.data
+loading instance size: 1
+loading instance from: fibonacci.1.instance.data
+loading instance size: 1
+loading instance from: fibonacci.2.instance.data
+loading instance size: 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+commitment equiv: []
+commitment expose: [[0, 62], [0, 40]]
+commitment absorb: []
+target proof instance size: [[1]]
+hash agg info: None
+target proof max instance: [[1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]]]
+param verifier size 10
+agg config is []
+offset 2496309 2126420 97904
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+generate rec proofs 1
+preparing batch circuit (is final false):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x1169f2da209caf4b1f95604917bee41c5d53b85c5ace258f31f3c9e8050ab38d, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000621eb7386be23ab7bb2b8fa7761cfc97072fd71860e9e8277a529e, 0x0000000000189dcc6a1cad534e091521f0a520000000000000000028e4d3e9b0, 0x00000000000000000000000000018725421123ff59198237cf4e15d6753e9f12]]]
+param verifier size 10
+agg config is [(0, 0, 1, 1)]
+offset 3262694 2824020 129328
+k is 22
+free is 4754636800, total is 25393692672
+loading instance from: fib_agg.start.0.instance.data
+loading instance size: 10
+loading instance from: fib_agg.rec.1.instance.data
+loading instance size: 10
+preparing batch circuit (is final true):
+vkey named advices: [("img_col", 40), ("post_img_col", 52), ("shared_opcodes", 54), ("shared_operands", 55), ("context_input", 61), ("context_output", 62)]
+vkey named advices: []
+commitment equiv: []
+commitment expose: [[0, 40]]
+commitment absorb: [([1, 0, 7], [0, 52])]
+target proof instance size: [[1], [1]]
+hash agg info: Some([(1, 0, 0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09)])
+target proof max instance: [[1], [1]]
+building aggregate circuit:
+instances [[[0x0000000000000000000000000000000000000000000000000000000000000019]], [[0x0cb3837ffd02150488bf4cc8105f5cc266c0fcc65eac730e2be90c3e5d715a09, 0x0000000000c9a5f6b6120932fb772acf1f8ed5965d7361d07c5882c91e88e121, 0x0000000000532da8e325b767f64ee573c8e96000000000000000002d0c27d705, 0x0000000000000000000000000000ef4fdd880c2df183c744c4b70272ea434f22, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x0000000000000000000000000000000000000000000000000000000000000000, 0x000000000022dd7f37b9d0007641d62c4d8f5638fa58e55b1ba9e6338b543769, 0x0000000000e7dbc506b01d6e44ce0b8b7873a000000000000000000266566d7e, 0x00000000000000000000000000028dbe498c5ce31daf3890503aef40851b48c3]]]
+param verifier size 1
+agg config is [(0, 0, 1, 1)]
+hash_list before shadow instance [0x04449b4c140a43f773998bd1420ad3e53c7d3d932f1281e9cf984ce45b9c669e, 0x00000000006c1ad1e721fee31975e6415b144cdeeda4f07450208ed2798d3ba0, 0x0000000000db6e8a93765d0b86d59fecf4d1a000000000000000002a85ed2355, 0x00000000000000000000000000004340eab98c57c43bfd9b6e4dc7393d30da10]
+offset 6300750 4744912 0
+k is 23
+free is 6767902720, total is 25393692672
+CUDA Runtime Error by: cudaMallocAsync(&sort_indices_temp_storage, sort_indices_temp_storage_bytes, stream) at: /home/yymone/.cargo/git/checkouts/icicle-9b25725c9b5d6dd2/73cd4c0/icicle/src/msm/msm.cu:464
+out of memory
+
+CUDA Runtime Error by: bucket_method_msm( bitsize, c, scalars, points, config.batch_size, msm_size, (config.points_size == 0) ? msm_size : config.points_size, results, config.are_scalars_on_device, config.are_scalars_montgomery_form, config.are_points_on_device, config.are_points_montgomery_form, config.are_results_on_device, config.is_big_triangle, config.large_bucket_factor, config.precompute_factor, config.is_async, stream) at: /home/yymone/.cargo/git/checkouts/icicle-9b25725c9b5d6dd2/73cd4c0/icicle/src/msm/msm.cu:882
+out of memory
+
+thread 'main' panicked at /home/yymone/.cargo/git/checkouts/zkwasm-prover-k23-d1676dee4e28c1d0/4935c70/src/cuda/bn254.rs:325:72:
+called `Result::unwrap()` on an `Err` value: IcicleError { icicle_error_code: InternalCudaError, cuda_error: Some(cudaErrorMemoryAllocation), reason: Some("Runtime CUDA error.") }
+stack backtrace:
+   0: rust_begin_unwind
+             at /rustc/97c81e1b537088f1881c8894ee8579812ed9b6d1/library/std/src/panicking.rs:597:5
+   1: core::panicking::panic_fmt
+             at /rustc/97c81e1b537088f1881c8894ee8579812ed9b6d1/library/core/src/panicking.rs:72:14
+   2: core::result::unwrap_failed
+             at /rustc/97c81e1b537088f1881c8894ee8579812ed9b6d1/library/core/src/result.rs:1653:5
+   3: zkwasm_prover::cuda::bn254::batch_msm
+   4: zkwasm_prover::_create_proof_from_advices::{{closure}}
+   5: std::thread::scoped::scope
+   6: zkwasm_prover::_create_proof_from_advices
+   7: circuits_batcher::batch::BatchInfo<E>::batch_proof
+   8: circuits_batcher::exec::exec_batch_proofs
+   9: circuits_batcher::appbuilder::AppBuilder::exec
+  10: circuit_batcher::main
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.

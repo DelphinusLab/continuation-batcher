@@ -19,3 +19,6 @@ test_continuation_cli() {
 
 2. Update script test_cont.sh to point WKDIR to the folder of zkwasm
 3. Run `bash scripts/test_cont.sh`
+
+## Notes:
+The file cliErrorAtLoop27.txt is an example log which error happen at loop time 27.
