@@ -817,7 +817,7 @@ dependencies = [
 [[package]]
 name = "halo2aggregator-s"
 version = "1.1.0"
-source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git?tag=on-prove-pairing-0.6.3#50978c1e8bc02083c23738055a89279d15edfecd"
+source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git?tag=on-prove-pairing-0.6.4#2ce6522fce52938ec7d28c7c1510be4dd85e5be2"
 dependencies = [
  "ark-ff",
  "ark-std",
@@ -841,7 +841,7 @@ dependencies = [
 [[package]]
 name = "halo2ecc-s"
 version = "0.3.2"
-source = "git+https://github.com/DelphinusLab/halo2ecc-s.git?tag=on-prove-pairing-0.6.3#ef2c90f208499a5f471599aa2fc538bf89631e76"
+source = "git+https://github.com/DelphinusLab/halo2ecc-s.git?tag=on-prove-pairing-0.6.4#164b8367cc243f28128c785930859fa536b5c7af"
 dependencies = [
  "ark-std",
  "halo2_proofs",
