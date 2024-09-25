@@ -7,6 +7,7 @@ use crate::proof::ParamsCache;
 use crate::proof::ProofGenerationInfo;
 use crate::proof::ProofInfo;
 use crate::proof::ProvingKeyCache;
+use crate::round1::round1::batch_round_1_proofs;
 use ark_std::end_timer;
 use ark_std::start_timer;
 use clap::App;
@@ -107,6 +108,30 @@ pub trait AppBuilder: CommandBuilder {
                     open_schema,
                     accumulator,
                 )
+            }
+
+            Some(("round1-batch", sub_matches)) => {
+                let k: u32 = Self::parse_zkwasm_k_arg(&sub_matches).unwrap();
+                let target_k: u32 = Self::parse_target_k(&sub_matches).unwrap();
+                
+                let proof_name = sub_matches
+                    .get_one::<String>("name")
+                    .expect("name of the prove task is not provided");
+
+                let proof_path = output_dir.join(format!("{}.loadinfo.json", proof_name));
+
+                let proof_piece_info = ProofGenerationInfo::load(&proof_path);
+                let proof = proof_piece_info.proofs[0].clone();
+                let _ = batch_round_1_proofs(
+                    params_cache.lock().as_mut().unwrap(),
+                    pkey_cache.lock().as_mut().unwrap(),
+                    proof_name,
+                    output_dir,
+                    params_dir,
+                    k,
+                    target_k,
+                    proof,
+                );
             }
 
             Some(("verify", sub_matches)) => {
