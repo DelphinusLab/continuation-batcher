@@ -83,7 +83,7 @@ pub trait ArgBuilder {
     }
 
     fn parse_target_k(matches: &ArgMatches) -> Option<u32> {
-        matches.get_one("target-k").clone().map(|v| *v)
+        matches.get_one("TARGET_K").clone().map(|v| *v)
     }
 
     fn proof_load_info_arg<'a>() -> Arg<'a> {
