@@ -75,6 +75,13 @@ pub trait ArgBuilder {
         matches.get_one("K").clone().map(|v| *v)
     }
 
+    fn target_k<'a>() -> Arg<'a> {
+        arg!(
+            --target-k [TARGET_K] "Target Circuit Size K"
+        )
+        .value_parser(value_parser!(u32))
+    }
+
     fn parse_target_k(matches: &ArgMatches) -> Option<u32> {
         matches.get_one("target-k").clone().map(|v| *v)
     }
