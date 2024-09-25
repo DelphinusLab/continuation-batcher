@@ -42,6 +42,7 @@ pub trait AppBuilder: CommandBuilder {
         let app = Self::append_params_subcommand(app);
         let app = Self::append_setup_subcommand(app);
         let app = Self::append_batch_subcommand(app);
+        let app = Self::append_round_1_batch_subcommand(app);
         let app = Self::append_verify_subcommand(app);
         let app = Self::append_generate_solidity_verifier(app);
         app
@@ -110,7 +111,7 @@ pub trait AppBuilder: CommandBuilder {
                 )
             }
 
-            Some(("round_1_batch", sub_matches)) => {
+            Some(("round1", sub_matches)) => {
                 let k: u32 = Self::parse_zkwasm_k_arg(&sub_matches).unwrap();
                 let target_k: u32 = Self::parse_target_k(&sub_matches).unwrap();
 

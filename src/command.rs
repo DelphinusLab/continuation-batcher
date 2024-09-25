@@ -29,6 +29,13 @@ pub trait CommandBuilder: ArgBuilder {
         app.subcommand(command)
     }
 
+    fn append_round_1_batch_subcommand(app: App) -> App {
+        let command = Command::new("round1")
+            .arg(Self::zkwasm_k_arg())
+            .arg(Self::proof_name_arg());
+        app.subcommand(command)
+    }
+
     fn append_verify_subcommand(app: App) -> App {
         let command = Command::new("verify")
             .arg(Self::hashtype())
