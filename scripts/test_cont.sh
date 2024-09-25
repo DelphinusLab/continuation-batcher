@@ -10,4 +10,4 @@ CUDA_VISIBLE_DEVICES=3 RUST_BACKTRACE=1 cargo run --features perf --release -- -
 
 cargo run --release --features cuda -- --params $WKDIR/params --output $WKDIR/output verify --challenge poseidon --info $WKDIR/output/fib_agg.final.loadinfo.json
 
-CUDA_VISIBLE_DEVICES=3 RUST_BACKTRACE=1 cargo run --features perf --release -- --params $WKDIR/params --output $WKDIR/output round1-batch -k 22  -s shplonk --challenge poseidon --info $WKDIR/output/fibonacci.loadinfo.json --name fib_agg --commits $BATCH_INFO_INIT $BATCH_INFO_RECT $BATCH_INFO_FINAL --cont 6
+CUDA_VISIBLE_DEVICES=3 RUST_BACKTRACE=1 cargo run --features perf --release -- --params $WKDIR/params --output $WKDIR/output round1-batch -k 23 --target-k 22 --name fib_agg 
