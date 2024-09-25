@@ -77,13 +77,13 @@ pub trait ArgBuilder {
 
     fn target_k<'a>() -> Arg<'a> {
         arg!(
-            --target-k [TARGET_K] "Target Circuit Size K"
+            -t [T] "Target Circuit Size K"
         )
         .value_parser(value_parser!(u32))
     }
 
     fn parse_target_k(matches: &ArgMatches) -> Option<u32> {
-        matches.get_one("TARGET_K").clone().map(|v| *v)
+        matches.get_one("T").clone().map(|v| *v)
     }
 
     fn proof_load_info_arg<'a>() -> Arg<'a> {

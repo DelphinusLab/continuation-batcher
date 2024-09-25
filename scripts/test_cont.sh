@@ -10,4 +10,4 @@ CUDA_VISIBLE_DEVICES=3 RUST_BACKTRACE=1 cargo run --features perf --release -- -
 
 cargo run --release --features cuda -- --params $WKDIR/params --output $WKDIR/output verify --challenge poseidon --info $WKDIR/output/fib_agg.final.loadinfo.json
 
-CUDA_VISIBLE_DEVICES=3 RUST_BACKTRACE=1 cargo run --features perf --release -- --params $WKDIR/params --output $WKDIR/output round1 -k 23 --target-k 22 --name fib_agg 
+CUDA_VISIBLE_DEVICES=3 RUST_BACKTRACE=1 cargo run --features perf --release -- --params $WKDIR/params --output $WKDIR/output round1 -k 23 -t 22 --name fib_agg 
