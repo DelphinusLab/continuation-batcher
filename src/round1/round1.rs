@@ -1,6 +1,6 @@
 
 use std::path::PathBuf;
-use crate::proof::ProofPieceInfo;
+use crate::proof::ProofInfo;
 use crate::round1::vec_fr_to_vec_u8;
 // This file include the executing logic of Round1
 
@@ -15,7 +15,6 @@ use crate::proof::ParamsCache;
 use crate::proof::ProvingKeyCache;
 
 use super::batch_proofs;
-use super::vec_u8_to_vec_fr;
 
 // TODO: adjust inputs/output if need
 pub fn batch_round_1_proofs(
@@ -26,23 +25,16 @@ pub fn batch_round_1_proofs(
     params_dir: &PathBuf,
     batch_k: u32,
     target_k: u32,
-    input_proof: ProofPieceInfo,
+    input_proof: Vec<ProofInfo<Bn256>>,
     
 ) -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
 
-    // Load the transcript and instance bytes from the input proof
-    let transcript_file_path = output_dir.join(input_proof.transcript);
-    let instances_file_path = output_dir.join(input_proof.instance);
-
     // into bytes
-    let transcript_bytes = std::fs::read(&transcript_file_path).unwrap();
-    let instance_bytes = std::fs::read(&instances_file_path).unwrap();
+    let transcript_bytes = input_proof[0].transcripts.clone();
 
     // repeat the input_proof 12 times
-    let batch_instances = vec![transcript_bytes.clone(); 12];
-    let proofs = vec![instance_bytes.clone(); 12];
-
-    let batch_instances_fr = batch_instances.iter().map(|b| vec_u8_to_vec_fr(b)).collect::<Vec<_>>();
+    let batch_instances = vec![input_proof[0].instances[0].clone(); 12];
+    let proofs = vec![transcript_bytes.clone(); 12];
 
     let params_file = format!("K{}.params", target_k);
     let param_file_path = params_dir.join(params_file);
@@ -64,7 +56,7 @@ pub fn batch_round_1_proofs(
         params_cache,
         pkey_cache,
         proofs,
-        batch_instances_fr,
+        batch_instances,
         target_circuit_vkey,
         round_1_proof_name.to_string(),
         target_k as usize,

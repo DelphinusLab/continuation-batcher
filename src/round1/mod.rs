@@ -165,14 +165,6 @@ pub fn batch_proofs(
     (transcripts, instances, shadow_instances, aux)
 }
 
-pub fn vec_u8_to_vec_fr(data: &Vec<u8>) -> Vec<Fr> {
-    let frs = data
-        .chunks_exact(32)
-        .map(|c| Fr::from_repr(c.try_into().unwrap()).unwrap())
-        .collect::<Vec<_>>();
-    frs
-}
-
 pub fn vec_fr_to_vec_u8(data: &Vec<Fr>) -> Vec<u8> {
     let u8s = data.iter().map(|f| f.to_repr()).flatten().collect::<Vec<u8>>();
     u8s

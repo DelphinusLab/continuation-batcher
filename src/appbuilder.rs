@@ -110,9 +110,10 @@ pub trait AppBuilder: CommandBuilder {
                 )
             }
 
-            Some(("round1-batch", sub_matches)) => {
+            Some(("round_1_batch", sub_matches)) => {
                 let k: u32 = Self::parse_zkwasm_k_arg(&sub_matches).unwrap();
                 let target_k: u32 = Self::parse_target_k(&sub_matches).unwrap();
+
                 
                 let proof_name = sub_matches
                     .get_one::<String>("name")
@@ -120,8 +121,9 @@ pub trait AppBuilder: CommandBuilder {
 
                 let proof_path = output_dir.join(format!("{}.loadinfo.json", proof_name));
 
-                let proof_piece_info = ProofGenerationInfo::load(&proof_path);
-                let proof = proof_piece_info.proofs[0].clone();
+                let proof_load_info = ProofGenerationInfo::load(&proof_path);
+                
+                let proofs: Vec<ProofInfo<Bn256>> = ProofInfo::load_proof(&output_dir, &params_dir, &proof_load_info);
                 let _ = batch_round_1_proofs(
                     params_cache.lock().as_mut().unwrap(),
                     pkey_cache.lock().as_mut().unwrap(),
@@ -130,7 +132,7 @@ pub trait AppBuilder: CommandBuilder {
                     params_dir,
                     k,
                     target_k,
-                    proof,
+                    proofs,
                 );
             }
 
