@@ -120,7 +120,7 @@ pub trait AppBuilder: CommandBuilder {
                     .get_one::<String>("name")
                     .expect("name of the prove task is not provided");
 
-                let proof_path = output_dir.join(format!("{}.loadinfo.json", proof_name));
+                let proof_path = output_dir.join(format!("{}.final.loadinfo.json", proof_name));
 
                 let proof_load_info = ProofGenerationInfo::load(&proof_path);
                 
