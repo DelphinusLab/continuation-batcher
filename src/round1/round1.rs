@@ -46,7 +46,7 @@ pub fn batch_round_1_proofs(
     );
 
     let vkey_file = format!("{}.final.circuit.data.vkey.data", proof_name);
-    let aggr_final_vkey_file_path = output_dir.join(vkey_file);
+    let aggr_final_vkey_file_path = params_dir.join(vkey_file);
 
     // Here we need use STATIC_PKEY_CACHE as we are trying to get the PKEY for our playground aggr proofs
     let target_circuit_vkey = load_vkey::<Bn256, AggregatorCircuit<G1Affine>>(auto_submit_params, &aggr_final_vkey_file_path);
