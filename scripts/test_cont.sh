@@ -1,5 +1,5 @@
 CONFIGDIR="."
-WKDIR="/home/xgao/zkWasm"
+WKDIR=$HOME/zkWasm
 
 BATCH_INFO_INIT=$CONFIGDIR/sample/cont-init.json
 BATCH_INFO_RECT=$CONFIGDIR/sample/cont-rec.json
