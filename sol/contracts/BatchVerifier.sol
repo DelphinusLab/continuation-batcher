@@ -80,6 +80,38 @@ contract ProofTracker {
         require(_tracked_instances[target_instance] == true);
     }
 
+    /* The batched verifier can also been used as a single proof verifier if the batch depth is 2 */
+    function verify (
+        uint256[] calldata sibling_instances,   /* siblings + round1-shadow-instance as proof */
+        uint256[] calldata verify_instance,  /* same as verify_instance as in the single proof verifier */
+        uint256[] calldata membership_proof_index, /* one element index as aux */
+        uint256[][] calldata target_instances /* same as target instances as in the single proof verifier */
+    ) external view {
+        uint256[] memory buf = new uint256[](36);
+        uint256 len = 0;
+        for (uint256 i = 0; i < target_instances.length; i++) {
+            for (uint256 j = 0; j < target_instances[i].length; j++) {
+                buf[len++] = target_instances[i][j];
+            }
+        }
+
+        for (uint256 i = 0; i < verify_instance.length; i++) {
+                buf[len++] = verify_instance[i];
+        }
+
+        uint256 target_instance = AggregatorLib.hash_instances(buf, len);
+
+        /* check that sibling_instances contains our target instance */
+        require(sibling_instances[membership_proof_index[0]] == target_instance, "membership proof of sibling instances fail");
+
+        /* calculated the target instance for the next round */
+        len = sibling_instances.length;
+        target_instance = AggregatorLib.hash_instances(sibling_instances, len);
+
+        require(_tracked_instances[target_instance] == true);
+    }
+
+
     modifier onlyOwner() {
         require(msg.sender == _owner, "Only owner can call this function");
         _;
