@@ -281,7 +281,7 @@ pub fn exec_batch_proofs(
             .collect::<Vec<_>>();
 
         construct_merkle_records(
-            &output_dir.join(format!("{}.{}.hashes", &proof_name, len)),
+            &output_dir.join(format!("{}.{}.hashes", &proof_agg_final_name, len)),
             &mut final_hashes_merkle,
             depth as usize,
         );
