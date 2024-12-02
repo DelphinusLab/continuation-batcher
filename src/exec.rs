@@ -218,7 +218,7 @@ pub fn exec_batch_proofs(
         }
 
         proof_generation_info =
-            ProofGenerationInfo::new(format!("{}.final", proof_name).as_str(), k as usize, hash);
+            ProofGenerationInfo::new(format!("{}.final", proof_agg_final_name).as_str(), k as usize, hash);
 
         // Now we processing the final round where we provid the batch_k which could be slightly
         // bigger than the target_k since it will uses a non-select ecc circuit
