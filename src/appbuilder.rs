@@ -96,6 +96,7 @@ pub trait AppBuilder: CommandBuilder {
                     params_cache.lock().as_mut().unwrap(),
                     pkey_cache.lock().as_mut().unwrap(),
                     proof_name,
+                    proof_name,
                     output_dir,
                     params_dir,
                     config_files,

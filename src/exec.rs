@@ -52,6 +52,7 @@ pub fn exec_batch_proofs(
     params_cache: &mut ParamsCache<Bn256>,
     pkey_cache: &mut ProvingKeyCache<Bn256>,
     proof_name: &String,
+    proof_agg_final_name: &String,
     output_dir: &PathBuf,
     params_dir: &PathBuf,
     config_files: Vec<PathBuf>,
@@ -241,7 +242,7 @@ pub fn exec_batch_proofs(
 
         // Last round
         let proof_piece = ProofPieceInfo::new(
-            format!("{}.final", proof_name),
+            format!("{}.final", proof_agg_final_name),
             0,
             batchinfo.get_agg_instance_size() as u32,
         );
