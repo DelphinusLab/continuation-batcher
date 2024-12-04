@@ -110,6 +110,7 @@ pub trait ArgBuilder {
         arg!(
             --with_circuit_prefixes "With circuit prefixes."
         )
+        .action(ArgAction::SetTrue)
         .takes_value(false)
     }
 
