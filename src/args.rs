@@ -102,6 +102,10 @@ pub trait ArgBuilder {
         matches.get_one::<u32>("cont").map_or(None, |&x| Some(x))
     }
 
+    fn parse_with_circuit_prefixes(matches: &ArgMatches) -> bool {
+        matches.get_flag("with_circuit_prefixes")
+    }
+
     fn commits_info_arg<'a>() -> Arg<'a> {
         Arg::new("commits")
             .long("commits")
