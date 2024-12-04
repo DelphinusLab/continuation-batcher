@@ -106,6 +106,13 @@ pub trait ArgBuilder {
         matches.get_flag("with_circuit_prefixes")
     }
 
+    fn with_circuit_prefixes_arg<'a>() -> Arg<'a> {
+        arg!(
+            --with_circuit_prefixes "With circuit prefixes."
+        )
+        .takes_value(false)
+    }
+
     fn commits_info_arg<'a>() -> Arg<'a> {
         Arg::new("commits")
             .long("commits")
