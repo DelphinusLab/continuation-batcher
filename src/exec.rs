@@ -63,9 +63,10 @@ pub fn exec_batch_proofs(
     open_schema: OpenSchema,
     accumulator: Accumulator,
 ) {
-    exec_batch_proofs_with_names(
+    exec_batch_proofs_with_circuit_names(
         params_cache,
         pkey_cache,
+        proof_name,
         proof_name,
         proof_name,
         proof_name,
@@ -82,12 +83,13 @@ pub fn exec_batch_proofs(
     );
 }
 
-pub fn exec_batch_proofs_with_names(
+pub fn exec_batch_proofs_with_circuit_names(
     params_cache: &mut ParamsCache<Bn256>,
     pkey_cache: &mut ProvingKeyCache<Bn256>,
-    start_proof_name: &String,
-    rec_proof_name: &String,
-    final_proof_name: &String,
+    proof_name: &String,
+    start_circuit_prefix: &String,
+    rec_circuit_prefix: &String,
+    final_circuit_prefix: &String,
     output_dir: &PathBuf,
     params_dir: &PathBuf,
     config_files: Vec<PathBuf>,
@@ -150,7 +152,7 @@ pub fn exec_batch_proofs_with_names(
         };
 
         let mut proof_generation_info = ProofGenerationInfo::new(
-            format!("{}.rec", rec_proof_name).as_str(),
+            format!("{}.rec", proof_name).as_str(),
             batchinfo.batch_k as usize,
             HashType::Poseidon,
         );
@@ -162,9 +164,10 @@ pub fn exec_batch_proofs_with_names(
         }
 
         let proof_piece = ProofPieceInfo::new(
-            format!("{}.start", start_proof_name),
+            format!("{}.start", proof_name),
             0,
             batchinfo.get_agg_instance_size() as u32,
+            Some(start_circuit_prefix.clone()),
         );
 
         let (agg_proof_piece, instances, transcripts, _, last_hash) = batchinfo.batch_proof(
@@ -221,9 +224,10 @@ pub fn exec_batch_proofs_with_names(
             batchinfo.load_commitments_check(&vec![round_info, acc_proof_info], commits[1].clone());
 
             let proof_piece = ProofPieceInfo::new(
-                format!("{}.rec", rec_proof_name),
+                format!("{}.rec", proof_name),
                 i,
                 batchinfo.get_agg_instance_size() as u32,
+                Some(rec_circuit_prefix.clone()),
             );
             let (agg_proof_piece, instances, transcripts, _, last_hash) = batchinfo.batch_proof(
                 proof_piece.clone(),
@@ -252,11 +256,8 @@ pub fn exec_batch_proofs_with_names(
             last_agg_piece = proof_piece;
         }
 
-        proof_generation_info = ProofGenerationInfo::new(
-            format!("{}.final", final_proof_name).as_str(),
-            k as usize,
-            hash,
-        );
+        proof_generation_info =
+            ProofGenerationInfo::new(format!("{}.final", proof_name).as_str(), k as usize, hash);
 
         // Now we processing the final round where we provid the batch_k which could be slightly
         // bigger than the target_k since it will uses a non-select ecc circuit
@@ -280,9 +281,10 @@ pub fn exec_batch_proofs_with_names(
 
         // Last round
         let proof_piece = ProofPieceInfo::new(
-            format!("{}.final", final_proof_name),
+            format!("{}.final", proof_name),
             0,
             batchinfo.get_agg_instance_size() as u32,
+            Some(final_circuit_prefix.clone()),
         );
 
         let (agg_proof_piece, instances, transcripts, shadow_instances, last_hash) = batchinfo
@@ -319,7 +321,7 @@ pub fn exec_batch_proofs_with_names(
             .collect::<Vec<_>>();
 
         construct_merkle_records(
-            &output_dir.join(format!("{}.{}.hashes", &final_proof_name, len)),
+            &output_dir.join(format!("{}.{}.hashes", &proof_name, len)),
             &mut final_hashes_merkle,
             depth as usize,
         );
@@ -353,15 +355,16 @@ pub fn exec_batch_proofs_with_names(
 
         // Singleton batch
         let mut proof_generation_info = ProofGenerationInfo::new(
-            format!("{}", start_proof_name).as_str(),
+            format!("{}", proof_name).as_str(),
             batchinfo.batch_k as usize,
             hash,
         );
 
         let proof_piece = ProofPieceInfo::new(
-            format!("{}", start_proof_name),
+            format!("{}", proof_name),
             0,
             batchinfo.get_agg_instance_size() as u32,
+            None,
         );
         let (agg_proof_piece, instances, transcripts, shadow_instances, last_hash) = batchinfo
             .batch_proof(
