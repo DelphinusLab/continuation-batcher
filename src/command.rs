@@ -22,7 +22,6 @@ pub trait CommandBuilder: ArgBuilder {
             .arg(Self::hashtype())
             .arg(Self::openschema())
             .arg(Self::proof_name_arg())
-            .arg(Self::with_circuit_prefixes_arg())
             .arg(Self::commits_info_arg())
             .arg(Self::accumulator())
             .arg(Self::proof_load_info_arg())
