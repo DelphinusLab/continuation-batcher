@@ -114,12 +114,18 @@ pub struct ProofPieceInfo {
 }
 
 impl ProofPieceInfo {
-    pub fn new(name: String, i: usize, instance_size: u32) -> Self {
+    pub fn new(
+        name: String,
+        i: usize,
+        instance_size: u32,
+        circuit_name_prefix: Option<String>,
+    ) -> Self {
+        let circuit_prefix = circuit_name_prefix.unwrap_or(name.clone());
         ProofPieceInfo {
             witness: format!("{}.{}.witness.data", name, i),
             instance: format!("{}.{}.instance.data", name, i),
             transcript: format!("{}.{}.transcript.data", name, i),
-            circuit: format!("{}.circuit.data", name),
+            circuit: format!("{}.circuit.data", circuit_prefix),
             instance_size,
         }
     }
@@ -686,7 +692,7 @@ fn batch_single_circuit() {
 
         let instances = vec![vec![Fr::from(300u64)]];
         let param_file = format!("K{}.params", K);
-        let circuit_info = ProofPieceInfo::new("test_circuit".to_string(), 0, 1);
+        let circuit_info = ProofPieceInfo::new("test_circuit".to_string(), 0, 1, None);
 
         // testing proof
         circuit_info.mock_proof::<Bn256, _>(K, &circuit, &instances);
@@ -726,7 +732,7 @@ fn batch_single_circuit() {
         };
 
         let instances = vec![vec![Fr::from(300u64)]];
-        let circuit_info = ProofPieceInfo::new("test_circuit".to_string(), 1, 1);
+        let circuit_info = ProofPieceInfo::new("test_circuit".to_string(), 1, 1, None);
 
         let transcripts = circuit_info.exec_create_proof(
             &circuit,
