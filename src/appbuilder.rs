@@ -1,7 +1,6 @@
 use crate::args::HashType;
 use crate::batch::CommitmentCheck;
 use crate::exec::exec_batch_proofs;
-use crate::exec::exec_batch_proofs_with_circuit_names;
 use crate::exec::exec_solidity_gen;
 use crate::proof::load_or_build_unsafe_params;
 use crate::proof::ParamsCache;
@@ -93,57 +92,21 @@ pub trait AppBuilder: CommandBuilder {
                     .map(|x| CommitmentCheck::load(x.as_path()))
                     .collect::<Vec<_>>();
                 debug!("commits equivalent {:?}", batch_script_info);
-
-                let with_circuit_names = Self::parse_with_circuit_prefixes(sub_matches);
-
-                if with_circuit_names {
-                    let start_circuit_prefix = sub_matches
-                        .get_one::<String>("start_circuit_prefix")
-                        .expect("start_circuit_prefix is not provided");
-
-                    let rec_circuit_prefix = sub_matches
-                        .get_one::<String>("rec_circuit_prefix")
-                        .expect("rec_circuit_prefix is not provided");
-
-                    let final_circuit_prefix = sub_matches
-                        .get_one::<String>("final_circuit_prefix")
-                        .expect("final_circuit_prefix is not provided");
-
-                    exec_batch_proofs_with_circuit_names(
-                        params_cache.lock().as_mut().unwrap(),
-                        pkey_cache.lock().as_mut().unwrap(),
-                        proof_name,
-                        start_circuit_prefix,
-                        rec_circuit_prefix,
-                        final_circuit_prefix,
-                        output_dir,
-                        params_dir,
-                        config_files,
-                        batch_script_info,
-                        hash,
-                        k,
-                        cont,
-                        true,
-                        open_schema,
-                        accumulator,
-                    )
-                } else {
-                    exec_batch_proofs(
-                        params_cache.lock().as_mut().unwrap(),
-                        pkey_cache.lock().as_mut().unwrap(),
-                        proof_name,
-                        output_dir,
-                        params_dir,
-                        config_files,
-                        batch_script_info,
-                        hash,
-                        k,
-                        cont,
-                        true,
-                        open_schema,
-                        accumulator,
-                    )
-                }
+                exec_batch_proofs(
+                    params_cache.lock().as_mut().unwrap(),
+                    pkey_cache.lock().as_mut().unwrap(),
+                    proof_name,
+                    output_dir,
+                    params_dir,
+                    config_files,
+                    batch_script_info,
+                    hash,
+                    k,
+                    cont,
+                    true,
+                    open_schema,
+                    accumulator,
+                )
             }
 
             Some(("verify", sub_matches)) => {
