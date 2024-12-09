@@ -19,7 +19,7 @@ fi
 
 cargo build
 
-./target/debug/circuit-batcher \
+RUST_BACKTRACE=1 ./target/release/circuit-batcher \
     --params ./params \
     --output ./output \
     batch \
