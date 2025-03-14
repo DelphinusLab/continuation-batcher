@@ -11,13 +11,13 @@ use halo2_proofs::arithmetic::MultiMillerLoop;
 use halo2_proofs::arithmetic::{Engine, MultiMillerLoopOnProvePairing};
 use halo2_proofs::poly::commitment::{Params, ParamsVerifier};
 use halo2aggregator_s::circuit_verifier::build_aggregate_verify_circuit;
-use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuitOption;
+use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuit;
 use halo2aggregator_s::circuit_verifier::G2AffineBaseHelper;
 use halo2aggregator_s::circuit_verifier::GtHelper;
 use halo2aggregator_s::circuits::utils::{AggregatorConfig, TranscriptHash};
-use halo2aggregator_s::{NativeScalarEccContext, PairingChipOnProvePairingOps};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
+use std::sync::Arc;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct CommitmentName {
@@ -78,9 +78,6 @@ pub struct BatchInfo<E: MultiMillerLoop> {
 
 impl<E: MultiMillerLoop + G2AffineBaseHelper + GtHelper + MultiMillerLoopOnProvePairing>
     BatchInfo<E>
-where
-    NativeScalarEccContext<<E as Engine>::G1Affine>:
-        PairingChipOnProvePairingOps<<E as Engine>::G1Affine, <E as Engine>::Scalar>,
 {
     pub fn get_agg_instance_size(&self) -> usize {
         if self.is_final {
@@ -174,11 +171,14 @@ where
         open_schema: OpenSchema,
         absorb_instance: Vec<(usize, usize, usize, usize)>,
     ) -> (
-        AggregatorCircuitOption<<E as Engine>::G1Affine>,
+        AggregatorCircuit<E>,
         Vec<<E as Engine>::Scalar>,
         Vec<<E as Engine>::Scalar>,
         <E as Engine>::Scalar,
-    ) {
+    )
+    where
+        E: MultiMillerLoop + MultiMillerLoopOnProvePairing,
+    {
         let mut all_proofs = vec![];
         let mut vkeys = vec![];
         let mut instances = vec![];
@@ -186,7 +186,7 @@ where
         for (_, proof) in self.proofs.iter().enumerate() {
             all_proofs.push((&proof.transcripts).clone());
             vkeys.push(&proof.vkey);
-            instances.push(&proof.instances);
+            instances.push(proof.instances.clone());
         }
 
         let mut target_proof_max_instance = instances
@@ -221,7 +221,7 @@ where
         let target_aggregator_constant_hash_instance_offset =
             last_agg_info.clone().map_or_else(|| vec![], |x| x.clone());
 
-        let config = &AggregatorConfig {
+        let config = AggregatorConfig {
             hash: TranscriptHash::Poseidon,
             commitment_check: self.equivalents.clone(),
             expose: self.expose.clone(),
@@ -238,6 +238,7 @@ where
                 .map_or_else(|| vec![], |x| vec![(x[0].0, 1)]),
             absorb_instance: last_agg_info.map_or_else(|| vec![], |_| absorb_instance),
             use_select_chip,
+            circuit_rows_for_pairing: 500000,
         };
 
         let target_params_verifier: ParamsVerifier<E> =
@@ -252,11 +253,14 @@ where
         println!("agg config is {:?}", config.absorb_instance);
         let timer = start_timer!(|| "build aggregate verify circuit");
         let (circuit, instances, shadow_instance, hash) = build_aggregate_verify_circuit::<E>(
-            &target_params_verifier,
-            &vkeys,
+            Arc::new(target_params_verifier),
+            &vkeys
+                .into_iter()
+                .map(|x| Arc::new(x.clone()))
+                .collect::<Vec<_>>()[..],
             instances,
             all_proofs,
-            config,
+            Arc::new(config),
         );
         end_timer!(timer);
 
@@ -289,38 +293,17 @@ where
             absorb_instance,
         );
 
-        let transcripts = match use_select_chip {
-            true => {
-                let agg_circuit_with_select_chip = circuit.circuit_with_select_chip.unwrap();
-                let timer = start_timer!(|| "create aggregate proof");
-                let transcripts = proof_piece.exec_create_proof::<E, _>(
-                    &agg_circuit_with_select_chip,
-                    &vec![instances.clone()],
-                    self.batch_k,
-                    pkey_cache,
-                    params_cache,
-                    hashtype,
-                    open_schema,
-                );
-                end_timer!(timer);
-                transcripts
-            }
-            false => {
-                let agg_circuit_without_select_chip = circuit.circuit_without_select_chip.unwrap();
-                let timer = start_timer!(|| "create aggregate proof");
-                let transcripts = proof_piece.exec_create_proof::<E, _>(
-                    &agg_circuit_without_select_chip,
-                    &vec![instances.clone()],
-                    self.batch_k,
-                    pkey_cache,
-                    params_cache,
-                    hashtype,
-                    open_schema,
-                );
-                end_timer!(timer);
-                transcripts
-            }
-        };
+        let timer = start_timer!(|| "create aggregate proof");
+        let transcripts = proof_piece.exec_create_proof::<E, _>(
+            &circuit,
+            &vec![instances.clone()],
+            self.batch_k,
+            pkey_cache,
+            params_cache,
+            hashtype,
+            open_schema,
+        );
+        end_timer!(timer);
 
         (proof_piece, instances, transcripts, shadow_instance, hash)
     }

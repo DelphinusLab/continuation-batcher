@@ -12,8 +12,8 @@ anyhow = "1.0.68"
 ark-std = { version = "0.4.0" }
 downcast-rs = "1.2.0"
 env_logger = "0.9.3"
-halo2aggregator-s = { git = "https://github.com/DelphinusLab/halo2aggregator-s.git", branch="moore/logup_extend" }
-halo2_proofs = { git = "https://github.com/DelphinusLab/halo2-gpu-specific.git", branch="moore/logup_extent" }
+halo2aggregator-s = { git = "https://github.com/DelphinusLab/halo2aggregator-s.git", branch="moore/logup-shuffle-extend-rebase" }
+halo2_proofs = { git = "https://github.com/DelphinusLab/halo2-gpu-specific.git", tag="stable-logup-shuffle-v1.0.0" }
 ff = "0.12"
 log = "0.4.17"
 md5 = "0.7.0"
@@ -38,13 +38,13 @@ serde_json = "1.0"
 bitvec = "1.0.1"
 quote = "1.0.25"
 lru = "0.11.0"
-zkwasm-prover = { git = "https://github.com/DelphinusLab/zkWasm-prover.git", branch="moore/logup-oogl-dev-msm", optional = true }
+zkwasm-prover = { git = "https://github.com/DelphinusLab/zkWasm-prover.git", tag="stable-logup-shuffle-1.0", optional = true }
 
 [dev-dependencies]
 rusty-fork = "0.3.0"
 
 [features]
-default = []
+default = ["profile","perf"]
 perf = ["dep:zkwasm-prover"]
 profile = ["ark-std/print-trace"]
 cuda = ["halo2_proofs/cuda"]
