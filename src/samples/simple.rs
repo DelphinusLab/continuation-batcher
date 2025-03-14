@@ -1,12 +1,12 @@
 use halo2_proofs::arithmetic::FieldExt;
 use halo2_proofs::circuit::floor_planner::V1;
 use halo2_proofs::circuit::Layouter;
-use halo2_proofs::plonk::{Advice, TableColumn};
 use halo2_proofs::plonk::Circuit;
 use halo2_proofs::plonk::Column;
 use halo2_proofs::plonk::ConstraintSystem;
 use halo2_proofs::plonk::Error;
 use halo2_proofs::plonk::Fixed;
+use halo2_proofs::plonk::{Advice, TableColumn};
 use halo2_proofs::poly::Rotation;
 
 #[derive(Clone)]
@@ -81,7 +81,11 @@ impl<F: FieldExt> Circuit<F> for SimpleCircuit<F> {
         meta.enable_equality(advices[0]);
         meta.enable_equality(advices[1]);
 
-        SimpleConfig { advices, sel, table }
+        SimpleConfig {
+            advices,
+            sel,
+            table,
+        }
     }
 
     fn synthesize(&self, config: Self::Config, layouter: impl Layouter<F>) -> Result<(), Error> {
@@ -90,7 +94,7 @@ impl<F: FieldExt> Circuit<F> for SimpleCircuit<F> {
             |region| {
                 region.assign_advice(|| "a", config.advices[0], 0, || Ok(self.a))?;
                 region.assign_advice(|| "b", config.advices[1], 0, || Ok(self.b))?;
-                region.assign_advice(|| "c", config.advices[2], 0, || Ok(self.a+self.b))?;
+                region.assign_advice(|| "c", config.advices[2], 0, || Ok(self.a + self.b))?;
                 region.assign_fixed(|| "sel", config.sel, 0, || Ok(F::one()))?;
                 region.assign_fixed(|| "sel", config.sel, 1, || Ok(F::zero()))?;
 
@@ -107,12 +111,7 @@ impl<F: FieldExt> Circuit<F> for SimpleCircuit<F> {
             || "common range table",
             |t| {
                 for i in 0..1024 {
-                    t.assign_cell(
-                        || "range tag",
-                        config.table,
-                        i,
-                        || Ok(F::from(i as u64)),
-                    )?;
+                    t.assign_cell(|| "range tag", config.table, i, || Ok(F::from(i as u64)))?;
                 }
 
                 Ok(())
