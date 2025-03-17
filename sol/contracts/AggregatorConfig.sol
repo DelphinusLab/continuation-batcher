@@ -6,10 +6,10 @@ import "./AggregatorLib.sol";
 
 library AggregatorConfig {
     function fill_verify_circuits_g2(uint256[] memory s) internal pure {
-        s[2] = 245594121536359573923098574574226326976999057568186541946386251521899051239;
-        s[3] = 11989966233273451827196188952389165206577659839709149893302910060266325627571;
-        s[4] = 11910458354706402682903890364451297053898217829624118573734401521924804373440;
-        s[5] = 18959020778577892511275037308105300366342066298066792876219332202571921563881;
+        s[2] = 17131510004222863239408580011965663790707790083758508980521431927481455316244;
+        s[3] = 13239981408604951437450014900617239305783482703680168225708776375178235958414;
+        s[4] = 16758014440826914722508163669181150884980044788823938544831532724103579389691;
+        s[5] = 8824020152601776802611073397094798788346180506242534327221018398726195908688;
 
         s[8] = 11559732032986387107991004021392285783925812861821192530917403151452391805634;
         s[9] = 10857046999023057135944570762232829481370756359578518086990519993285655852781;
@@ -18,8 +18,8 @@ library AggregatorConfig {
     }
 
     function calc_verify_circuit_lagrange(uint256[] memory buf) internal view {
-        buf[0] = 21212064348612611901561423219879055645551074583119790177064738204301217053650;
-        buf[1] = 21132618524209467515678062617824281241872283101978369676623106767352325954433;
+        buf[0] = 4246485553913621569067470645392660895027649716862194263429156289599464730996;
+        buf[1] = 15899192751216009222363664025367168439943024377694320324116625506830866071849;
         
         AggregatorLib.msm(buf, 0, 1);
     }
@@ -61,14 +61,14 @@ library AggregatorConfig {
     ) internal view {
         
         
-        uint256[] memory absorbing = new uint256[](140);
-        absorbing[0] = 551621251195677807166452993210395209455583904580652063116816829719364515818;
+        uint256[] memory absorbing = new uint256[](152);
+        absorbing[0] = 6901874450049050949560638117932163566866099697656126185212198417536751485015;
         absorbing[1] = buf[0];
         absorbing[2] = buf[1];
 
         uint256 pos = 3;
         uint256 transcript_pos = 0;
-        for (uint i = 0; i < 10; i ++) {
+        for (uint i = 0; i < 9; i ++) {
             AggregatorLib.check_on_curve(transcript[transcript_pos], transcript[transcript_pos + 1]);
             absorbing[pos++] = transcript[transcript_pos++];
             absorbing[pos++] = transcript[transcript_pos++];
@@ -78,7 +78,7 @@ library AggregatorConfig {
         
         
         pos = 1;
-        for (uint i = 0; i < 6; i ++) {
+        for (uint i = 0; i < 2; i ++) {
             AggregatorLib.check_on_curve(transcript[transcript_pos], transcript[transcript_pos + 1]);
             absorbing[pos++] = transcript[transcript_pos++];
             absorbing[pos++] = transcript[transcript_pos++];
@@ -113,7 +113,7 @@ library AggregatorConfig {
         
         
         pos = 1;
-        for (uint i = 0; i < 70; i ++) {
+        for (uint i = 0; i < 76; i ++) {
             absorbing[pos++] = transcript[transcript_pos++];
         }
         //y

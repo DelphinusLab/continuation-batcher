@@ -1,18 +1,19 @@
 use halo2_proofs::arithmetic::FieldExt;
 use halo2_proofs::circuit::floor_planner::V1;
 use halo2_proofs::circuit::Layouter;
-use halo2_proofs::plonk::Advice;
 use halo2_proofs::plonk::Circuit;
 use halo2_proofs::plonk::Column;
 use halo2_proofs::plonk::ConstraintSystem;
 use halo2_proofs::plonk::Error;
 use halo2_proofs::plonk::Fixed;
+use halo2_proofs::plonk::{Advice, TableColumn};
 use halo2_proofs::poly::Rotation;
 
 #[derive(Clone)]
 pub struct SimpleConfig {
-    advices: [Column<Advice>; 2],
+    advices: [Column<Advice>; 3],
     sel: Column<Fixed>,
+    table: TableColumn,
 }
 
 #[derive(Default, Clone)]
@@ -37,9 +38,11 @@ impl<F: FieldExt> Circuit<F> for SimpleCircuit<F> {
         let advices = [
             meta.named_advice_column("A".to_string()),
             meta.advice_column(),
+            meta.advice_column(),
         ];
         let instance = meta.instance_column();
         let sel = meta.fixed_column();
+        let table = meta.lookup_table_column();
 
         meta.create_gate("sum equals to instance", |meta| {
             let sel = meta.query_fixed(sel, Rotation(0));
@@ -61,10 +64,28 @@ impl<F: FieldExt> Circuit<F> for SimpleCircuit<F> {
             vec![(b, a)]
         });
 
+        // construct lookup set
+        meta.lookup("table0", |meta| {
+            let input_0 = meta.query_advice(advices[0], Rotation::cur());
+            [(input_0, table)].to_vec()
+        });
+        meta.lookup("table1", |meta| {
+            let input_1 = meta.query_advice(advices[1], Rotation::cur());
+            [(input_1 * F::from(2), table)].to_vec()
+        });
+        meta.lookup("table2", |meta| {
+            let input_2 = meta.query_advice(advices[2], Rotation::cur());
+            [(input_2, table)].to_vec()
+        });
+
         meta.enable_equality(advices[0]);
         meta.enable_equality(advices[1]);
 
-        SimpleConfig { advices, sel }
+        SimpleConfig {
+            advices,
+            sel,
+            table,
+        }
     }
 
     fn synthesize(&self, config: Self::Config, layouter: impl Layouter<F>) -> Result<(), Error> {
@@ -73,6 +94,7 @@ impl<F: FieldExt> Circuit<F> for SimpleCircuit<F> {
             |region| {
                 region.assign_advice(|| "a", config.advices[0], 0, || Ok(self.a))?;
                 region.assign_advice(|| "b", config.advices[1], 0, || Ok(self.b))?;
+                region.assign_advice(|| "c", config.advices[2], 0, || Ok(self.a + self.b))?;
                 region.assign_fixed(|| "sel", config.sel, 0, || Ok(F::one()))?;
                 region.assign_fixed(|| "sel", config.sel, 1, || Ok(F::zero()))?;
 
@@ -84,7 +106,17 @@ impl<F: FieldExt> Circuit<F> for SimpleCircuit<F> {
                 Ok(())
             },
         )?;
-        Ok(())
+
+        layouter.assign_table(
+            || "common range table",
+            |t| {
+                for i in 0..1024 {
+                    t.assign_cell(|| "range tag", config.table, i, || Ok(F::from(i as u64)))?;
+                }
+
+                Ok(())
+            },
+        )
     }
 }
 
@@ -93,7 +125,7 @@ fn test_simple_diff() {
     use halo2_proofs::dev::MockProver;
     use halo2_proofs::pairing::bn256::Fr;
 
-    const K: u32 = 8;
+    const K: u32 = 11;
     let circuit = SimpleCircuit::<Fr> {
         a: Fr::from(100u64),
         b: Fr::from(200u64),
@@ -110,7 +142,7 @@ fn test_simple_same() {
     use halo2_proofs::dev::MockProver;
     use halo2_proofs::pairing::bn256::Fr;
 
-    const K: u32 = 8;
+    const K: u32 = 11;
     let circuit = SimpleCircuit::<Fr> {
         a: Fr::from(10u64),
         b: Fr::from(10u64),
@@ -127,7 +159,7 @@ fn test_simple_err() {
     use halo2_proofs::dev::MockProver;
     use halo2_proofs::pairing::bn256::Fr;
 
-    const K: u32 = 8;
+    const K: u32 = 11;
     let circuit = SimpleCircuit::<Fr> {
         a: Fr::from(10u64),
         b: Fr::from(20u64),
