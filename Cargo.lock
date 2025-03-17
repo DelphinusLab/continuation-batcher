@@ -880,7 +880,7 @@ dependencies = [
 [[package]]
 name = "halo2aggregator-s"
 version = "1.1.0"
-source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git?branch=moore/logup-shuffle-extend-rebase#7033957ca59ddc71a43576bb72ec28a2833f611c"
+source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git?tag=stable-logup-shuffle-1.0.0#ba51aed7154ac0f4f865cd1d3883daa1e77f0a08"
 dependencies = [
  "ark-ff",
  "ark-std",
