@@ -365,6 +365,11 @@ impl Prover for ProofPieceInfo {
         hashtype: HashType,
         schema: OpenSchema,
     ) -> Vec<u8> {
+
+        println!("instances: {instances:?}");
+        println!("hashtype: {hashtype:?}");
+        println!("schema: {schema:?}");
+
         use ark_std::{end_timer, start_timer};
 
         let inputs_size = instances.iter().fold(0, |acc, x| usize::max(acc, x.len()));
@@ -513,6 +518,9 @@ impl Prover for ProofPieceInfo {
             }
         };
         end_timer!(timer);
+
+        println!("create_proof transcript: {r:?}");
+
         r
     }
 
