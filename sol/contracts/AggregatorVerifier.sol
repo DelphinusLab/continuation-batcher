@@ -38,7 +38,7 @@ contract AggregatorVerifier {
         uint256[] calldata aux,
         uint256[][] calldata target_instance
     ) public view {
-        uint256[] memory buf = new uint256[](43);
+        uint256[] memory buf = new uint256[](52);
 
         // step 0: calc real verify instance with keccak
         uint256 len = 0;
