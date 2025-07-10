@@ -328,7 +328,7 @@ dependencies = [
  "downcast-rs",
  "env_logger 0.9.3",
  "ff",
- "halo2_proofs 0.1.0-beta.1 (git+https://github.com/DelphinusLab/halo2-gpu-specific.git?tag=stable-logup-shuffle-v1.0.0)",
+ "halo2_proofs 0.1.0-beta.1 (git+https://github.com/DelphinusLab/halo2-gpu-specific.git?tag=stable-logup-shuffle-v1.0.1)",
  "halo2aggregator-s",
  "hex",
  "lazy_static",
@@ -823,7 +823,7 @@ dependencies = [
 [[package]]
 name = "halo2_proofs"
 version = "0.1.0-beta.1"
-source = "git+https://github.com/DelphinusLab/halo2-gpu-specific.git?tag=stable-logup-shuffle-v1.0.0#55d1969571375005206615deb6ff0395a7ca1607"
+source = "git+https://github.com/DelphinusLab/halo2-gpu-specific.git?tag=stable-logup-shuffle-v1.0.1#f2aa4f26f223b44f3b0c8813ac549d970657afe8"
 dependencies = [
  "ark-std",
  "blake2b_simd",
@@ -852,7 +852,7 @@ dependencies = [
 [[package]]
 name = "halo2_proofs"
 version = "0.1.0-beta.1"
-source = "git+https://github.com/DelphinusLab/halo2-gpu-specific.git#55d1969571375005206615deb6ff0395a7ca1607"
+source = "git+https://github.com/DelphinusLab/halo2-gpu-specific.git#f2aa4f26f223b44f3b0c8813ac549d970657afe8"
 dependencies = [
  "ark-std",
  "blake2b_simd",
@@ -880,13 +880,13 @@ dependencies = [
 [[package]]
 name = "halo2aggregator-s"
 version = "1.1.0"
-source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git?tag=stable-logup-shuffle-1.0.0#ba51aed7154ac0f4f865cd1d3883daa1e77f0a08"
+source = "git+https://github.com/DelphinusLab/halo2aggregator-s.git?tag=stable-logup-shuffle-v1.0.1#32033034e97a2e6d234c443a3808d398d269419e"
 dependencies = [
  "ark-ff",
  "ark-std",
  "blake2b_simd",
  "ff",
- "halo2_proofs 0.1.0-beta.1 (git+https://github.com/DelphinusLab/halo2-gpu-specific.git?tag=stable-logup-shuffle-v1.0.0)",
+ "halo2_proofs 0.1.0-beta.1 (git+https://github.com/DelphinusLab/halo2-gpu-specific.git?tag=stable-logup-shuffle-v1.0.1)",
  "halo2ecc-o",
  "lazy_static",
  "num-bigint",
@@ -904,10 +904,10 @@ dependencies = [
 [[package]]
 name = "halo2ecc-o"
 version = "0.1.0"
-source = "git+https://github.com/ooglayout/halo2ecc-o.git#abe27af616b7790fda6dad6c5fb78e73331330b0"
+source = "git+https://github.com/ooglayout/halo2ecc-o.git#333f7628dc31521754b6a226a618cc1dabb9bb18"
 dependencies = [
  "ark-std",
- "halo2_proofs 0.1.0-beta.1 (git+https://github.com/DelphinusLab/halo2-gpu-specific.git?tag=stable-logup-shuffle-v1.0.0)",
+ "halo2_proofs 0.1.0-beta.1 (git+https://github.com/DelphinusLab/halo2-gpu-specific.git?tag=stable-logup-shuffle-v1.0.1)",
  "lazy_static",
  "num-bigint",
  "num-integer",
@@ -2351,13 +2351,13 @@ dependencies = [
 [[package]]
 name = "zkwasm-prover"
 version = "0.1.0"
-source = "git+https://github.com/DelphinusLab/zkWasm-prover.git?tag=stable-logup-shuffle-1.0#198d74b3aef0101f6fee7c07873a0ea2e859de2c"
+source = "git+https://github.com/DelphinusLab/zkWasm-prover.git?tag=stable-logup-shuffle-v1.0.1#17ab7a9cf64560d8dff78c408588d5cf659272c8"
 dependencies = [
  "ark-std",
  "cc",
  "cuda-runtime-sys",
  "env_logger 0.11.6",
- "halo2_proofs 0.1.0-beta.1 (git+https://github.com/DelphinusLab/halo2-gpu-specific.git?tag=stable-logup-shuffle-v1.0.0)",
+ "halo2_proofs 0.1.0-beta.1 (git+https://github.com/DelphinusLab/halo2-gpu-specific.git?tag=stable-logup-shuffle-v1.0.1)",
  "lazy_static",
  "libc",
  "log",
