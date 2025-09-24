@@ -26,6 +26,12 @@ pub enum Accumulator {
     UseHash,
 }
 
+#[derive(clap::ArgEnum, Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
+pub enum ProveSchema {
+    UseHalo2,
+    UseHyperPlonk,
+}
+
 pub trait ArgBuilder {
     fn hashtype<'a>() -> Arg<'a> {
         arg!(-c --challenge<CHALLENGE_HASH_TYPE>... "HashType of Challenge")
@@ -38,7 +44,11 @@ pub trait ArgBuilder {
             .max_values(1)
             .value_parser(value_parser!(OpenSchema))
     }
-
+    fn proveschema<'a>() -> Arg<'a> {
+        arg!(-p --proveschema<PROVE_SCHEMA>... "Prove Schema")
+            .max_values(1)
+            .value_parser(value_parser!(ProveSchema))
+    }
     fn accumulator<'a>() -> Arg<'a> {
         arg!(-a --accumulator[ACCUMULATOR]... "Accumulator of the public instances (default is using commitment)")
             .value_parser(value_parser!(Accumulator))
@@ -62,6 +72,13 @@ pub trait ArgBuilder {
         matches
             .get_one::<Accumulator>("accumulator")
             .map_or(Accumulator::UseCommitment, |x| x.clone())
+            .clone()
+    }
+
+    fn parse_prove_schema(matches: &ArgMatches) -> ProveSchema {
+        matches
+            .get_one::<ProveSchema>("provechema")
+            .map_or(ProveSchema::UseHalo2, |x| x.clone())
             .clone()
     }
 

@@ -1,6 +1,6 @@
-use crate::args::Accumulator;
 use crate::args::HashType;
 use crate::args::OpenSchema;
+use crate::args::{Accumulator, ProveSchema};
 use crate::batch::BatchInfo;
 use crate::batch::CommitmentCheck;
 use crate::proof::load_or_build_unsafe_params;
@@ -173,6 +173,7 @@ pub fn exec_batch_proofs_flat(
         0,
         batchinfo.get_agg_instance_size() as u32,
         None,
+        ProveSchema::UseHalo2,
     );
     let (agg_proof_piece, instances, transcripts, shadow_instances, _) = batchinfo.batch_proof(
         proof_piece,
@@ -333,6 +334,7 @@ pub fn exec_batch_proofs_continuation(
         0,
         batchinfo.get_agg_instance_size() as u32,
         Some(start_circuit_prefix.clone()),
+        ProveSchema::UseHalo2,
     );
 
     let (agg_proof_piece, instances, transcripts, _, last_hash) = batchinfo.batch_proof(
@@ -393,6 +395,7 @@ pub fn exec_batch_proofs_continuation(
             i,
             batchinfo.get_agg_instance_size() as u32,
             Some(rec_circuit_prefix.clone()),
+            ProveSchema::UseHalo2,
         );
         let (agg_proof_piece, instances, transcripts, _, last_hash) = batchinfo.batch_proof(
             proof_piece.clone(),
@@ -450,6 +453,7 @@ pub fn exec_batch_proofs_continuation(
         0,
         batchinfo.get_agg_instance_size() as u32,
         Some(final_circuit_prefix.clone()),
+        ProveSchema::UseHalo2,
     );
 
     let (agg_proof_piece, instances, transcripts, shadow_instances, last_hash) = batchinfo
@@ -588,7 +592,7 @@ pub fn exec_solidity_gen<D: Digest + Clone>(
         |i| format!("AggregatorVerifierStep{}.sol", i + 1),
         hasher,
         &proof_params_verifier,
-        &proof[0].vkey,
+        proof[0].vkey.as_halo2().unwrap(),
         &proof[0].instances[0],
         proof[0].transcripts.clone(),
     );

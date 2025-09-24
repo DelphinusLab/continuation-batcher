@@ -1,7 +1,7 @@
-use crate::args::HashType;
 use crate::args::OpenSchema;
-use halo2_proofs::arithmetic::FieldExt;
+use crate::args::{HashType, ProveSchema};
 use halo2_proofs::arithmetic::MultiMillerLoop;
+use halo2_proofs::arithmetic::{Engine, FieldExt};
 use halo2_proofs::dev::MockProver;
 use halo2_proofs::helpers::Serializable;
 use halo2_proofs::plonk::create_witness;
@@ -16,6 +16,7 @@ use halo2_proofs::plonk::SingleVerifier;
 use halo2_proofs::plonk::VerifyingKey;
 use halo2_proofs::poly::commitment::Params;
 use halo2_proofs::poly::commitment::ParamsVerifier;
+use halo2aggregator_s::api::VerifierKey;
 use halo2aggregator_s::circuits::utils::load_instance;
 use halo2aggregator_s::circuits::utils::load_or_build_vkey;
 use halo2aggregator_s::circuits::utils::load_proof;
@@ -24,16 +25,27 @@ use halo2aggregator_s::transcript::poseidon::PoseidonRead;
 use halo2aggregator_s::transcript::poseidon::PoseidonWrite;
 use halo2aggregator_s::transcript::sha256::ShaRead;
 use halo2aggregator_s::transcript::sha256::ShaWrite;
+use plonkish_backend::backend::hyperplonk;
+use plonkish_backend::backend::hyperplonk::{HyperPlonkProverParam, HyperPlonkVerifierParam};
+use plonkish_backend::util::transcript as hyper_transcript;
+
 use lru::LruCache;
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fs::OpenOptions;
+use std::hash::Hash;
 use std::io::Write;
 use std::num::NonZeroUsize;
 use std::path::Path;
 use std::path::PathBuf;
 
+use plonkish_backend::backend::PlonkishBackend;
+use plonkish_backend::pcs::multilinear::Zeromorph;
+use plonkish_backend::pcs::univariate::UnivariateKzg;
+use plonkish_backend::IntoHalo2Error;
+
 pub struct ProvingKeyCache<E: MultiMillerLoop> {
     pub cache: LruCache<String, ProvingKey<E::G1Affine>>,
+    pub cache_hyper: LruCache<String, HyperPlonkProverParam<E::G1Affine>>,
     pub cache_dir: PathBuf,
 }
 
@@ -42,14 +54,22 @@ impl<E: MultiMillerLoop> ProvingKeyCache<E> {
         let lrucache = LruCache::<String, ProvingKey<E::G1Affine>>::new(
             NonZeroUsize::new(cache_size).unwrap(),
         );
+        let lrucache_hyper = LruCache::<String, HyperPlonkProverParam<E::G1Affine>>::new(
+            NonZeroUsize::new(cache_size).unwrap(),
+        );
+
         ProvingKeyCache {
             cache: lrucache,
+            cache_hyper: lrucache_hyper,
             cache_dir,
         }
     }
 
     pub fn contains(&mut self, key: &String) -> bool {
         self.cache.get(key).is_some()
+    }
+    pub fn contains_hyper(&mut self, key: &String) -> bool {
+        self.cache_hyper.get(key).is_some()
     }
 
     pub fn push<'a>(
@@ -61,6 +81,15 @@ impl<E: MultiMillerLoop> ProvingKeyCache<E> {
         self.cache.get(&key).unwrap()
     }
 
+    pub fn push_hyper<'a>(
+        &'a mut self,
+        key: String,
+        v: HyperPlonkProverParam<E::G1Affine>,
+    ) -> &'a HyperPlonkProverParam<E::G1Affine> {
+        self.cache_hyper.push(key.clone(), v);
+        self.cache_hyper.get(&key).unwrap()
+    }
+
     pub fn load_or_build_pkey<'a, C: Circuit<E::Scalar>>(
         &'a mut self,
         c: &C,
@@ -68,6 +97,21 @@ impl<E: MultiMillerLoop> ProvingKeyCache<E> {
         name: String,
     ) -> &'a ProvingKey<E::G1Affine> {
         load_or_build_pkey::<E, C>(
+            &params,
+            c,
+            &self.cache_dir.join(name.clone()),
+            &self.cache_dir.join(format!("{}.vkey.data", name.clone())),
+            self,
+        )
+    }
+
+    pub fn load_or_build_hyper_pkey<'a, C: Circuit<E::Scalar>>(
+        &'a mut self,
+        c: &C,
+        params: &Params<E::G1Affine>,
+        name: String,
+    ) -> &'a HyperPlonkProverParam<E::G1Affine> {
+        load_or_build_hyper_pkey::<E, C>(
             &params,
             c,
             &self.cache_dir.join(name.clone()),
@@ -111,6 +155,7 @@ pub struct ProofPieceInfo {
     pub witness: String,
     pub instance: String,
     pub transcript: String,
+    pub prove_type: ProveSchema,
 }
 
 impl ProofPieceInfo {
@@ -119,6 +164,7 @@ impl ProofPieceInfo {
         i: usize,
         instance_size: u32,
         circuit_name_prefix: Option<String>,
+        prove_type: ProveSchema,
     ) -> Self {
         let circuit_prefix = circuit_name_prefix.unwrap_or(name.clone());
         ProofPieceInfo {
@@ -127,6 +173,7 @@ impl ProofPieceInfo {
             transcript: format!("{}.{}.transcript.data", name, i),
             circuit: format!("{}.circuit.data", circuit_prefix),
             instance_size,
+            prove_type,
         }
     }
 }
@@ -177,14 +224,20 @@ impl ProofGenerationInfo {
 
 #[derive(Clone)]
 pub struct ProofInfo<E: MultiMillerLoop> {
-    pub vkey: VerifyingKey<E::G1Affine>,
+    pub vkey: VerifierKey<E::G1Affine>,
     pub instances: Vec<Vec<E::Scalar>>,
     pub transcripts: Vec<u8>,
     pub k: usize,
     pub hashtype: HashType,
+    // pub prove_type: ProveSchema,//todo real needed?
 }
 
-impl<E: MultiMillerLoop> ProofInfo<E> {
+impl<E: MultiMillerLoop + std::fmt::Debug> ProofInfo<E>
+where
+    <E as Engine>::G1Affine: Serialize + DeserializeOwned,
+    <E as Engine>::G2Affine: Serialize + DeserializeOwned,
+    <E as Engine>::Scalar: Serialize + DeserializeOwned + Hash,
+{
     pub fn load_proof(
         cache_folder: &Path,
         param_folder: &Path,
@@ -192,7 +245,9 @@ impl<E: MultiMillerLoop> ProofInfo<E> {
     ) -> Vec<Self> {
         let mut proofs = vec![];
         for proof_info in loadinfo.proofs.iter() {
-            let vkey = read_vkey_full::<E>(&param_folder.join(proof_info.circuit.clone()));
+            let vkey = proof_info
+                .prove_type
+                .read_vkey::<E>(&param_folder.join(proof_info.circuit.clone()));
             println!("loading instance from: {}", proof_info.instance);
             println!("loading instance size: {}", proof_info.instance_size);
             let instances = load_instance::<E>(
@@ -218,43 +273,66 @@ impl<E: MultiMillerLoop> ProofInfo<E> {
     ) -> anyhow::Result<()> {
         let strategy = SingleVerifier::new(&params_verifier);
 
-        match self.hashtype {
-            HashType::Poseidon => verify_proof_ext(
-                params_verifier,
-                &self.vkey,
-                strategy,
-                &[&self
-                    .instances
-                    .iter()
-                    .map(|instances| instances.as_slice())
-                    .collect::<Vec<_>>()[..]],
-                &mut PoseidonRead::init(&self.transcripts[..]),
-                open_scheme == OpenSchema::GWC,
-            )?,
-            HashType::Sha => verify_proof_ext(
-                params_verifier,
-                &self.vkey,
-                strategy,
-                &[&self
-                    .instances
-                    .iter()
-                    .map(|instances| instances.as_slice())
-                    .collect::<Vec<_>>()[..]],
-                &mut ShaRead::<_, _, _, sha2::Sha256>::init(&self.transcripts[..]),
-                open_scheme == OpenSchema::GWC,
-            )?,
-            HashType::Keccak => verify_proof_ext(
-                params_verifier,
-                &self.vkey,
-                strategy,
-                &[&self
-                    .instances
-                    .iter()
-                    .map(|instances| instances.as_slice())
-                    .collect::<Vec<_>>()[..]],
-                &mut ShaRead::<_, _, _, sha3::Keccak256>::init(&self.transcripts[..]),
-                open_scheme == OpenSchema::GWC,
-            )?,
+        match &self.vkey {
+            VerifierKey::Halo2(vk) => match self.hashtype {
+                HashType::Poseidon => verify_proof_ext(
+                    params_verifier,
+                    vk,
+                    strategy,
+                    &[&self
+                        .instances
+                        .iter()
+                        .map(|instances| instances.as_slice())
+                        .collect::<Vec<_>>()[..]],
+                    &mut PoseidonRead::init(&self.transcripts[..]),
+                    open_scheme == OpenSchema::GWC,
+                )?,
+                HashType::Sha => verify_proof_ext(
+                    params_verifier,
+                    vk,
+                    strategy,
+                    &[&self
+                        .instances
+                        .iter()
+                        .map(|instances| instances.as_slice())
+                        .collect::<Vec<_>>()[..]],
+                    &mut ShaRead::<_, _, _, sha2::Sha256>::init(&self.transcripts[..]),
+                    open_scheme == OpenSchema::GWC,
+                )?,
+                HashType::Keccak => verify_proof_ext(
+                    params_verifier,
+                    vk,
+                    strategy,
+                    &[&self
+                        .instances
+                        .iter()
+                        .map(|instances| instances.as_slice())
+                        .collect::<Vec<_>>()[..]],
+                    &mut ShaRead::<_, _, _, sha3::Keccak256>::init(&self.transcripts[..]),
+                    open_scheme == OpenSchema::GWC,
+                )?,
+            },
+            VerifierKey::HyperPlonk(vk) => match self.hashtype {
+                HashType::Poseidon => {
+                    let kzg_vk_params =
+                        plonkish_backend::pcs::univariate::UnivariateKzgVerifierParam::<E>::new(
+                            params_verifier.g1,
+                            params_verifier.g2,
+                            params_verifier.s_g2,
+                        );
+                    let kzg_vs = plonkish_backend::pcs::multilinear::ZeromorphKzgVerifierParam::new(
+                        kzg_vk_params,
+                    );
+                    let vs = hyperplonk::HyperPlonkVerifierSetupParam { pcs: kzg_vs };
+                    let mut reader =
+                        hyper_transcript::poseidon::PoseidonRead::init(&self.transcripts[..]);
+                    <hyperplonk::HyperPlonk<Zeromorph<UnivariateKzg<E>>> as PlonkishBackend<
+                        E::G1Affine,
+                    >>::verify(&vs, vk, &self.instances, &mut reader)
+                    .into_error_halo2()?
+                }
+                _ => unimplemented!(),
+            },
         };
 
         Ok(())
@@ -305,6 +383,21 @@ pub trait Prover {
         schema: OpenSchema,
     ) -> Vec<u8>;
 
+    //todo: combine with halo2's
+    fn create_hyper_plonk_proof<E: MultiMillerLoop + std::fmt::Debug, C: Circuit<E::Scalar>>(
+        &self,
+        c: &C,
+        instances: &Vec<Vec<E::Scalar>>,
+        params: &Params<E::G1Affine>,
+        pkey: &HyperPlonkProverParam<E::G1Affine>,
+        hashtype: HashType,
+        // schema: OpenSchema,
+    ) -> Vec<u8>
+    where
+        <E as Engine>::G1Affine: Serialize + DeserializeOwned,
+        <E as Engine>::G2Affine: Serialize + DeserializeOwned,
+        <E as Engine>::Scalar: Serialize + DeserializeOwned + Hash;
+
     fn create_witness<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
         &self,
         c: &C,
@@ -339,7 +432,7 @@ impl ProofPieceInfo {
         fd.write_all(transcript).unwrap();
     }
 
-    pub fn exec_create_proof<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
+    pub fn exec_create_proof<E: MultiMillerLoop + std::fmt::Debug, C: Circuit<E::Scalar>>(
         &self,
         c: &C,
         instances: &Vec<Vec<E::Scalar>>,
@@ -348,13 +441,28 @@ impl ProofPieceInfo {
         param_cache: &mut ParamsCache<E>,
         hashtype: HashType,
         schema: OpenSchema,
-    ) -> Vec<u8> {
+    ) -> Vec<u8>
+    where
+        <E as Engine>::G1Affine: Serialize + DeserializeOwned,
+        <E as Engine>::G2Affine: Serialize + DeserializeOwned,
+        <E as Engine>::Scalar: Serialize + DeserializeOwned + Hash,
+    {
         let params = param_cache.generate_k_params(k);
-        let pkey = pkey_cache.load_or_build_pkey::<C>(c, &params, self.circuit.clone());
-        self.create_proof::<E, C>(c, instances, params, pkey, hashtype, schema)
+        match self.prove_type {
+            ProveSchema::UseHalo2 => {
+                let pkey = pkey_cache.load_or_build_pkey::<C>(c, &params, self.circuit.clone());
+                self.create_proof::<E, C>(c, instances, params, pkey, hashtype, schema)
+            }
+            ProveSchema::UseHyperPlonk => {
+                let pkey =
+                    pkey_cache.load_or_build_hyper_pkey::<C>(c, &params, self.circuit.clone());
+                self.create_hyper_plonk_proof::<E, C>(c, instances, params, pkey, hashtype)
+            }
+        }
     }
 }
 
+//todo refactor add prover schema trait
 impl Prover for ProofPieceInfo {
     fn create_proof<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
         &self,
@@ -516,6 +624,76 @@ impl Prover for ProofPieceInfo {
         r
     }
 
+    fn create_hyper_plonk_proof<E: MultiMillerLoop + std::fmt::Debug, C: Circuit<E::Scalar>>(
+        &self,
+        c: &C,
+        instances: &Vec<Vec<E::Scalar>>,
+        params: &Params<E::G1Affine>,
+        pkey: &HyperPlonkProverParam<E::G1Affine>,
+        hashtype: HashType,
+        // schema: OpenSchema,
+    ) -> Vec<u8>
+    where
+        <E as Engine>::G1Affine: Serialize + DeserializeOwned,
+        <E as Engine>::G2Affine: Serialize + DeserializeOwned,
+        <E as Engine>::Scalar: Serialize + DeserializeOwned + Hash,
+    {
+        use ark_std::{end_timer, start_timer};
+
+        let inputs_size = instances.iter().fold(0, |acc, x| usize::max(acc, x.len()));
+
+        // let instances: Vec<[E::Scalar]> = instances.iter().map(|x| &x[..]).collect::<Vec<_>>();
+
+        let params_verifier: ParamsVerifier<E> = params.verifier(inputs_size).unwrap();
+
+        let hyper_circuit = plonkish_backend::transform::circuit::get_zkwasm_circuit::<E, C>(
+            params.get_k(),
+            &c,
+            instances.clone(),
+        );
+
+        let kzg_pk_params = plonkish_backend::pcs::univariate::UnivariateKzgProverParam::<E>::new(
+            params.get_k() as usize,
+            params.get_g(),
+            params.get_g_lagrange().clone(),
+        );
+        let kzg_pk =
+            plonkish_backend::pcs::multilinear::ZeromorphKzgProverParam::new(kzg_pk_params);
+        let ps = plonkish_backend::backend::hyperplonk::HyperPlonkProverSetupParam { pcs: kzg_pk };
+
+        let kzg_vk_params = plonkish_backend::pcs::univariate::UnivariateKzgVerifierParam::<E>::new(
+            params_verifier.g1,
+            params_verifier.g2,
+            params_verifier.s_g2,
+        );
+        let kzg_vs =
+            plonkish_backend::pcs::multilinear::ZeromorphKzgVerifierParam::new(kzg_vk_params);
+        let vs = hyperplonk::HyperPlonkVerifierSetupParam { pcs: kzg_vs };
+
+        let timer = start_timer!(|| "creating proof ...");
+        let r = match hashtype {
+            HashType::Poseidon => {
+                let mut transcript = hyper_transcript::poseidon::PoseidonWrite::init(vec![]);
+                <hyperplonk::HyperPlonk<Zeromorph<UnivariateKzg<E>>> as PlonkishBackend<
+                    E::G1Affine,
+                >>::prove(&ps, &pkey, &hyper_circuit, &mut transcript)
+                .expect("prove should not fail");
+                let r = transcript.finalize();
+                let mut reader = hyper_transcript::poseidon::PoseidonRead::init(&r[..]);
+                <hyperplonk::HyperPlonk<Zeromorph<UnivariateKzg<E>>> as PlonkishBackend<
+                    E::G1Affine,
+                >>::verify(&vs, pkey.get_vk(), instances, &mut reader)
+                .unwrap();
+                r
+            }
+            _ => {
+                unimplemented!()
+            }
+        };
+        end_timer!(timer);
+        r
+    }
+
     fn create_witness<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
         &self,
         c: &C,
@@ -599,7 +777,8 @@ pub fn load_or_build_pkey<'a, E: MultiMillerLoop, C: Circuit<E::Scalar>>(
             end_timer!(timer);
             pkey
         } else {
-            let vkey = load_or_build_vkey::<E, C>(params, circuit, Some(vkey_file));
+            let vkey = load_or_build_vkey::<E, C>(params, circuit, Some(vkey_file), false);
+            let vkey = vkey.as_halo2().unwrap().clone();
             let pkey =
                 keygen_pk(&params, vkey.clone(), circuit).expect("keygen_pk should not fail");
             let timer = start_timer!(|| "test storing info full ...");
@@ -629,10 +808,78 @@ fn store_info_full<E: MultiMillerLoop, C: Circuit<E::Scalar>>(
     data.write(&mut fd).unwrap();
 }
 
-pub(crate) fn read_vkey_full<E: MultiMillerLoop>(cache_file: &Path) -> VerifyingKey<E::G1Affine> {
+fn store_hyper_pk_full<E: MultiMillerLoop>(
+    pkey: &HyperPlonkProverParam<E::G1Affine>,
+    cache_file: &Path,
+) {
+    log::info!("store pkey full to {:?}", cache_file);
+    let mut fd = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(&cache_file)
+        .unwrap();
+    pkey.store(&mut fd).unwrap()
+}
+
+pub fn load_or_build_hyper_pkey<'a, E: MultiMillerLoop, C: Circuit<E::Scalar>>(
+    params: &Params<E::G1Affine>,
+    circuit: &C,
+    cache_file: &Path,
+    vkey_file: &Path,
+    pkey_cache: &'a mut ProvingKeyCache<E>,
+) -> &'a HyperPlonkProverParam<E::G1Affine> {
+    use ark_std::{end_timer, start_timer};
+    let key = cache_file.to_str().unwrap().to_string();
+    if pkey_cache.contains_hyper(&key) {
+        log::info!("pkey find in cache. Key: {:?}", &key);
+        pkey_cache.cache_hyper.get(&key).as_ref().unwrap()
+    } else {
+        log::info!("pkey not found in cache. Key: {:?}", &key);
+        let pkey = if Path::exists(&cache_file) {
+            let timer = start_timer!(|| "test read hyper pk info full ...");
+            let pkey = read_hyper_pk_full::<E>(&cache_file);
+            //assert_eq!(vkey.domain, pkey.get_vk().domain);
+            //assert_eq!(vkey.fixed_commitments, pkey.get_vk().fixed_commitments);
+            end_timer!(timer);
+            pkey
+        } else {
+            let vkey = load_or_build_vkey::<E, C>(params, circuit, Some(vkey_file), true);
+            let pkey =
+                hyperplonk::keygen_pk::<E, C>(&params, vkey.as_hyper_plonk().unwrap(), circuit)
+                    .expect("keygen_pk should not fail");
+            let timer = start_timer!(|| "storing hyper pk info full ...");
+            store_hyper_pk_full::<E>(&pkey, cache_file);
+            end_timer!(timer);
+            pkey
+        };
+
+        pkey_cache.push_hyper(key, pkey)
+    }
+}
+
+pub(crate) fn read_vkey_full<E: MultiMillerLoop>(cache_file: &Path) -> VerifierKey<E::G1Affine> {
     log::info!("read vkey full from {:?}", cache_file);
     let mut fd = std::fs::File::open(&cache_file).unwrap();
-    VerifyingKey::<E::G1Affine>::fetch(&mut fd).unwrap()
+    VerifierKey::Halo2(VerifyingKey::<E::G1Affine>::fetch(&mut fd).unwrap())
+}
+pub(crate) fn read_hyper_vkey_full<E: MultiMillerLoop>(
+    cache_file: &Path,
+) -> VerifierKey<E::G1Affine> {
+    log::info!("read vkey full from {:?}", cache_file);
+    println!("read hyper vkey full from {:?}", cache_file);
+    let mut fd = std::fs::File::open(&cache_file).unwrap();
+    VerifierKey::HyperPlonk(HyperPlonkVerifierParam::<E::G1Affine>::fetch(&mut fd).unwrap())
+}
+
+impl ProveSchema {
+    pub fn read_vkey<E: MultiMillerLoop>(&self, cache_file: &Path) -> VerifierKey<E::G1Affine> {
+        match self {
+            ProveSchema::UseHalo2 => read_vkey_full::<E>(cache_file),
+            ProveSchema::UseHyperPlonk => read_hyper_vkey_full::<E>(cache_file),
+        }
+    }
 }
 
 pub(crate) fn read_pk_full<E: MultiMillerLoop>(
@@ -647,6 +894,17 @@ pub(crate) fn read_pk_full<E: MultiMillerLoop>(
     let timer = start_timer!(|| "fetch pk full ...");
     let circuit_data = CircuitData::read(&mut fd).unwrap();
     let pk = circuit_data.into_proving_key(params);
+    end_timer!(timer);
+    pk
+}
+
+pub(crate) fn read_hyper_pk_full<E: MultiMillerLoop>(
+    cache_file: &Path,
+) -> HyperPlonkProverParam<E::G1Affine> {
+    use ark_std::{end_timer, start_timer};
+    let timer = start_timer!(|| "fetch pkey full ...");
+    let mut fd = std::fs::File::open(&cache_file).unwrap();
+    let pk = HyperPlonkProverParam::fetch(&mut fd).unwrap();
     end_timer!(timer);
     pk
 }
@@ -692,7 +950,13 @@ fn batch_single_circuit() {
 
         let instances = vec![vec![Fr::from(300u64)]];
         let param_file = format!("K{}.params", K);
-        let circuit_info = ProofPieceInfo::new("test_circuit".to_string(), 0, 1, None);
+        let circuit_info = ProofPieceInfo::new(
+            "test_circuit".to_string(),
+            0,
+            1,
+            None,
+            ProveSchema::UseHalo2,
+        );
 
         // testing proof
         circuit_info.mock_proof::<Bn256, _>(K, &circuit, &instances);
@@ -732,7 +996,13 @@ fn batch_single_circuit() {
         };
 
         let instances = vec![vec![Fr::from(300u64)]];
-        let circuit_info = ProofPieceInfo::new("test_circuit".to_string(), 1, 1, None);
+        let circuit_info = ProofPieceInfo::new(
+            "test_circuit".to_string(),
+            1,
+            1,
+            None,
+            ProveSchema::UseHalo2,
+        );
 
         let transcripts = circuit_info.exec_create_proof(
             &circuit,

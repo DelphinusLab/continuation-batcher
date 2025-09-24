@@ -39,12 +39,13 @@ bitvec = "1.0.1"
 quote = "1.0.25"
 lru = "0.11.0"
 zkwasm-prover = { git = "https://github.com/DelphinusLab/zkWasm-prover.git", tag="stable-logup-shuffle-v1.0.1", optional = true }
+plonkish_backend = { path = "/home/moore/github/delphinus/hyperplonk/plonkish_backend"}
 
 [dev-dependencies]
 rusty-fork = "0.3.0"
 
 [features]
-default = []
+default = ["profile","cuda"]
 perf = ["dep:zkwasm-prover"]
 profile = ["ark-std/print-trace"]
 cuda = ["halo2_proofs/cuda"]
@@ -53,3 +54,7 @@ on_prove_pairing = ["halo2aggregator-s/on_prove_pairing_affine"]
 [profile.dev]
 opt-level = 3
 
+[patch."https://github.com/DelphinusLab/halo2-gpu-specific.git"]
+halo2_proofs={path="/home/moore/github/delphinus/temp/halo2-gpu-specific/halo2_proofs"}
+[patch."https://github.com/DelphinusLab/halo2aggregator-s.git"]
+halo2aggregator-s={path="/home/moore/github/delphinus/halo2aggregator-s"}

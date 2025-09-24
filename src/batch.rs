@@ -15,7 +15,8 @@ use halo2aggregator_s::circuit_verifier::circuit::AggregatorCircuit;
 use halo2aggregator_s::circuit_verifier::G2AffineBaseHelper;
 use halo2aggregator_s::circuit_verifier::GtHelper;
 use halo2aggregator_s::circuits::utils::{AggregatorConfig, TranscriptHash};
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use std::hash::Hash;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -78,6 +79,11 @@ pub struct BatchInfo<E: MultiMillerLoop> {
 
 impl<E: MultiMillerLoop + G2AffineBaseHelper + GtHelper + MultiMillerLoopOnProvePairing>
     BatchInfo<E>
+where
+    E: std::fmt::Debug,
+    <E as Engine>::G1Affine: Serialize + DeserializeOwned,
+    <E as Engine>::G2Affine: Serialize + DeserializeOwned,
+    <E as Engine>::Scalar: Serialize + DeserializeOwned + Hash,
 {
     pub fn get_agg_instance_size(&self) -> usize {
         if self.is_final {
@@ -97,14 +103,12 @@ impl<E: MultiMillerLoop + G2AffineBaseHelper + GtHelper + MultiMillerLoopOnProve
         for proofinfo in proofsinfo.iter() {
             if proofinfo.name == cn.name {
                 idx += cn.proof_idx;
-                let c = self.proofs[idx]
+                column_idx = self.proofs[idx]
                     .vkey
-                    .cs
-                    .named_advices
+                    .get_name_advices()
                     .iter()
-                    .position(|r| r.0 == cn.column_name)
-                    .unwrap();
-                column_idx = Some(self.proofs[idx].vkey.cs.named_advices[c].1);
+                    .find(|r| r.0 == cn.column_name)
+                    .map(|r| r.1);
                 break;
             } else {
                 idx += proofinfo.proofs.len()
@@ -206,7 +210,7 @@ impl<E: MultiMillerLoop + G2AffineBaseHelper + GtHelper + MultiMillerLoopOnProve
 
         println!("preparing batch circuit (is final {}):", self.is_final);
         for vkey in vkeys.iter() {
-            println!("vkey named advices: {:?}", vkey.cs.named_advices);
+            println!("vkey named advices: {:?}", vkey.get_name_advices());
         }
         println!("commitment equiv: {:?}", self.equivalents);
         println!("commitment expose: {:?}", self.expose);
