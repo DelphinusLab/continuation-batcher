@@ -319,6 +319,7 @@ where
                             params_verifier.g1,
                             params_verifier.g2,
                             params_verifier.s_g2,
+                            Some(params_verifier.sum_inv_add_s_l_g2),
                         );
                     let kzg_vs = plonkish_backend::pcs::multilinear::ZeromorphKzgVerifierParam::new(
                         kzg_vk_params,
@@ -651,11 +652,12 @@ impl Prover for ProofPieceInfo {
             &c,
             instances.clone(),
         );
-
+        //TODO not copy, high cost
         let kzg_pk_params = plonkish_backend::pcs::univariate::UnivariateKzgProverParam::<E>::new(
             params.get_k() as usize,
             params.get_g(),
             params.get_g_lagrange().clone(),
+            Some(params.g_cross.clone()),
         );
         let kzg_pk =
             plonkish_backend::pcs::multilinear::ZeromorphKzgProverParam::new(kzg_pk_params);
@@ -665,6 +667,7 @@ impl Prover for ProofPieceInfo {
             params_verifier.g1,
             params_verifier.g2,
             params_verifier.s_g2,
+            Some(params_verifier.sum_inv_add_s_l_g2),
         );
         let kzg_vs =
             plonkish_backend::pcs::multilinear::ZeromorphKzgVerifierParam::new(kzg_vk_params);
@@ -955,7 +958,7 @@ fn batch_single_circuit() {
             0,
             1,
             None,
-            ProveSchema::UseHalo2,
+            ProveSchema::UseHyperPlonk,
         );
 
         // testing proof
@@ -997,7 +1000,7 @@ fn batch_single_circuit() {
 
         let instances = vec![vec![Fr::from(300u64)]];
         let circuit_info = ProofPieceInfo::new(
-            "test_circuit".to_string(),
+            "test_circuit2".to_string(),
             1,
             1,
             None,

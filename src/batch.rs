@@ -1,5 +1,5 @@
-use crate::args::HashType;
 use crate::args::OpenSchema;
+use crate::args::{HashType, ProveSchema};
 use crate::proof::ParamsCache;
 use crate::proof::ProofGenerationInfo;
 use crate::proof::ProofInfo;
@@ -72,6 +72,7 @@ pub struct BatchInfo<E: MultiMillerLoop> {
     pub batch_k: usize,
     pub target_k: usize,
     pub equivalents: Vec<[usize; 4]>,
+    pub equivalents_diff_basis: Vec<[usize; 4]>,
     pub expose: Vec<[usize; 2]>,
     pub absorb: Vec<([usize; 3], [usize; 2])>,
     pub is_final: bool,
@@ -97,9 +98,10 @@ where
         &self,
         proofsinfo: &Vec<ProofGenerationInfo>,
         cn: &CommitmentName,
-    ) -> (usize, usize) {
+    ) -> (usize, usize, ProveSchema) {
         let mut idx = 0;
         let mut column_idx = None;
+        let mut prove_type = None;
         for proofinfo in proofsinfo.iter() {
             if proofinfo.name == cn.name {
                 idx += cn.proof_idx;
@@ -109,6 +111,7 @@ where
                     .iter()
                     .find(|r| r.0 == cn.column_name)
                     .map(|r| r.1);
+                prove_type = Some(proofinfo.proofs[cn.proof_idx].prove_type);
                 break;
             } else {
                 idx += proofinfo.proofs.len()
@@ -124,7 +127,7 @@ where
                     .collect::<Vec<_>>()
             );
         }
-        (idx, column_idx.unwrap() as usize)
+        (idx, column_idx.unwrap() as usize, prove_type.unwrap())
     }
 
     fn get_instance_index(
@@ -154,7 +157,14 @@ where
         for eqs in commits.equivalents.iter() {
             let src = self.get_commitment_index(proofsinfo, &eqs.source);
             let target = self.get_commitment_index(proofsinfo, &eqs.target);
-            self.equivalents.push([src.0, src.1, target.0, target.1])
+            let entry = [src.0, src.1, target.0, target.1];
+            //prove_type(halo2, hyper_plonk), diff prove_type's commitments are equivalent but not equal.
+            let vec_ref = if src.2 == target.2 {
+                &mut self.equivalents
+            } else {
+                &mut self.equivalents_diff_basis
+            };
+            vec_ref.push(entry)
         }
         for exp in commits.expose.iter() {
             let s = self.get_commitment_index(proofsinfo, exp);
@@ -213,6 +223,10 @@ where
             println!("vkey named advices: {:?}", vkey.get_name_advices());
         }
         println!("commitment equiv: {:?}", self.equivalents);
+        println!(
+            "commitment diff basis equiv: {:?}",
+            self.equivalents_diff_basis
+        );
         println!("commitment expose: {:?}", self.expose);
         println!("commitment absorb: {:?}", self.absorb);
         println!(
@@ -228,6 +242,7 @@ where
         let config = AggregatorConfig {
             hash: TranscriptHash::Poseidon,
             commitment_check: self.equivalents.clone(),
+            commitment_diff_basis_check: self.equivalents_diff_basis.clone(),
             expose: self.expose.clone(),
             absorb: self.absorb.clone(),
             target_aggregator_constant_hash_instance_offset,
