@@ -27,7 +27,6 @@ use halo2aggregator_s::transcript::sha256::ShaRead;
 use halo2aggregator_s::transcript::sha256::ShaWrite;
 use plonkish_backend::backend::hyperplonk;
 use plonkish_backend::backend::hyperplonk::{HyperPlonkProverParam, HyperPlonkVerifierParam};
-use plonkish_backend::util::transcript as hyper_transcript;
 
 use lru::LruCache;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
@@ -326,7 +325,7 @@ where
                     );
                     let vs = hyperplonk::HyperPlonkVerifierSetupParam { pcs: kzg_vs };
                     let mut reader =
-                        hyper_transcript::poseidon::PoseidonRead::init(&self.transcripts[..]);
+                        PoseidonRead::init(&self.transcripts[..]);
                     <hyperplonk::HyperPlonk<Zeromorph<UnivariateKzg<E>>> as PlonkishBackend<
                         E::G1Affine,
                     >>::verify(&vs, vk, &self.instances, &mut reader)
@@ -676,13 +675,13 @@ impl Prover for ProofPieceInfo {
         let timer = start_timer!(|| "creating proof ...");
         let r = match hashtype {
             HashType::Poseidon => {
-                let mut transcript = hyper_transcript::poseidon::PoseidonWrite::init(vec![]);
+                let mut transcript = PoseidonWrite::init(vec![]);
                 <hyperplonk::HyperPlonk<Zeromorph<UnivariateKzg<E>>> as PlonkishBackend<
                     E::G1Affine,
                 >>::prove(&ps, &pkey, &hyper_circuit, &mut transcript)
                 .expect("prove should not fail");
                 let r = transcript.finalize();
-                let mut reader = hyper_transcript::poseidon::PoseidonRead::init(&r[..]);
+                let mut reader = PoseidonRead::init(&r[..]);
                 <hyperplonk::HyperPlonk<Zeromorph<UnivariateKzg<E>>> as PlonkishBackend<
                     E::G1Affine,
                 >>::verify(&vs, pkey.get_vk(), instances, &mut reader)
