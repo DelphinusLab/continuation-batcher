@@ -19,10 +19,10 @@ log = "0.4.17"
 md5 = "0.7.0"
 num-integer = "0.1"
 num-bigint = { version = "0.4.5", features = ["rand"] }
-num-traits = "0.2.15"
+num-traits = "0.2.19"
 num-derive = "0.3"
 num = "0.4"
-wabt = "0.10.0"
+#wabt = "0.10.0"
 lazy_static = "1.4.0"
 rand = "0.8.4"
 sha2 = "0.10.6"
@@ -39,13 +39,13 @@ bitvec = "1.0.1"
 quote = "1.0.25"
 lru = "0.11.0"
 zkwasm-prover = { git = "https://github.com/DelphinusLab/zkWasm-prover.git", tag="stable-logup-shuffle-v1.0.1", optional = true }
-plonkish_backend = { path = "/home/moore/github/delphinus/hyperplonk/plonkish_backend"}
+plonkish_backend = { git = "https://github.com/mooreland/hyperplonk.git"}
 
 [dev-dependencies]
 rusty-fork = "0.3.0"
 
 [features]
-default = ["profile","cuda"]
+default = ["profile",]
 perf = ["dep:zkwasm-prover"]
 profile = ["ark-std/print-trace"]
 cuda = ["halo2_proofs/cuda"]
@@ -55,6 +55,8 @@ on_prove_pairing = ["halo2aggregator-s/on_prove_pairing_affine"]
 opt-level = 3
 
 [patch."https://github.com/DelphinusLab/halo2-gpu-specific.git"]
-halo2_proofs={path="/home/moore/github/delphinus/temp/halo2-gpu-specific/halo2_proofs"}
+halo2_proofs={path="/Users/pony/github/delphinuslab/temp/halo2-gpu-specific/halo2_proofs"}
 [patch."https://github.com/DelphinusLab/halo2aggregator-s.git"]
-halo2aggregator-s={path="/home/moore/github/delphinus/halo2aggregator-s"}
+halo2aggregator-s={path="/Users/pony/github/delphinuslab/halo2aggregator-s"}
+[patch."https://github.com/mooreland/hyperplonk.git"]
+plonkish_backend ={path = "/Users/pony/github/delphinuslab/hyperplonk/plonkish_backend"}

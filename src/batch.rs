@@ -4,6 +4,7 @@ use crate::proof::ParamsCache;
 use crate::proof::ProofGenerationInfo;
 use crate::proof::ProofInfo;
 use crate::proof::ProofPieceInfo;
+use crate::proof::Prover;
 use crate::proof::ProvingKeyCache;
 use ark_std::end_timer;
 use ark_std::start_timer;
@@ -313,7 +314,7 @@ where
         );
 
         let timer = start_timer!(|| "create aggregate proof");
-        let transcripts = proof_piece.exec_create_proof::<E, _>(
+        let transcripts = proof_piece.create_proof::<E, _>(
             &circuit,
             &vec![instances.clone()],
             self.batch_k,
