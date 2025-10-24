@@ -300,7 +300,6 @@ where
                             params_verifier.g1,
                             params_verifier.g2,
                             params_verifier.s_g2,
-                            Some(params_verifier.sum_inv_add_s_l_g2),
                         );
                     let kzg_vs = plonkish_backend::pcs::multilinear::ZeromorphKzgVerifierParam::new(
                         kzg_vk_params,
@@ -615,7 +614,7 @@ fn batch_single_circuit() {
             0,
             1,
             None,
-            ProveSchema::UseHyperPlonk,
+            ProveSchema::UseHalo2,
         );
 
         // testing proof
@@ -634,7 +633,7 @@ fn batch_single_circuit() {
             );
         }
 
-        let transcripts = circuit_info.exec_create_proof(
+        let transcripts = circuit_info.create_proof(
             &circuit,
             &instances,
             K as usize,
@@ -661,10 +660,10 @@ fn batch_single_circuit() {
             1,
             1,
             None,
-            ProveSchema::UseHalo2,
+            ProveSchema::UseHyperPlonk,
         );
 
-        let transcripts = circuit_info.exec_create_proof(
+        let transcripts = circuit_info.create_proof(
             &circuit,
             &instances,
             K as usize,

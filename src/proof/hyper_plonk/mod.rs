@@ -125,7 +125,6 @@ where
 
     fn read_vkey_full(cache_file: &Path) -> Self::VerifierParam {
         log::info!("read vkey full from {:?}", cache_file);
-        println!("read hyper vkey full from {:?}", cache_file);
         let mut fd = std::fs::File::open(&cache_file).unwrap();
         HyperPlonkVerifierParam::<E::G1Affine>::fetch(&mut fd).unwrap()
     }
@@ -166,7 +165,6 @@ where
             params_verifier.g1,
             params_verifier.g2,
             params_verifier.s_g2,
-            Some(params_verifier.sum_inv_add_s_l_g2),
         );
         let kzg_vs =
             plonkish_backend::pcs::multilinear::ZeromorphKzgVerifierParam::new(kzg_vk_params);

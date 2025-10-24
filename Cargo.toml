@@ -39,7 +39,7 @@ bitvec = "1.0.1"
 quote = "1.0.25"
 lru = "0.11.0"
 zkwasm-prover = { git = "https://github.com/DelphinusLab/zkWasm-prover.git", tag="stable-logup-shuffle-v1.0.1", optional = true }
-plonkish_backend = { git = "https://github.com/mooreland/hyperplonk.git"}
+plonkish_backend = {git = "https://github.com/DelphinusLab/hyperplonk.git",branch="moore/support_zeromorph"}
 
 [dev-dependencies]
 rusty-fork = "0.3.0"
@@ -55,8 +55,7 @@ on_prove_pairing = ["halo2aggregator-s/on_prove_pairing_affine"]
 opt-level = 3
 
 [patch."https://github.com/DelphinusLab/halo2-gpu-specific.git"]
-halo2_proofs={path="/Users/pony/github/delphinuslab/temp/halo2-gpu-specific/halo2_proofs"}
+halo2_proofs={path="../halo2-gpu-specific/halo2_proofs"}
 [patch."https://github.com/DelphinusLab/halo2aggregator-s.git"]
-halo2aggregator-s={path="/Users/pony/github/delphinuslab/halo2aggregator-s"}
-[patch."https://github.com/mooreland/hyperplonk.git"]
-plonkish_backend ={path = "/Users/pony/github/delphinuslab/hyperplonk/plonkish_backend"}
+halo2aggregator-s={path="../halo2aggregator-s"}
+

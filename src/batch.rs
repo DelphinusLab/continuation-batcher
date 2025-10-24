@@ -112,7 +112,11 @@ where
                     .iter()
                     .find(|r| r.0 == cn.column_name)
                     .map(|r| r.1);
-                prove_type = Some(proofinfo.proofs[cn.proof_idx].prove_type);
+
+                //self.proofs are reversed from proofs info, the cn.proof_idx is the reversed idx
+                assert!(proofinfo.proofs.len() >= cn.proof_idx + 1);
+                prove_type =
+                    Some(proofinfo.proofs[proofinfo.proofs.len() - cn.proof_idx - 1].prove_type);
                 break;
             } else {
                 idx += proofinfo.proofs.len()
@@ -158,11 +162,15 @@ where
         for eqs in commits.equivalents.iter() {
             let src = self.get_commitment_index(proofsinfo, &eqs.source);
             let target = self.get_commitment_index(proofsinfo, &eqs.target);
-            let entry = [src.0, src.1, target.0, target.1];
+            let mut entry = [src.0, src.1, target.0, target.1];
             //prove_type(halo2, hyper_plonk), diff prove_type's commitments are equivalent but not equal.
             let vec_ref = if src.2 == target.2 {
                 &mut self.equivalents
             } else {
+                if src.2 != ProveSchema::UseHalo2 {
+                    //make sure halo2 proof head
+                    entry = [target.0, target.1, src.0, src.1];
+                }
                 &mut self.equivalents_diff_basis
             };
             vec_ref.push(entry)
@@ -243,7 +251,7 @@ where
         let config = AggregatorConfig {
             hash: TranscriptHash::Poseidon,
             commitment_check: self.equivalents.clone(),
-            commitment_diff_basis_check: self.equivalents_diff_basis.clone(),
+            diff_basis_commitment_check: self.equivalents_diff_basis.clone(),
             expose: self.expose.clone(),
             absorb: self.absorb.clone(),
             target_aggregator_constant_hash_instance_offset,
